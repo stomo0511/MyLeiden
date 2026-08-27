@@ -5,6 +5,7 @@
 #include "common/MM_IO.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <exception>
 #include <fstream>
@@ -71,10 +72,19 @@ double ParsePositiveResolution(const std::string& text)
     if (consumed != text.size()) {
         throw std::invalid_argument("resolution has trailing characters: " + text);
     }
-    if (value <= 0.0) {
-        throw std::invalid_argument("resolution must be positive");
+    if (!std::isfinite(value) || value <= 0.0) {
+        throw std::invalid_argument("resolution must be finite and positive");
     }
     return value;
+}
+
+void SetBinaryEdgeWeights(Graph& G)
+{
+    for (std::vector<Edge>& adjacency : G.adj) {
+        for (Edge& e : adjacency) {
+            e.weight = 1.0;
+        }
+    }
 }
 
 std::unique_ptr<QualityFunction> MakeQualityFunction(double resolution)
@@ -176,7 +186,8 @@ int main(int argc, char** argv)
         }
 
         const double resolution = ParsePositiveResolution(resolution_text);
-        const Graph G = Read_MM_UD(matrix_file);
+        Graph G = Read_MM_UD(matrix_file);
+        SetBinaryEdgeWeights(G);
         const LeidenGraphStats stats = BuildLeidenGraphStats(G);
         const std::unique_ptr<QualityFunction> quality =
             MakeQualityFunction(resolution);
@@ -195,7 +206,13 @@ int main(int argc, char** argv)
                             block_partition.block_of,
                             BlockEdgeWeight::Binary);
         std::vector<int> block_color;
-        const int num_colors = Greedy_Coloring(block_graph, block_color);
+        int num_colors = Greedy_Coloring(block_graph, block_color);
+        RelabelColorsByClassSize(block_color);
+        num_colors =
+            block_color.empty()
+                ? 0
+                : 1 + *std::max_element(block_color.begin(),
+                                        block_color.end());
         ValidateColoring(block_graph, block_color, num_colors);
 
         const std::string base = file_stem(matrix_file) + "_" +
