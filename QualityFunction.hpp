@@ -24,6 +24,11 @@ public:
                                         Community target_community,
                                         double weight_to_source,
                                         double weight_to_target) const = 0;
+
+    virtual double refinementNodeMass(const LeidenGraphStats& stats,
+                                      Vertex v) const = 0;
+
+    virtual double refinementResolution(const LeidenGraphStats& stats) const = 0;
 };
 
 // Scans G.adj[v] once and sums edge weights by neighbor community.
@@ -56,6 +61,11 @@ public:
                                 double weight_to_source,
                                 double weight_to_target) const override;
 
+    double refinementNodeMass(const LeidenGraphStats& stats,
+                              Vertex v) const override;
+
+    double refinementResolution(const LeidenGraphStats& stats) const override;
+
     double gamma() const { return gamma_; }
 
 private:
@@ -82,6 +92,11 @@ public:
                                 Community target_community,
                                 double weight_to_source,
                                 double weight_to_target) const override;
+
+    double refinementNodeMass(const LeidenGraphStats& stats,
+                              Vertex v) const override;
+
+    double refinementResolution(const LeidenGraphStats& stats) const override;
 
     double gamma() const { return gamma_; }
 

@@ -355,6 +355,21 @@ double CPMQualityFunction::deltaMoveFromWeights(const LeidenGraphStats& stats,
            - gamma_ * stats.node_size[v] * (target_size - source_size_without_v);
 }
 
+double CPMQualityFunction::refinementNodeMass(const LeidenGraphStats& stats,
+                                              Vertex v) const
+{
+    if (v < 0 || static_cast<std::size_t>(v) >= stats.node_size.size()) {
+        throw std::out_of_range("vertex id out of range");
+    }
+    return stats.node_size[v];
+}
+
+double CPMQualityFunction::refinementResolution(const LeidenGraphStats& stats) const
+{
+    (void)stats;
+    return gamma_;
+}
+
 ModularityQualityFunction::ModularityQualityFunction(double gamma)
     : gamma_(gamma)
 {
@@ -451,4 +466,23 @@ double ModularityQualityFunction::deltaMoveFromWeights(
     return 2.0 * (weight_to_target - weight_to_source)
            - gamma_ * kv * (target_strength - source_strength_without_v)
                  / stats.total_edge_weight;
+}
+
+double ModularityQualityFunction::refinementNodeMass(
+    const LeidenGraphStats& stats,
+    Vertex v) const
+{
+    if (v < 0 || static_cast<std::size_t>(v) >= stats.node_strength.size()) {
+        throw std::out_of_range("vertex id out of range");
+    }
+    return stats.node_strength[v];
+}
+
+double ModularityQualityFunction::refinementResolution(
+    const LeidenGraphStats& stats) const
+{
+    if (stats.total_edge_weight == 0.0) {
+        return 0.0;
+    }
+    return gamma_ / (2.0 * stats.total_edge_weight);
 }

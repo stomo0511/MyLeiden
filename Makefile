@@ -4,22 +4,32 @@ CPPFLAGS ?= -I. -Icommon
 LDFLAGS ?=
 LDLIBS ?=
 
-TARGETS := test_quality
+TARGETS := test_quality test_move_nodes_fast test_refinement
 TEST_QUALITY_OBJS := QualityFunction.o test_quality.o
-DEPS := $(TEST_QUALITY_OBJS:.o=.d)
+TEST_MOVE_NODES_FAST_OBJS := QualityFunction.o Leiden.o test_move_nodes_fast.o
+TEST_REFINEMENT_OBJS := QualityFunction.o Leiden.o test_refinement.o
+DEPS := $(sort $(TEST_QUALITY_OBJS:.o=.d) $(TEST_MOVE_NODES_FAST_OBJS:.o=.d) $(TEST_REFINEMENT_OBJS:.o=.d))
 
 .PHONY: all test clean
 
-all: test_quality
+all: $(TARGETS)
 
 test_quality: $(TEST_QUALITY_OBJS)
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+test_move_nodes_fast: $(TEST_MOVE_NODES_FAST_OBJS)
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+test_refinement: $(TEST_REFINEMENT_OBJS)
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 %.o: %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
-test: test_quality
+test: $(TARGETS)
 	./test_quality
+	./test_move_nodes_fast
+	./test_refinement
 
 clean:
 	rm -f $(TARGETS) *.o *.d common/*.o common/*.d
