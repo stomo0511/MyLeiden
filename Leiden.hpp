@@ -19,6 +19,12 @@ struct RefinementCommunityStats {
     std::vector<Community> active_communities;
 };
 
+struct AggregateGraphResult {
+    Graph graph;
+    LeidenGraphStats stats;
+    std::vector<Vertex> coarse_of;
+};
+
 MoveNodesFastResult MoveNodesFast(const Graph& G,
                                   const LeidenGraphStats& stats,
                                   LeidenPartition partition,
@@ -84,3 +90,7 @@ LeidenPartition RefinePartition(const Graph& G,
                                 const QualityFunction& quality_function,
                                 double theta,
                                 std::mt19937& rng);
+
+AggregateGraphResult AggregateGraph(const Graph& G,
+                                    const LeidenGraphStats& stats,
+                                    const LeidenPartition& refined);

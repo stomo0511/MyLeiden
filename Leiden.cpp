@@ -3,12 +3,29 @@
 #include <algorithm>
 #include <cmath>
 #include <deque>
-#include <stdexcept>
+#include <functional>
 #include <numeric>
+#include <stdexcept>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace {
+
+struct EdgePairHash {
+    std::size_t operator()(const std::pair<int, int>& p) const
+    {
+        const std::size_t a = std::hash<int>{}(p.first);
+        const std::size_t b = std::hash<int>{}(p.second);
+        return a ^ (b + 0x9e3779b97f4a7c15ULL + (a << 6U) + (a >> 2U));
+    }
+};
+
+struct WeightedEdge {
+    int u;
+    int v;
+    double weight;
+};
 
 double LookupWeight(const std::unordered_map<Community, double>& weights,
                     Community community)
@@ -126,6 +143,43 @@ std::vector<Community> BuildCandidateCommunities(
     candidates.erase(std::unique(candidates.begin(), candidates.end()),
                      candidates.end());
     return candidates;
+}
+
+void ValidateAggregateInput(const Graph& G,
+                            const LeidenGraphStats& stats,
+                            const LeidenPartition& refined)
+{
+    const int n = num_vertices(G);
+    if (static_cast<int>(stats.node_size.size()) != n ||
+        static_cast<int>(stats.node_strength.size()) != n ||
+        static_cast<int>(refined.community_of.size()) != n) {
+        throw std::invalid_argument("aggregate input size does not match graph");
+    }
+    for (Community community : refined.community_of) {
+        if (community < 0) {
+            throw std::invalid_argument("refined partition contains negative community id");
+        }
+    }
+}
+
+std::vector<Community> BuildCommunityToCoarse(const LeidenPartition& refined)
+{
+    std::vector<Community> active;
+    active.reserve(refined.community_size.size());
+    for (Community c : refined.community_of) {
+        active.push_back(c);
+    }
+    std::sort(active.begin(), active.end());
+    active.erase(std::unique(active.begin(), active.end()), active.end());
+
+    const Community max_community = active.empty() ? -1 : active.back();
+    std::vector<Community> community_to_coarse(
+        static_cast<std::size_t>(max_community + 1),
+        -1);
+    for (Community coarse = 0; coarse < static_cast<Community>(active.size()); ++coarse) {
+        community_to_coarse[active[coarse]] = coarse;
+    }
+    return community_to_coarse;
 }
 
 } // namespace
@@ -561,4 +615,66 @@ LeidenPartition RefinePartition(const Graph& G,
         }
     }
     return refined;
+}
+
+AggregateGraphResult AggregateGraph(const Graph& G,
+                                    const LeidenGraphStats& stats,
+                                    const LeidenPartition& refined)
+{
+    ValidateAggregateInput(G, stats, refined);
+
+    AggregateGraphResult result;
+    const std::vector<Community> community_to_coarse =
+        BuildCommunityToCoarse(refined);
+    const int n_coarse =
+        community_to_coarse.empty()
+            ? 0
+            : static_cast<int>(
+                  *std::max_element(community_to_coarse.begin(),
+                                    community_to_coarse.end()) + 1);
+
+    result.graph = MakeGraph(n_coarse);
+    result.coarse_of.assign(num_vertices(G), -1);
+    std::vector<double> coarse_node_size(n_coarse, 0.0);
+
+    for (Vertex v = 0; v < num_vertices(G); ++v) {
+        const Community coarse = community_to_coarse[refined.community_of[v]];
+        result.coarse_of[v] = coarse;
+        coarse_node_size[coarse] += stats.node_size[v];
+    }
+
+    std::unordered_map<std::pair<int, int>, double, EdgePairHash> edge_weight;
+    edge_weight.reserve(num_edges(G));
+
+    // Each undirected input edge is processed once. Edges inside a refined
+    // community become aggregate self-loops; inter-community and parallel
+    // edges are summed by canonical (min,max) coarse pair.
+    for_each_undirected_edge(G, [&](int u, int v, double w) {
+        int cu = result.coarse_of[u];
+        int cv = result.coarse_of[v];
+        if (cu > cv) {
+            std::swap(cu, cv);
+        }
+        edge_weight[std::make_pair(cu, cv)] += w;
+    });
+
+    std::vector<WeightedEdge> edges;
+    edges.reserve(edge_weight.size());
+    for (const auto& item : edge_weight) {
+        edges.push_back({item.first.first, item.first.second, item.second});
+    }
+    std::sort(edges.begin(), edges.end(), [](const WeightedEdge& a,
+                                             const WeightedEdge& b) {
+        if (a.u != b.u) {
+            return a.u < b.u;
+        }
+        return a.v < b.v;
+    });
+
+    for (const WeightedEdge& e : edges) {
+        add_undirected_edge(result.graph, e.u, e.v, e.weight);
+    }
+
+    result.stats = BuildLeidenGraphStats(result.graph, coarse_node_size);
+    return result;
 }
