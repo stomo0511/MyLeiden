@@ -12,6 +12,13 @@ struct MoveNodesFastResult {
     std::size_t num_visits = 0;
 };
 
+struct RefinementCommunityStats {
+    std::vector<int> member_count;
+    std::vector<double> mass;
+    std::vector<double> external_weight;
+    std::vector<Community> active_communities;
+};
+
 MoveNodesFastResult MoveNodesFast(const Graph& G,
                                   const LeidenGraphStats& stats,
                                   LeidenPartition partition,
@@ -37,6 +44,31 @@ bool IsCommunityWellConnectedToSubset(
     Community community,
     const std::vector<Vertex>& subset,
     const std::vector<bool>& in_subset);
+
+RefinementCommunityStats BuildRefinementCommunityStats(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& refined,
+    const QualityFunction& quality_function,
+    const std::vector<Vertex>& subset,
+    const std::vector<bool>& in_subset);
+
+bool IsCommunityWellConnectedFromStats(
+    const LeidenGraphStats& stats,
+    const QualityFunction& quality_function,
+    Community community,
+    double subset_mass,
+    const RefinementCommunityStats& community_stats);
+
+void UpdateRefinementCommunityStatsForMove(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& refined_before_move,
+    const QualityFunction& quality_function,
+    const std::vector<bool>& in_subset,
+    Vertex v,
+    Community target,
+    RefinementCommunityStats& community_stats);
 
 void MergeNodesSubset(const Graph& G,
                       const LeidenGraphStats& stats,

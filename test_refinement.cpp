@@ -7,6 +7,7 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace {
@@ -105,6 +106,93 @@ void CheckStatsAgainstRecompute(const std::string& test_name,
         CheckNear(test_name + " community_strength", expected_strength, actual_strength);
         CheckNear(test_name + " internal_edge_weight", expected_internal, actual_internal);
     }
+}
+
+std::vector<bool> MakeSubsetMask(const Graph& G,
+                                 const std::vector<Vertex>& subset)
+{
+    std::vector<bool> in_subset(num_vertices(G), false);
+    for (Vertex v : subset) {
+        in_subset[v] = true;
+    }
+    return in_subset;
+}
+
+RefinementCommunityStats DirectRefinementCommunityStats(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& refined,
+    const QualityFunction& qf,
+    const std::vector<Vertex>& subset,
+    const std::vector<bool>& in_subset)
+{
+    RefinementCommunityStats direct;
+    direct.member_count.assign(refined.community_size.size(), 0);
+    direct.mass.assign(refined.community_size.size(), 0.0);
+    direct.external_weight.assign(refined.community_size.size(), 0.0);
+
+    for (Vertex v : subset) {
+        const Community community = refined.community_of[v];
+        if (static_cast<std::size_t>(community) >= direct.member_count.size()) {
+            const std::size_t need = static_cast<std::size_t>(community) + 1;
+            direct.member_count.resize(need, 0);
+            direct.mass.resize(need, 0.0);
+            direct.external_weight.resize(need, 0.0);
+        }
+        ++direct.member_count[community];
+        direct.mass[community] += qf.refinementNodeMass(stats, v);
+    }
+
+    for (Community c = 0;
+         c < static_cast<Community>(direct.member_count.size());
+         ++c) {
+        for (Vertex v : subset) {
+            if (refined.community_of[v] != c) {
+                continue;
+            }
+            for (const Edge& e : G.adj[v]) {
+                if (e.to != v && in_subset[e.to] &&
+                    refined.community_of[e.to] != c) {
+                    direct.external_weight[c] += e.weight;
+                }
+            }
+        }
+        if (direct.member_count[c] > 0) {
+            direct.active_communities.push_back(c);
+        }
+    }
+
+    return direct;
+}
+
+void CheckRefinementCommunityStatsEqual(
+    const std::string& test_name,
+    const RefinementCommunityStats& expected,
+    const RefinementCommunityStats& actual)
+{
+    const std::size_t nc = std::max(expected.member_count.size(),
+                                    actual.member_count.size());
+    for (std::size_t c = 0; c < nc; ++c) {
+        const int expected_count =
+            (c < expected.member_count.size()) ? expected.member_count[c] : 0;
+        const int actual_count =
+            (c < actual.member_count.size()) ? actual.member_count[c] : 0;
+        const double expected_mass =
+            (c < expected.mass.size()) ? expected.mass[c] : 0.0;
+        const double actual_mass =
+            (c < actual.mass.size()) ? actual.mass[c] : 0.0;
+        const double expected_external =
+            (c < expected.external_weight.size()) ? expected.external_weight[c] : 0.0;
+        const double actual_external =
+            (c < actual.external_weight.size()) ? actual.external_weight[c] : 0.0;
+
+        CheckTrue(test_name + " member_count",
+                  expected_count == actual_count);
+        CheckNear(test_name + " mass", expected_mass, actual_mass);
+        CheckNear(test_name + " external_weight", expected_external, actual_external);
+    }
+    CheckTrue(test_name + " active_communities",
+              expected.active_communities == actual.active_communities);
 }
 
 void CheckRefinementOfPartition(const std::string& test_name,
@@ -378,6 +466,118 @@ void TestThetaValidation()
                        33);
 }
 
+Graph MakeStatsUpdateGraph()
+{
+    Graph G = MakeGraph(5);
+    add_undirected_edge(G, 0, 0, 10.0);
+    add_undirected_edge(G, 0, 1, 1.0);
+    add_undirected_edge(G, 0, 2, 2.0);
+    add_undirected_edge(G, 0, 3, 3.0);
+    add_undirected_edge(G, 0, 4, 4.0);
+    add_undirected_edge(G, 1, 2, 0.25);
+    add_undirected_edge(G, 2, 3, 0.5);
+    return G;
+}
+
+void CheckCachedStatsAgainstDirect(const std::string& test_name,
+                                   const Graph& G,
+                                   const LeidenGraphStats& stats,
+                                   const LeidenPartition& refined,
+                                   const QualityFunction& qf,
+                                   const std::vector<Vertex>& subset,
+                                   const std::vector<bool>& in_subset,
+                                   const RefinementCommunityStats& cached)
+{
+    const RefinementCommunityStats direct =
+        DirectRefinementCommunityStats(G,
+                                       stats,
+                                       refined,
+                                       qf,
+                                       subset,
+                                       in_subset);
+    CheckRefinementCommunityStatsEqual(test_name, direct, cached);
+}
+
+void TestRefinementCommunityStatsCache()
+{
+    const Graph G = MakeStatsUpdateGraph();
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    LeidenPartition refined = MakePartition(G, stats, {0, 0, 1, 2, 3});
+    const CPMQualityFunction cpm(0.1);
+    const std::vector<Vertex> subset = {0, 1, 2, 3};
+    const std::vector<bool> in_subset = MakeSubsetMask(G, subset);
+
+    RefinementCommunityStats cached =
+        BuildRefinementCommunityStats(G,
+                                      stats,
+                                      refined,
+                                      cpm,
+                                      subset,
+                                      in_subset);
+    CheckCachedStatsAgainstDirect("Test J initial cached stats",
+                                  G,
+                                  stats,
+                                  refined,
+                                  cpm,
+                                  subset,
+                                  in_subset,
+                                  cached);
+
+    UpdateRefinementCommunityStatsForMove(G,
+                                          stats,
+                                          refined,
+                                          cpm,
+                                          in_subset,
+                                          0,
+                                          1,
+                                          cached);
+    MoveNodeToCommunity(G, stats, refined, 0, 1);
+    CheckCachedStatsAgainstDirect("Test J single move cached stats",
+                                  G,
+                                  stats,
+                                  refined,
+                                  cpm,
+                                  subset,
+                                  in_subset,
+                                  cached);
+
+    UpdateRefinementCommunityStatsForMove(G,
+                                          stats,
+                                          refined,
+                                          cpm,
+                                          in_subset,
+                                          1,
+                                          1,
+                                          cached);
+    MoveNodeToCommunity(G, stats, refined, 1, 1);
+    CheckCachedStatsAgainstDirect("Test J source empty cached stats",
+                                  G,
+                                  stats,
+                                  refined,
+                                  cpm,
+                                  subset,
+                                  in_subset,
+                                  cached);
+
+    UpdateRefinementCommunityStatsForMove(G,
+                                          stats,
+                                          refined,
+                                          cpm,
+                                          in_subset,
+                                          3,
+                                          1,
+                                          cached);
+    MoveNodeToCommunity(G, stats, refined, 3, 1);
+    CheckCachedStatsAgainstDirect("Test J multiple moves cached stats",
+                                  G,
+                                  stats,
+                                  refined,
+                                  cpm,
+                                  subset,
+                                  in_subset,
+                                  cached);
+}
+
 } // namespace
 
 int main()
@@ -391,6 +591,7 @@ int main()
     TestAggregateNodeSizeCPM();
     TestModularityMass();
     TestThetaValidation();
+    TestRefinementCommunityStatsCache();
 
     std::cout << "All refinement tests passed.\n";
     return EXIT_SUCCESS;

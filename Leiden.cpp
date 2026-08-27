@@ -55,18 +55,30 @@ double RefinedCommunityMassInSubset(const LeidenGraphStats& stats,
     return mass;
 }
 
-std::vector<int> CountRefinedCommunityMembers(const LeidenPartition& refined)
+void EnsureRefinementCommunityStatsSize(RefinementCommunityStats& community_stats,
+                                        Community community)
 {
-    std::vector<int> member_count(refined.community_size.size(), 0);
-    for (Community community : refined.community_of) {
-        if (community >= 0) {
-            if (static_cast<std::size_t>(community) >= member_count.size()) {
-                member_count.resize(static_cast<std::size_t>(community) + 1, 0);
-            }
-            ++member_count[community];
+    if (community < 0) {
+        throw std::out_of_range("community id out of range");
+    }
+    const std::size_t need = static_cast<std::size_t>(community) + 1;
+    if (community_stats.member_count.size() < need) {
+        community_stats.member_count.resize(need, 0);
+        community_stats.mass.resize(need, 0.0);
+        community_stats.external_weight.resize(need, 0.0);
+    }
+}
+
+void RefreshActiveCommunities(RefinementCommunityStats& community_stats)
+{
+    community_stats.active_communities.clear();
+    for (Community c = 0;
+         c < static_cast<Community>(community_stats.member_count.size());
+         ++c) {
+        if (community_stats.member_count[c] > 0) {
+            community_stats.active_communities.push_back(c);
         }
     }
-    return member_count;
 }
 
 std::vector<std::vector<Vertex>> BuildPartitionMembers(
@@ -193,6 +205,135 @@ bool IsCommunityWellConnectedToSubset(
     return edge_weight >= threshold;
 }
 
+RefinementCommunityStats BuildRefinementCommunityStats(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& refined,
+    const QualityFunction& quality_function,
+    const std::vector<Vertex>& subset,
+    const std::vector<bool>& in_subset)
+{
+    if (static_cast<int>(in_subset.size()) != num_vertices(G)) {
+        throw std::invalid_argument("subset mask size does not match graph");
+    }
+
+    RefinementCommunityStats community_stats;
+    community_stats.member_count.assign(refined.community_size.size(), 0);
+    community_stats.mass.assign(refined.community_size.size(), 0.0);
+    community_stats.external_weight.assign(refined.community_size.size(), 0.0);
+
+    for (Vertex v : subset) {
+        ValidateVertex(v, G);
+        const Community community = refined.community_of[v];
+        EnsureRefinementCommunityStatsSize(community_stats, community);
+        ++community_stats.member_count[community];
+        community_stats.mass[community] +=
+            quality_function.refinementNodeMass(stats, v);
+    }
+
+    for (Vertex u : subset) {
+        ValidateVertex(u, G);
+        const Community cu = refined.community_of[u];
+        EnsureRefinementCommunityStatsSize(community_stats, cu);
+
+        for (const Edge& e : G.adj[u]) {
+            if (e.to == u || !in_subset[e.to] || u > e.to) {
+                continue;
+            }
+
+            const Community cv = refined.community_of[e.to];
+            EnsureRefinementCommunityStatsSize(community_stats, cv);
+            if (cu != cv) {
+                community_stats.external_weight[cu] += e.weight;
+                community_stats.external_weight[cv] += e.weight;
+            }
+        }
+    }
+
+    RefreshActiveCommunities(community_stats);
+    return community_stats;
+}
+
+bool IsCommunityWellConnectedFromStats(
+    const LeidenGraphStats& stats,
+    const QualityFunction& quality_function,
+    Community community,
+    double subset_mass,
+    const RefinementCommunityStats& community_stats)
+{
+    if (community < 0 ||
+        static_cast<std::size_t>(community) >= community_stats.member_count.size() ||
+        community_stats.member_count[community] <= 0) {
+        return false;
+    }
+
+    const double community_mass = community_stats.mass[community];
+    const double threshold =
+        quality_function.refinementResolution(stats) *
+        community_mass *
+        (subset_mass - community_mass);
+    return community_stats.external_weight[community] >= threshold;
+}
+
+void UpdateRefinementCommunityStatsForMove(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& refined_before_move,
+    const QualityFunction& quality_function,
+    const std::vector<bool>& in_subset,
+    Vertex v,
+    Community target,
+    RefinementCommunityStats& community_stats)
+{
+    ValidateVertex(v, G);
+    if (static_cast<int>(in_subset.size()) != num_vertices(G)) {
+        throw std::invalid_argument("subset mask size does not match graph");
+    }
+
+    const Community source = refined_before_move.community_of[v];
+    if (source == target) {
+        return;
+    }
+
+    EnsureRefinementCommunityStatsSize(community_stats, source);
+    EnsureRefinementCommunityStatsSize(community_stats, target);
+
+    const double node_mass =
+        quality_function.refinementNodeMass(stats, v);
+    --community_stats.member_count[source];
+    ++community_stats.member_count[target];
+    community_stats.mass[source] -= node_mass;
+    community_stats.mass[target] += node_mass;
+
+    // For each subset-internal edge (v,u), update E(C,S-C) using communities
+    // before the move A -> B:
+    //   C == A: internal A edge becomes A-B external, so A += w and B += w.
+    //   C == B: A-B external becomes internal B edge, so A -= w and B -= w.
+    //   otherwise: A-C external becomes B-C external, so A -= w and B += w.
+    // The third community C is external both before and after, so its value is
+    // unchanged. Self-loops and subset-external edges are ignored.
+    for (const Edge& e : G.adj[v]) {
+        const Vertex u = e.to;
+        if (u == v || !in_subset[u]) {
+            continue;
+        }
+
+        const Community neighbor_community = refined_before_move.community_of[u];
+        if (neighbor_community == source) {
+            community_stats.external_weight[source] += e.weight;
+            community_stats.external_weight[target] += e.weight;
+        } else if (neighbor_community == target) {
+            community_stats.external_weight[source] -= e.weight;
+            community_stats.external_weight[target] -= e.weight;
+        } else {
+            community_stats.external_weight[source] -= e.weight;
+            community_stats.external_weight[target] += e.weight;
+        }
+    }
+
+    RefreshActiveCommunities(community_stats);
+}
+
 MoveNodesFastResult MoveNodesFast(const Graph& G,
                                   const LeidenGraphStats& stats,
                                   LeidenPartition partition,
@@ -304,12 +445,18 @@ void MergeNodesSubset(const Graph& G,
     }
     std::shuffle(candidates.begin(), candidates.end(), rng);
 
-    std::vector<int> member_count = CountRefinedCommunityMembers(refined);
+    RefinementCommunityStats community_stats =
+        BuildRefinementCommunityStats(G,
+                                      stats,
+                                      refined,
+                                      quality_function,
+                                      subset,
+                                      in_subset);
     for (Vertex v : candidates) {
         const Community source = refined.community_of[v];
         if (source < 0 ||
-            static_cast<std::size_t>(source) >= member_count.size() ||
-            member_count[source] != 1) {
+            static_cast<std::size_t>(source) >= community_stats.member_count.size() ||
+            community_stats.member_count[source] != 1) {
             continue;
         }
 
@@ -317,34 +464,25 @@ void MergeNodesSubset(const Graph& G,
             BuildNeighborCommunityWeights(G, refined, v);
         const double weight_to_source = LookupWeight(neighbor_weights, source);
 
-        std::vector<Community> target_communities;
-        target_communities.reserve(subset.size());
-        for (Vertex u : subset) {
-            const Community community = refined.community_of[u];
-            if (community >= 0 &&
-                IsCommunityWellConnectedToSubset(G,
-                                                 stats,
-                                                 refined,
-                                                 quality_function,
-                                                 community,
-                                                 subset,
-                                                 in_subset)) {
-                target_communities.push_back(community);
-            }
-        }
-        std::sort(target_communities.begin(), target_communities.end());
-        target_communities.erase(
-            std::unique(target_communities.begin(), target_communities.end()),
-            target_communities.end());
-
         struct WeightedCandidate {
             Community community;
             double delta;
         };
         std::vector<WeightedCandidate> nondecreasing_candidates;
-        nondecreasing_candidates.reserve(target_communities.size());
+        nondecreasing_candidates.reserve(community_stats.active_communities.size());
 
-        for (Community community : target_communities) {
+        // Community-level full subset rescans are avoided here. The subset
+        // stats are built once in O(|S| + |E_S|); after each merge they are
+        // updated from G.adj[v]. Each well-connectedness query below is O(1).
+        for (Community community : community_stats.active_communities) {
+            if (!IsCommunityWellConnectedFromStats(stats,
+                                                  quality_function,
+                                                  community,
+                                                  subset_mass,
+                                                  community_stats)) {
+                continue;
+            }
+
             const double delta =
                 (community == source)
                     ? 0.0
@@ -384,12 +522,15 @@ void MergeNodesSubset(const Graph& G,
             nondecreasing_candidates[distribution(rng)].community;
 
         if (target != source) {
+            UpdateRefinementCommunityStatsForMove(G,
+                                                  stats,
+                                                  refined,
+                                                  quality_function,
+                                                  in_subset,
+                                                  v,
+                                                  target,
+                                                  community_stats);
             MoveNodeToCommunity(G, stats, refined, v, target);
-            --member_count[source];
-            if (static_cast<std::size_t>(target) >= member_count.size()) {
-                member_count.resize(static_cast<std::size_t>(target) + 1, 0);
-            }
-            ++member_count[target];
         }
     }
 }
