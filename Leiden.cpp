@@ -182,6 +182,25 @@ std::vector<Community> BuildCommunityToCoarse(const LeidenPartition& refined)
     return community_to_coarse;
 }
 
+std::vector<Community> BuildCompactCommunityMap(
+    const std::vector<Community>& community_ids)
+{
+    std::vector<Community> active = community_ids;
+    std::sort(active.begin(), active.end());
+    active.erase(std::unique(active.begin(), active.end()), active.end());
+
+    const Community max_community = active.empty() ? -1 : active.back();
+    std::vector<Community> community_map(
+        static_cast<std::size_t>(max_community + 1),
+        -1);
+    for (Community compact = 0;
+         compact < static_cast<Community>(active.size());
+         ++compact) {
+        community_map[active[compact]] = compact;
+    }
+    return community_map;
+}
+
 } // namespace
 
 double EdgeWeightFromNodeToSubset(const Graph& G,
@@ -677,4 +696,69 @@ AggregateGraphResult AggregateGraph(const Graph& G,
 
     result.stats = BuildLeidenGraphStats(result.graph, coarse_node_size);
     return result;
+}
+
+LeidenPartition BuildCoarsePartition(const AggregateGraphResult& aggregate,
+                                     const LeidenPartition& partition,
+                                     const LeidenPartition& refined)
+{
+    const int n_coarse = num_vertices(aggregate.graph);
+    const std::size_t n = aggregate.coarse_of.size();
+    if (partition.community_of.size() != n ||
+        refined.community_of.size() != n) {
+        throw std::invalid_argument("coarse partition input size mismatch");
+    }
+
+    std::vector<Community> coarse_original_community(n_coarse, -1);
+    std::vector<Vertex> refined_coarse(refined.community_size.size(), -1);
+
+    // Aggregation is based on Prefined, but the partition on the aggregate
+    // graph represents the original non-refined P. Each coarse vertex
+    // corresponds to one refined community, and all original vertices in that
+    // coarse vertex must therefore have the same P community.
+    for (Vertex v = 0; v < static_cast<Vertex>(n); ++v) {
+        const Vertex coarse = aggregate.coarse_of[v];
+        const Community p_community = partition.community_of[v];
+        const Community refined_community = refined.community_of[v];
+
+        if (coarse < 0 || coarse >= n_coarse) {
+            throw std::invalid_argument("coarse_of contains out-of-range vertex id");
+        }
+        if (p_community < 0 || refined_community < 0) {
+            throw std::invalid_argument("partition contains negative community id");
+        }
+
+        if (static_cast<std::size_t>(refined_community) >= refined_coarse.size()) {
+            refined_coarse.resize(static_cast<std::size_t>(refined_community) + 1,
+                                  -1);
+        }
+        if (refined_coarse[refined_community] == -1) {
+            refined_coarse[refined_community] = coarse;
+        } else if (refined_coarse[refined_community] != coarse) {
+            throw std::invalid_argument("coarse_of is inconsistent with refined partition");
+        }
+
+        if (coarse_original_community[coarse] == -1) {
+            coarse_original_community[coarse] = p_community;
+        } else if (coarse_original_community[coarse] != p_community) {
+            throw std::invalid_argument(
+                "refined partition is not a refinement of partition");
+        }
+    }
+
+    for (Vertex coarse = 0; coarse < n_coarse; ++coarse) {
+        if (coarse_original_community[coarse] < 0) {
+            throw std::invalid_argument("coarse vertex has no original vertex");
+        }
+    }
+
+    const std::vector<Community> compact_map =
+        BuildCompactCommunityMap(coarse_original_community);
+    std::vector<Community> coarse_assignment(n_coarse, -1);
+    for (Vertex coarse = 0; coarse < n_coarse; ++coarse) {
+        coarse_assignment[coarse] =
+            compact_map[coarse_original_community[coarse]];
+    }
+
+    return MakePartition(aggregate.graph, aggregate.stats, coarse_assignment);
 }

@@ -94,3 +94,7 @@ LeidenPartition RefinePartition(const Graph& G,
 AggregateGraphResult AggregateGraph(const Graph& G,
                                     const LeidenGraphStats& stats,
                                     const LeidenPartition& refined);
+
+LeidenPartition BuildCoarsePartition(const AggregateGraphResult& aggregate,
+                                     const LeidenPartition& partition,
+                                     const LeidenPartition& refined);
