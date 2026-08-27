@@ -645,41 +645,23 @@ inline void EvaluateBlockGraph(const Graph& T)
               << BlockGraphDensity(T) << "\n";
 }
 
-// inline void EvaluateLocalityScore(const Graph& G,
-//                                   const std::vector<int>& block_of)
-// {
-//     int nb = 1 + *std::max_element(block_of.begin(), block_of.end());
-//     int internal = 0;
-//     int external = 0;
-
-//     CountEdgeLocality(G, block_of, nb, internal, external);
-
-//     std::cout << "Locality score : "
-//               << LocalityScore(internal, external) << "\n";
-// }
-void EvaluateLocalityScore(
-    const Graph& G,
-    const std::vector<int>& block_of)
+inline void EvaluateLocalityScore(const Graph& G,
+                                  const std::vector<int>& block_of)
 {
+    if(block_of.empty()){
+        std::cout << "Locality score : 0\n";
+        return;
+    }
+
+    int nb = 1 + *std::max_element(block_of.begin(), block_of.end());
     int internal = 0;
     int external = 0;
 
-    int N = static_cast<int>(num_vertices(G));
-
-    for_each_undirected_edge(G, [&](int u, int v, double) {
-        if(block_of[u] == block_of[v])
-            internal++;
-        else
-            external++;
-    });
-
-    double score =
-        static_cast<double>(internal)
-        / static_cast<double>(external + 1);
+    CountEdgeLocality(G, block_of, nb, internal, external);
 
     std::cout
         << "Locality score : "
-        << score << "\n";
+        << LocalityScore(internal, external) << "\n";
 }
 
 inline void EvaluateLoadBalance(const std::vector<int>& nodes_per_block)
