@@ -162,6 +162,20 @@ void ValidateAggregateInput(const Graph& G,
     }
 }
 
+void ValidateLeidenInput(const Graph& G,
+                         const LeidenGraphStats& stats,
+                         const LeidenOptions& options)
+{
+    const int n = num_vertices(G);
+    if (static_cast<int>(stats.node_size.size()) != n ||
+        static_cast<int>(stats.node_strength.size()) != n) {
+        throw std::invalid_argument("Leiden input stats size does not match graph");
+    }
+    if (options.theta <= 0.0) {
+        throw std::invalid_argument("theta must be positive");
+    }
+}
+
 std::vector<Community> BuildCommunityToCoarse(const LeidenPartition& refined)
 {
     std::vector<Community> active;
@@ -199,6 +213,26 @@ std::vector<Community> BuildCompactCommunityMap(
         community_map[active[compact]] = compact;
     }
     return community_map;
+}
+
+std::vector<Community> CompactAssignment(
+    const std::vector<Community>& assignment)
+{
+    if (assignment.empty()) {
+        return {};
+    }
+    const std::vector<Community> compact_map =
+        BuildCompactCommunityMap(assignment);
+
+    std::vector<Community> compacted(assignment.size(), -1);
+    for (std::size_t i = 0; i < assignment.size(); ++i) {
+        const Community community = assignment[i];
+        if (community < 0) {
+            throw std::invalid_argument("assignment contains negative community id");
+        }
+        compacted[i] = compact_map[community];
+    }
+    return compacted;
 }
 
 } // namespace
@@ -761,4 +795,92 @@ LeidenPartition BuildCoarsePartition(const AggregateGraphResult& aggregate,
     }
 
     return MakePartition(aggregate.graph, aggregate.stats, coarse_assignment);
+}
+
+LeidenResult Leiden(const Graph& G,
+                    const LeidenGraphStats& stats,
+                    const QualityFunction& quality_function,
+                    const LeidenOptions& options)
+{
+    ValidateLeidenInput(G, stats, options);
+
+    LeidenResult result;
+    const int n_original = num_vertices(G);
+    if (n_original == 0) {
+        result.partition = MakePartition(G, stats, {});
+        return result;
+    }
+
+    Graph current_graph = G;
+    LeidenGraphStats current_stats = stats;
+    LeidenPartition current_partition =
+        MakeSingletonPartition(current_graph, current_stats);
+
+    // original_to_current[v] is the current coarse-graph vertex that
+    // represents original vertex v at the start of each level.
+    std::vector<Vertex> original_to_current(n_original);
+    std::iota(original_to_current.begin(), original_to_current.end(), 0);
+
+    std::mt19937 rng(options.seed);
+
+    while (options.max_levels == 0 || result.num_levels < options.max_levels) {
+        const int n_before_aggregation = num_vertices(current_graph);
+        MoveNodesFastResult moved =
+            MoveNodesFast(current_graph,
+                          current_stats,
+                          current_partition,
+                          quality_function,
+                          rng);
+        current_partition = std::move(moved.partition);
+        ++result.num_levels;
+        result.total_moves += moved.num_moves;
+
+        if (moved.num_moves == 0 ||
+            (options.max_levels != 0 && result.num_levels >= options.max_levels)) {
+            break;
+        }
+
+        LeidenPartition refined =
+            RefinePartition(current_graph,
+                            current_stats,
+                            current_partition,
+                            quality_function,
+                            options.theta,
+                            rng);
+        AggregateGraphResult aggregate =
+            AggregateGraph(current_graph, current_stats, refined);
+        LeidenPartition coarse_partition =
+            BuildCoarsePartition(aggregate, current_partition, refined);
+
+        if (num_vertices(aggregate.graph) > n_before_aggregation) {
+            throw std::logic_error("aggregation increased graph size");
+        }
+
+        for (Vertex original = 0; original < n_original; ++original) {
+            const Vertex current = original_to_current[original];
+            if (current < 0 ||
+                static_cast<std::size_t>(current) >= aggregate.coarse_of.size()) {
+                throw std::logic_error("original_to_current is out of range");
+            }
+            original_to_current[original] = aggregate.coarse_of[current];
+        }
+
+        current_graph = std::move(aggregate.graph);
+        current_stats = std::move(aggregate.stats);
+        current_partition = std::move(coarse_partition);
+    }
+
+    std::vector<Community> final_assignment(n_original, -1);
+    for (Vertex original = 0; original < n_original; ++original) {
+        const Vertex current = original_to_current[original];
+        if (current < 0 ||
+            current >= static_cast<Vertex>(current_partition.community_of.size())) {
+            throw std::logic_error("final mapping is out of range");
+        }
+        final_assignment[original] = current_partition.community_of[current];
+    }
+
+    result.partition =
+        MakePartition(G, stats, CompactAssignment(final_assignment));
+    return result;
 }

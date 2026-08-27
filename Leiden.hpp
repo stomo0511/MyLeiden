@@ -25,6 +25,18 @@ struct AggregateGraphResult {
     std::vector<Vertex> coarse_of;
 };
 
+struct LeidenOptions {
+    double theta = 0.01;
+    unsigned int seed = 0;
+    std::size_t max_levels = 0;
+};
+
+struct LeidenResult {
+    LeidenPartition partition;
+    std::size_t num_levels = 0;
+    std::size_t total_moves = 0;
+};
+
 MoveNodesFastResult MoveNodesFast(const Graph& G,
                                   const LeidenGraphStats& stats,
                                   LeidenPartition partition,
@@ -98,3 +110,8 @@ AggregateGraphResult AggregateGraph(const Graph& G,
 LeidenPartition BuildCoarsePartition(const AggregateGraphResult& aggregate,
                                      const LeidenPartition& partition,
                                      const LeidenPartition& refined);
+
+LeidenResult Leiden(const Graph& G,
+                    const LeidenGraphStats& stats,
+                    const QualityFunction& quality_function,
+                    const LeidenOptions& options);
