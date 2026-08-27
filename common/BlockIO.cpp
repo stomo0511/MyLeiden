@@ -1,8 +1,10 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cstddef>
 #include <algorithm>
 #include <unordered_map>
 
-#include "Types.hpp"
-#include "mm_io.hpp"
 #include "BlockIO.hpp"
 
 // ---- 出力：ブロック情報（1始まり）

@@ -47,9 +47,15 @@ inline void add_undirected_edge(Graph& G, int u, int v, double weight = 1.0)
 inline std::size_t num_edges(const Graph& G)
 {
     std::size_t m = 0;
-    for (const auto& nbrs : G.adj)
-        m += nbrs.size();
-    return m / 2;
+
+    for (int u = 0; u < G.n; ++u) {
+        for (const auto& e : G.adj[u]) {
+            if (u <= e.to)
+                ++m;
+        }
+    }
+
+    return m;
 }
 
 inline bool find_edge_weight(const Graph& G, int u, int v, double& weight)
