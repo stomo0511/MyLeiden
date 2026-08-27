@@ -2,6 +2,8 @@
 
 #include "LeidenTypes.hpp"
 
+#include <unordered_map>
+
 class QualityFunction {
 public:
     virtual ~QualityFunction() = default;
@@ -15,7 +17,23 @@ public:
                              const LeidenPartition& partition,
                              Vertex v,
                              Community target_community) const = 0;
+
+    virtual double deltaMoveFromWeights(const LeidenGraphStats& stats,
+                                        const LeidenPartition& partition,
+                                        Vertex v,
+                                        Community target_community,
+                                        double weight_to_source,
+                                        double weight_to_target) const = 0;
 };
+
+// Scans G.adj[v] once and sums edge weights by neighbor community.
+// Self-loops are excluded because deltaMoveFromWeights() uses the same
+// convention as deltaMove(): self-loop contribution is unchanged by moving v.
+// Multiple edges to the same community are accumulated.
+std::unordered_map<Community, double>
+BuildNeighborCommunityWeights(const Graph& G,
+                              const LeidenPartition& partition,
+                              Vertex v);
 
 class CPMQualityFunction final : public QualityFunction {
 public:
@@ -30,6 +48,13 @@ public:
                      const LeidenPartition& partition,
                      Vertex v,
                      Community target_community) const override;
+
+    double deltaMoveFromWeights(const LeidenGraphStats& stats,
+                                const LeidenPartition& partition,
+                                Vertex v,
+                                Community target_community,
+                                double weight_to_source,
+                                double weight_to_target) const override;
 
     double gamma() const { return gamma_; }
 
@@ -50,6 +75,13 @@ public:
                      const LeidenPartition& partition,
                      Vertex v,
                      Community target_community) const override;
+
+    double deltaMoveFromWeights(const LeidenGraphStats& stats,
+                                const LeidenPartition& partition,
+                                Vertex v,
+                                Community target_community,
+                                double weight_to_source,
+                                double weight_to_target) const override;
 
     double gamma() const { return gamma_; }
 

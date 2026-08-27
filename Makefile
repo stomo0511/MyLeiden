@@ -4,10 +4,6 @@ CPPFLAGS ?= -I. -Icommon
 LDFLAGS ?=
 LDLIBS ?=
 
-ifeq ($(NATIVE),1)
-CXXFLAGS += -march=native
-endif
-
 TARGETS := test_quality
 TEST_QUALITY_OBJS := QualityFunction.o test_quality.o
 DEPS := $(TEST_QUALITY_OBJS:.o=.d)

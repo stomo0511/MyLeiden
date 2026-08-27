@@ -26,6 +26,26 @@ void ValidatePartitionSize(const Graph& G, const LeidenPartition& partition)
     }
 }
 
+void ValidateStatsPartitionVertex(const LeidenGraphStats& stats,
+                                  const LeidenPartition& partition,
+                                  Vertex v)
+{
+    if (v < 0 || static_cast<std::size_t>(v) >= stats.node_size.size() ||
+        static_cast<std::size_t>(v) >= stats.node_strength.size() ||
+        static_cast<std::size_t>(v) >= partition.community_of.size()) {
+        throw std::out_of_range("vertex id out of range");
+    }
+    const std::size_t nc = partition.community_size.size();
+    if (partition.community_strength.size() != nc ||
+        partition.internal_edge_weight.size() != nc) {
+        throw std::invalid_argument("community statistic arrays have inconsistent sizes");
+    }
+    const Community source = partition.community_of[v];
+    if (source < 0 || static_cast<std::size_t>(source) >= nc) {
+        throw std::invalid_argument("node is not assigned to a valid community");
+    }
+}
+
 void EnsureCommunity(LeidenPartition& partition, Community community)
 {
     if (community < 0) {
@@ -54,6 +74,28 @@ double SumInternalEdgeWeight(const Graph& G,
 }
 
 } // namespace
+
+std::unordered_map<Community, double>
+BuildNeighborCommunityWeights(const Graph& G,
+                              const LeidenPartition& partition,
+                              Vertex v)
+{
+    ValidateVertex(v, G);
+    ValidatePartitionSize(G, partition);
+
+    std::unordered_map<Community, double> weights;
+    weights.reserve(G.adj[v].size());
+    for (const Edge& e : G.adj[v]) {
+        if (e.to == v) {
+            continue;
+        }
+        const Community community = partition.community_of[e.to];
+        if (community >= 0) {
+            weights[community] += e.weight;
+        }
+    }
+    return weights;
+}
 
 LeidenGraphStats BuildLeidenGraphStats(const Graph& G)
 {
@@ -272,18 +314,44 @@ double CPMQualityFunction::deltaMove(const Graph& G,
         return 0.0;
     }
 
+    const double w_to_source =
+        WeightFromNodeToCommunity(G, partition, v, source, false);
+    const double w_to_target =
+        WeightFromNodeToCommunity(G, partition, v, target_community, false);
+
+    return deltaMoveFromWeights(stats,
+                                partition,
+                                v,
+                                target_community,
+                                w_to_source,
+                                w_to_target);
+}
+
+double CPMQualityFunction::deltaMoveFromWeights(const LeidenGraphStats& stats,
+                                                const LeidenPartition& partition,
+                                                Vertex v,
+                                                Community target_community,
+                                                double weight_to_source,
+                                                double weight_to_target) const
+{
+    ValidateStatsPartitionVertex(stats, partition, v);
+    if (target_community < 0) {
+        throw std::out_of_range("target community id out of range");
+    }
+
+    const Community source = partition.community_of[v];
+    if (source == target_community) {
+        return 0.0;
+    }
+
     const double source_size_without_v =
         partition.community_size[source] - stats.node_size[v];
     const double target_size =
         (static_cast<std::size_t>(target_community) < partition.community_size.size())
             ? partition.community_size[target_community]
             : 0.0;
-    const double w_to_source =
-        WeightFromNodeToCommunity(G, partition, v, source, false);
-    const double w_to_target =
-        WeightFromNodeToCommunity(G, partition, v, target_community, false);
 
-    return (w_to_target - w_to_source)
+    return (weight_to_target - weight_to_source)
            - gamma_ * stats.node_size[v] * (target_size - source_size_without_v);
 }
 
@@ -338,6 +406,40 @@ double ModularityQualityFunction::deltaMove(const Graph& G,
         return 0.0;
     }
 
+    const double w_to_source =
+        WeightFromNodeToCommunity(G, partition, v, source, false);
+    const double w_to_target =
+        WeightFromNodeToCommunity(G, partition, v, target_community, false);
+
+    return deltaMoveFromWeights(stats,
+                                partition,
+                                v,
+                                target_community,
+                                w_to_source,
+                                w_to_target);
+}
+
+double ModularityQualityFunction::deltaMoveFromWeights(
+    const LeidenGraphStats& stats,
+    const LeidenPartition& partition,
+    Vertex v,
+    Community target_community,
+    double weight_to_source,
+    double weight_to_target) const
+{
+    ValidateStatsPartitionVertex(stats, partition, v);
+    if (target_community < 0) {
+        throw std::out_of_range("target community id out of range");
+    }
+    if (stats.total_edge_weight == 0.0) {
+        return 0.0;
+    }
+
+    const Community source = partition.community_of[v];
+    if (source == target_community) {
+        return 0.0;
+    }
+
     const double kv = stats.node_strength[v];
     const double source_strength_without_v =
         partition.community_strength[source] - kv;
@@ -345,12 +447,8 @@ double ModularityQualityFunction::deltaMove(const Graph& G,
         (static_cast<std::size_t>(target_community) < partition.community_strength.size())
             ? partition.community_strength[target_community]
             : 0.0;
-    const double w_to_source =
-        WeightFromNodeToCommunity(G, partition, v, source, false);
-    const double w_to_target =
-        WeightFromNodeToCommunity(G, partition, v, target_community, false);
 
-    return 2.0 * (w_to_target - w_to_source)
+    return 2.0 * (weight_to_target - weight_to_source)
            - gamma_ * kv * (target_strength - source_strength_without_v)
                  / stats.total_edge_weight;
 }
