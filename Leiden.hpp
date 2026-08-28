@@ -7,10 +7,32 @@
 
 #include "QualityFunction.hpp"
 
+// -----------------------------------------------------------------------------
+// TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+// Detailed profiling for MoveNodesFast(). Remove this block after performance
+// analysis. It is compiled only when ENABLE_MOVENODESFAST_PROFILE is defined.
+// -----------------------------------------------------------------------------
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+struct MoveNodesFastProfile {
+    double neighbor_weights = 0.0;
+    double candidate_build = 0.0;
+    double delta_evaluation = 0.0;
+    double move_node = 0.0;
+    double neighbor_requeue = 0.0;
+    std::size_t num_visits = 0;
+    std::size_t total_candidates = 0;
+};
+#endif
+// END TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+
 struct MoveNodesFastResult {
     LeidenPartition partition;
     std::size_t num_moves = 0;
     std::size_t num_visits = 0;
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    MoveNodesFastProfile profile;
+#endif
 };
 
 struct RefinementCommunityEntry {
@@ -38,10 +60,30 @@ struct LeidenOptions {
     std::size_t debug_interval = 100000;
 };
 
+// -----------------------------------------------------------------------------
+// TEMPORARY PERFORMANCE INSTRUMENTATION
+// These timers are used only for profiling the current Leiden implementation.
+// Keep this block isolated so it can be removed easily after performance study.
+// -----------------------------------------------------------------------------
+struct LeidenTiming {
+    double move_nodes_fast = 0.0;
+    double refine_partition = 0.0;
+    double aggregate_graph = 0.0;
+    double build_coarse_partition = 0.0;
+    double total = 0.0;
+};
+// END TEMPORARY PERFORMANCE INSTRUMENTATION
+
 struct LeidenResult {
     LeidenPartition partition;
     std::size_t num_levels = 0;
     std::size_t total_moves = 0;
+    // TEMPORARY PERFORMANCE INSTRUMENTATION
+    LeidenTiming timing;
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    MoveNodesFastProfile move_nodes_fast_profile;
+#endif
 };
 
 MoveNodesFastResult MoveNodesFast(const Graph& G,

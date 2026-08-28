@@ -316,6 +316,20 @@ int main(int argc, char** argv)
         const double final_quality =
             quality->quality(G, stats, result.partition);
 
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+        // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+        const MoveNodesFastProfile& move_profile =
+            result.move_nodes_fast_profile;
+        const double move_profile_sum =
+            move_profile.neighbor_weights +
+            move_profile.candidate_build +
+            move_profile.delta_evaluation +
+            move_profile.move_node +
+            move_profile.neighbor_requeue;
+        const double move_profile_residual =
+            std::max(0.0, result.timing.move_nodes_fast - move_profile_sum);
+#endif
+
         std::cout << "Method              : " << kMethodName << "\n"
                   << "Matrix              : " << matrix_file << "\n"
                   << "Resolution          : " << resolution_text << "\n"
@@ -327,6 +341,38 @@ int main(int argc, char** argv)
                   << "Number of colors    : " << num_colors << "\n"
                   << "Leiden levels       : " << result.num_levels << "\n"
                   << "Leiden moves        : " << result.total_moves << "\n"
+                  // TEMPORARY PERFORMANCE INSTRUMENTATION
+                  << "MoveNodesFast time  : "
+                  << result.timing.move_nodes_fast << " s\n"
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+                  // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+                  << "  Neighbor weights time : "
+                  << move_profile.neighbor_weights << " s\n"
+                  << "  Candidate build time  : "
+                  << move_profile.candidate_build << " s\n"
+                  << "  Delta evaluation time : "
+                  << move_profile.delta_evaluation << " s\n"
+                  << "  Move node time        : "
+                  << move_profile.move_node << " s\n"
+                  << "  Neighbor requeue time : "
+                  << move_profile.neighbor_requeue << " s\n"
+                  << "  Residual time         : "
+                  << move_profile_residual << " s\n"
+                  << "  MoveNodesFast visits  : "
+                  << move_profile.num_visits << "\n"
+                  << "  MoveNodesFast moves   : "
+                  << result.total_moves << "\n"
+                  << "  Total candidates      : "
+                  << move_profile.total_candidates << "\n"
+#endif
+                  << "RefinePartition time: "
+                  << result.timing.refine_partition << " s\n"
+                  << "AggregateGraph time : "
+                  << result.timing.aggregate_graph << " s\n"
+                  << "BuildCoarse time    : "
+                  << result.timing.build_coarse_partition << " s\n"
+                  << "Leiden total time   : " << result.timing.total << " s\n"
+                  // END TEMPORARY PERFORMANCE INSTRUMENTATION
                   << "Execution time      : " << execution_time << " s\n"
                   << "Quality value (internal objective): "
                   << final_quality << "\n"

@@ -427,6 +427,24 @@ void UpdateRefinementCommunityStatsForMove(
     RefreshActiveCommunities(community_stats);
 }
 
+// -----------------------------------------------------------------------------
+// TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+// These local macros keep profiling removable and compile to nothing when the
+// profile is disabled. Each measured region uses only one begin/end pair.
+// -----------------------------------------------------------------------------
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+#define MNF_PROFILE_BEGIN(name) \
+    const Clock::time_point name##_begin = Clock::now()
+#define MNF_PROFILE_END(name, field) \
+    result.profile.field += ElapsedSeconds(name##_begin, Clock::now())
+#define MNF_PROFILE_CANDIDATES(count) \
+    result.profile.total_candidates += (count)
+#else
+#define MNF_PROFILE_BEGIN(name)
+#define MNF_PROFILE_END(name, field)
+#define MNF_PROFILE_CANDIDATES(count)
+#endif
+
 MoveNodesFastResult MoveNodesFast(const Graph& G,
                                   const LeidenGraphStats& stats,
                                   LeidenPartition partition,
@@ -458,11 +476,16 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
         ++result.num_visits;
 
         const Community source = result.partition.community_of[v];
+        MNF_PROFILE_BEGIN(neighbor_weights);
         const auto neighbor_weights =
             BuildNeighborCommunityWeights(G, result.partition, v);
+        MNF_PROFILE_END(neighbor_weights, neighbor_weights);
         const double weight_to_source = LookupWeight(neighbor_weights, source);
+        MNF_PROFILE_BEGIN(candidate_build);
         const std::vector<Community> candidates =
             BuildCandidateCommunities(result.partition, neighbor_weights);
+        MNF_PROFILE_END(candidate_build, candidate_build);
+        MNF_PROFILE_CANDIDATES(candidates.size());
 
         Community best_community = source;
         double best_delta = 0.0;
@@ -470,6 +493,7 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
         // Deterministic tie-breaking: if deltas are exactly equal, choose
         // the smaller community id. The initial node order remains randomized
         // by the caller-supplied rng.
+        MNF_PROFILE_BEGIN(delta_evaluation);
         for (Community candidate : candidates) {
             const double delta =
                 (candidate == source)
@@ -488,11 +512,15 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
                 best_community = candidate;
             }
         }
+        MNF_PROFILE_END(delta_evaluation, delta_evaluation);
 
         if (best_delta > 0.0 && best_community != source) {
+            MNF_PROFILE_BEGIN(move_node);
             MoveNodeToCommunity(G, stats, result.partition, v, best_community);
+            MNF_PROFILE_END(move_node, move_node);
             ++result.num_moves;
 
+            MNF_PROFILE_BEGIN(neighbor_requeue);
             for (const Edge& e : G.adj[v]) {
                 const Vertex u = e.to;
                 if (u == v) {
@@ -504,6 +532,7 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
                     in_queue[u] = true;
                 }
             }
+            MNF_PROFILE_END(neighbor_requeue, neighbor_requeue);
         }
 
         if (debug && result.num_visits % debug_interval == 0) {
@@ -513,8 +542,16 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
         }
     }
 
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    result.profile.num_visits = result.num_visits;
+#endif
     return result;
 }
+
+#undef MNF_PROFILE_BEGIN
+#undef MNF_PROFILE_END
+#undef MNF_PROFILE_CANDIDATES
+// END TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
 
 void MergeNodesSubset(const Graph& G,
                       const LeidenGraphStats& stats,
@@ -891,6 +928,13 @@ LeidenResult Leiden(const Graph& G,
 {
     ValidateLeidenInput(G, stats, options);
 
+    // -------------------------------------------------------------------------
+    // TEMPORARY PERFORMANCE INSTRUMENTATION
+    // Phase durations below reuse the existing debug timestamps and accumulate
+    // only the four profiled calls. Keep these additions local to Leiden().
+    // -------------------------------------------------------------------------
+    const Clock::time_point leiden_begin = Clock::now();
+
     LeidenResult result;
     const int n_original = num_vertices(G);
     if (n_original == 0) {
@@ -898,6 +942,8 @@ LeidenResult Leiden(const Graph& G,
         if (options.debug) {
             std::cerr << "[Leiden] converged because num_moves == 0\n";
         }
+        result.timing.total =
+            ElapsedSeconds(leiden_begin, Clock::now());
         return result;
     }
 
@@ -983,6 +1029,23 @@ LeidenResult Leiden(const Graph& G,
                           rng,
                           &options);
         const Clock::time_point move_end = Clock::now();
+        result.timing.move_nodes_fast +=
+            ElapsedSeconds(move_begin, move_end);
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+        // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+        result.move_nodes_fast_profile.neighbor_weights +=
+            moved.profile.neighbor_weights;
+        result.move_nodes_fast_profile.candidate_build +=
+            moved.profile.candidate_build;
+        result.move_nodes_fast_profile.delta_evaluation +=
+            moved.profile.delta_evaluation;
+        result.move_nodes_fast_profile.move_node += moved.profile.move_node;
+        result.move_nodes_fast_profile.neighbor_requeue +=
+            moved.profile.neighbor_requeue;
+        result.move_nodes_fast_profile.num_visits += moved.profile.num_visits;
+        result.move_nodes_fast_profile.total_candidates +=
+            moved.profile.total_candidates;
+#endif
         current_partition = std::move(moved.partition);
         ++result.num_levels;
         result.total_moves += moved.num_moves;
@@ -1022,6 +1085,8 @@ LeidenResult Leiden(const Graph& G,
                             rng,
                             &options);
         const Clock::time_point refine_end = Clock::now();
+        result.timing.refine_partition +=
+            ElapsedSeconds(refine_begin, refine_end);
         if (options.debug) {
             std::cerr << "[Leiden] RefinePartition done\n"
                       << "[Leiden] number of refined communities: "
@@ -1038,6 +1103,8 @@ LeidenResult Leiden(const Graph& G,
         AggregateGraphResult aggregate =
             AggregateGraph(current_graph, current_stats, refined);
         const Clock::time_point aggregate_end = Clock::now();
+        result.timing.aggregate_graph +=
+            ElapsedSeconds(aggregate_begin, aggregate_end);
         if (options.debug) {
             std::cerr << "[Leiden] AggregateGraph done\n"
                       << "[Leiden] aggregate vertices: "
@@ -1056,6 +1123,8 @@ LeidenResult Leiden(const Graph& G,
         LeidenPartition coarse_partition =
             BuildCoarsePartition(aggregate, current_partition, refined);
         const Clock::time_point coarse_end = Clock::now();
+        result.timing.build_coarse_partition +=
+            ElapsedSeconds(coarse_begin, coarse_end);
         if (options.debug) {
             std::cerr << "[Leiden] BuildCoarsePartition done\n"
                       << "[Leiden] elapsed time: "
@@ -1114,5 +1183,8 @@ LeidenResult Leiden(const Graph& G,
             std::cerr << "[Leiden] converged because num_moves == 0\n";
         }
     }
+    result.timing.total =
+        ElapsedSeconds(leiden_begin, Clock::now());
+    // END TEMPORARY PERFORMANCE INSTRUMENTATION
     return result;
 }

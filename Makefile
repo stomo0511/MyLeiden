@@ -27,9 +27,14 @@ LEIDEN_MD_OBJS := QualityFunction.o Leiden.o common/MM_IO.o common/BlockIO.o com
 EBLOCK_OBJS := common/MM_IO.o common/BlockIO.o common/Coloring.o eblock.o
 DEPS := $(sort $(TEST_QUALITY_OBJS:.o=.d) $(TEST_MOVE_NODES_FAST_OBJS:.o=.d) $(TEST_REFINEMENT_OBJS:.o=.d) $(TEST_AGGREGATE_OBJS:.o=.d) $(TEST_COARSE_PARTITION_OBJS:.o=.d) $(TEST_LEIDEN_OBJS:.o=.d) $(TEST_BLOCK_EVAL_OBJS:.o=.d) $(LEIDEN_CP_OBJS:.o=.d) $(LEIDEN_MD_OBJS:.o=.d) $(EBLOCK_OBJS:.o=.d))
 
-.PHONY: all test clean
+.PHONY: all test clean profile
 
 all: $(TARGETS)
+
+# TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+profile:
+	$(MAKE) clean
+	$(MAKE) CPPFLAGS="$(CPPFLAGS) -DENABLE_MOVENODESFAST_PROFILE" all
 
 tests/test_quality: $(TEST_QUALITY_OBJS)
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
