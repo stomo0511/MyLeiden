@@ -6,6 +6,7 @@
 #include <iostream>
 #include <numeric>
 #include <random>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -391,6 +392,49 @@ void TestEmptyGraph()
     CheckTrue("Test N empty assignment", result.partition.community_of.empty());
 }
 
+void TestDebugDoesNotChangeResult()
+{
+    const Graph G = MakeWeightedGraph();
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    const ModularityQualityFunction modularity(1.0);
+
+    LeidenOptions normal{0.01, 2027, 0};
+    normal.debug = false;
+    normal.debug_interval = 2;
+
+    std::ostringstream normal_stderr;
+    std::streambuf* old_stderr = std::cerr.rdbuf(normal_stderr.rdbuf());
+    const LeidenResult normal_result = Leiden(G, stats, modularity, normal);
+    std::cerr.rdbuf(old_stderr);
+
+    CheckTrue("Test O normal debug output empty",
+              normal_stderr.str().empty());
+
+    LeidenOptions debug = normal;
+    debug.debug = true;
+
+    std::ostringstream debug_stderr;
+    old_stderr = std::cerr.rdbuf(debug_stderr.rdbuf());
+    const LeidenResult debug_result = Leiden(G, stats, modularity, debug);
+    std::cerr.rdbuf(old_stderr);
+
+    CheckTrue("Test O assignment",
+              normal_result.partition.community_of ==
+                  debug_result.partition.community_of);
+    CheckEqual("Test O levels",
+               normal_result.num_levels,
+               debug_result.num_levels);
+    CheckEqual("Test O moves",
+               normal_result.total_moves,
+               debug_result.total_moves);
+    CheckNear("Test O quality",
+              modularity.quality(G, stats, normal_result.partition),
+              modularity.quality(G, stats, debug_result.partition));
+    CheckTrue("Test O debug output present",
+              debug_stderr.str().find("[Leiden] level 1 start") !=
+                  std::string::npos);
+}
+
 } // namespace
 
 int main()
@@ -409,6 +453,7 @@ int main()
     TestLevelQualityPreservation();
     TestMaxLevels();
     TestEmptyGraph();
+    TestDebugDoesNotChangeResult();
 
     std::cout << "All Leiden tests passed.\n";
     return EXIT_SUCCESS;

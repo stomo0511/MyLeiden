@@ -59,19 +59,19 @@ void EnsureCommunity(LeidenPartition& partition, Community community)
     }
 }
 
-double SumInternalEdgeWeight(const Graph& G,
-                             const LeidenPartition& partition,
-                             Community community)
-{
-    double sum = 0.0;
-    for_each_undirected_edge(G, [&](int u, int v, double w) {
-        if (partition.community_of[u] == community &&
-            partition.community_of[v] == community) {
-            sum += w;
-        }
-    });
-    return sum;
-}
+// double SumInternalEdgeWeight(const Graph& G,
+//                              const LeidenPartition& partition,
+//                              Community community)
+// {
+//     double sum = 0.0;
+//     for_each_undirected_edge(G, [&](int u, int v, double w) {
+//         if (partition.community_of[u] == community &&
+//             partition.community_of[v] == community) {
+//             sum += w;
+//         }
+//     });
+//     return sum;
+// }
 
 } // namespace
 
@@ -166,9 +166,17 @@ LeidenPartition MakePartition(const Graph& G,
         partition.community_strength[c] += stats.node_strength[v];
     }
 
-    for (Community c = 0; c < nc; ++c) {
-        partition.internal_edge_weight[c] = SumInternalEdgeWeight(G, partition, c);
-    }
+    // for (Community c = 0; c < nc; ++c) {
+    //     partition.internal_edge_weight[c] = SumInternalEdgeWeight(G, partition, c);
+    // }
+    for_each_undirected_edge(G, [&](int u, int v, double w) {
+        const Community cu = partition.community_of[u];
+        const Community cv = partition.community_of[v];
+
+        if (cu == cv) {
+            partition.internal_edge_weight[cu] += w;
+        }
+    }); 
 
     return partition;
 }

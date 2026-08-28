@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <random>
 #include <stdexcept>
 #include <string>
@@ -108,14 +109,28 @@ void CheckStatsAgainstRecompute(const std::string& test_name,
     }
 }
 
-std::vector<bool> MakeSubsetMask(const Graph& G,
-                                 const std::vector<Vertex>& subset)
+void MarkSubsetForTest(const Graph& G,
+                       const std::vector<Vertex>& subset,
+                       std::vector<std::size_t>& subset_mark,
+                       std::size_t& subset_generation)
 {
-    std::vector<bool> in_subset(num_vertices(G), false);
-    for (Vertex v : subset) {
-        in_subset[v] = true;
+    if (subset_generation == std::numeric_limits<std::size_t>::max()) {
+        std::fill(subset_mark.begin(), subset_mark.end(), 0);
+        subset_generation = 1;
+    } else {
+        ++subset_generation;
     }
-    return in_subset;
+    for (Vertex v : subset) {
+        ValidateVertex(v, G);
+        subset_mark[v] = subset_generation;
+    }
+}
+
+bool IsInSubsetForTest(const std::vector<std::size_t>& subset_mark,
+                       std::size_t subset_generation,
+                       Vertex v)
+{
+    return subset_mark[v] == subset_generation;
 }
 
 RefinementCommunityStats DirectRefinementCommunityStats(
@@ -124,45 +139,71 @@ RefinementCommunityStats DirectRefinementCommunityStats(
     const LeidenPartition& refined,
     const QualityFunction& qf,
     const std::vector<Vertex>& subset,
-    const std::vector<bool>& in_subset)
+    const std::vector<std::size_t>& subset_mark,
+    std::size_t subset_generation)
 {
     RefinementCommunityStats direct;
-    direct.member_count.assign(refined.community_size.size(), 0);
-    direct.mass.assign(refined.community_size.size(), 0.0);
-    direct.external_weight.assign(refined.community_size.size(), 0.0);
+    direct.entries.reserve(subset.size());
 
     for (Vertex v : subset) {
         const Community community = refined.community_of[v];
-        if (static_cast<std::size_t>(community) >= direct.member_count.size()) {
-            const std::size_t need = static_cast<std::size_t>(community) + 1;
-            direct.member_count.resize(need, 0);
-            direct.mass.resize(need, 0.0);
-            direct.external_weight.resize(need, 0.0);
-        }
-        ++direct.member_count[community];
-        direct.mass[community] += qf.refinementNodeMass(stats, v);
+        RefinementCommunityEntry& entry = direct.entries[community];
+        ++entry.member_count;
+        entry.mass += qf.refinementNodeMass(stats, v);
     }
 
-    for (Community c = 0;
-         c < static_cast<Community>(direct.member_count.size());
-         ++c) {
+    for (const auto& item : direct.entries) {
+        const Community community = item.first;
         for (Vertex v : subset) {
-            if (refined.community_of[v] != c) {
+            if (refined.community_of[v] != community) {
                 continue;
             }
             for (const Edge& e : G.adj[v]) {
-                if (e.to != v && in_subset[e.to] &&
-                    refined.community_of[e.to] != c) {
-                    direct.external_weight[c] += e.weight;
+                if (e.to != v &&
+                    subset_mark[e.to] == subset_generation &&
+                    refined.community_of[e.to] != community) {
+                    direct.entries[community].external_weight += e.weight;
                 }
             }
         }
-        if (direct.member_count[c] > 0) {
-            direct.active_communities.push_back(c);
-        }
     }
 
+    direct.active_communities.reserve(direct.entries.size());
+    for (const auto& item : direct.entries) {
+        if (item.second.member_count > 0) {
+            direct.active_communities.push_back(item.first);
+        }
+    }
+    std::sort(direct.active_communities.begin(),
+              direct.active_communities.end());
+
     return direct;
+}
+
+RefinementCommunityEntry GetEntry(const RefinementCommunityStats& stats,
+                                  Community community)
+{
+    const auto it = stats.entries.find(community);
+    if (it == stats.entries.end()) {
+        return {};
+    }
+    return it->second;
+}
+
+void CheckEntryNear(const std::string& test_name,
+                    const RefinementCommunityStats& stats,
+                    Community community,
+                    int member_count,
+                    double mass,
+                    double external_weight)
+{
+    const RefinementCommunityEntry entry = GetEntry(stats, community);
+    CheckTrue(test_name + " member_count",
+              entry.member_count == member_count);
+    CheckNear(test_name + " mass", mass, entry.mass);
+    CheckNear(test_name + " external_weight",
+              external_weight,
+              entry.external_weight);
 }
 
 void CheckRefinementCommunityStatsEqual(
@@ -170,26 +211,33 @@ void CheckRefinementCommunityStatsEqual(
     const RefinementCommunityStats& expected,
     const RefinementCommunityStats& actual)
 {
-    const std::size_t nc = std::max(expected.member_count.size(),
-                                    actual.member_count.size());
-    for (std::size_t c = 0; c < nc; ++c) {
-        const int expected_count =
-            (c < expected.member_count.size()) ? expected.member_count[c] : 0;
-        const int actual_count =
-            (c < actual.member_count.size()) ? actual.member_count[c] : 0;
-        const double expected_mass =
-            (c < expected.mass.size()) ? expected.mass[c] : 0.0;
-        const double actual_mass =
-            (c < actual.mass.size()) ? actual.mass[c] : 0.0;
-        const double expected_external =
-            (c < expected.external_weight.size()) ? expected.external_weight[c] : 0.0;
-        const double actual_external =
-            (c < actual.external_weight.size()) ? actual.external_weight[c] : 0.0;
-
+    for (const auto& item : expected.entries) {
+        const RefinementCommunityEntry actual_entry =
+            GetEntry(actual, item.first);
         CheckTrue(test_name + " member_count",
-                  expected_count == actual_count);
-        CheckNear(test_name + " mass", expected_mass, actual_mass);
-        CheckNear(test_name + " external_weight", expected_external, actual_external);
+                  item.second.member_count == actual_entry.member_count);
+        CheckNear(test_name + " mass",
+                  item.second.mass,
+                  actual_entry.mass);
+        CheckNear(test_name + " external_weight",
+                  item.second.external_weight,
+                  actual_entry.external_weight);
+    }
+    for (const auto& item : actual.entries) {
+        if (expected.entries.find(item.first) == expected.entries.end() &&
+            item.second.member_count == 0) {
+            continue;
+        }
+        const RefinementCommunityEntry expected_entry =
+            GetEntry(expected, item.first);
+        CheckTrue(test_name + " reverse member_count",
+                  expected_entry.member_count == item.second.member_count);
+        CheckNear(test_name + " reverse mass",
+                  expected_entry.mass,
+                  item.second.mass);
+        CheckNear(test_name + " reverse external_weight",
+                  expected_entry.external_weight,
+                  item.second.external_weight);
     }
     CheckTrue(test_name + " active_communities",
               expected.active_communities == actual.active_communities);
@@ -331,11 +379,16 @@ void TestSelfLoop()
         MakePartition(G, stats, {0, 0, 1, 1});
     const CPMQualityFunction cpm(0.2);
     const ModularityQualityFunction modularity(1.2);
-    const std::vector<bool> subset = {true, true, false, false};
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+    MarkSubsetForTest(G, {0, 1}, subset_mark, subset_generation);
 
     CheckNear("Test D self-loop excluded from E(v,S-v)",
               1.5,
-              EdgeWeightFromNodeToSubset(G, 0, subset));
+              EdgeWeightFromNodeToSubset(G,
+                                         0,
+                                         subset_mark,
+                                         subset_generation));
     CheckRefinementRun("Test D CPM self-loop", G, stats, partition, cpm, 0.1, 42);
     CheckRefinementRun("Test D modularity self-loop",
                        G,
@@ -385,10 +438,18 @@ void TestAggregateNodeSizeCPM()
     const LeidenGraphStats stats = BuildLeidenGraphStats(G, node_size);
     const LeidenPartition partition = MakePartition(G, stats, {0, 0, 1});
     const CPMQualityFunction cpm(0.2);
-    const std::vector<bool> subset = {true, true, false};
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+    MarkSubsetForTest(G, {0, 1}, subset_mark, subset_generation);
 
     CheckTrue("Test G CPM node_size threshold false",
-              !IsNodeWellConnectedToSubset(G, stats, cpm, 0, subset, 11.0));
+              !IsNodeWellConnectedToSubset(G,
+                                           stats,
+                                           cpm,
+                                           0,
+                                           subset_mark,
+                                           subset_generation,
+                                           11.0));
 
     Graph H = MakeGraph(3);
     add_undirected_edge(H, 0, 1, 3.0);
@@ -426,14 +487,17 @@ void TestModularityMass()
     const LeidenPartition huge_partition =
         MakePartition(G, huge_stats, {0, 0, 1});
     const ModularityQualityFunction modularity(1.0);
-    const std::vector<bool> subset = {true, true, false};
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+    MarkSubsetForTest(G, {0, 1}, subset_mark, subset_generation);
 
     CheckTrue("Test H modularity strength threshold",
               IsNodeWellConnectedToSubset(G,
                                           huge_stats,
                                           modularity,
                                           0,
-                                          subset,
+                                          subset_mark,
+                                          subset_generation,
                                           11.0));
 
     std::mt19937 rng1(5);
@@ -485,7 +549,8 @@ void CheckCachedStatsAgainstDirect(const std::string& test_name,
                                    const LeidenPartition& refined,
                                    const QualityFunction& qf,
                                    const std::vector<Vertex>& subset,
-                                   const std::vector<bool>& in_subset,
+                                   const std::vector<std::size_t>& subset_mark,
+                                   std::size_t subset_generation,
                                    const RefinementCommunityStats& cached)
 {
     const RefinementCommunityStats direct =
@@ -494,7 +559,8 @@ void CheckCachedStatsAgainstDirect(const std::string& test_name,
                                        refined,
                                        qf,
                                        subset,
-                                       in_subset);
+                                       subset_mark,
+                                       subset_generation);
     CheckRefinementCommunityStatsEqual(test_name, direct, cached);
 }
 
@@ -505,7 +571,9 @@ void TestRefinementCommunityStatsCache()
     LeidenPartition refined = MakePartition(G, stats, {0, 0, 1, 2, 3});
     const CPMQualityFunction cpm(0.1);
     const std::vector<Vertex> subset = {0, 1, 2, 3};
-    const std::vector<bool> in_subset = MakeSubsetMask(G, subset);
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+    MarkSubsetForTest(G, subset, subset_mark, subset_generation);
 
     RefinementCommunityStats cached =
         BuildRefinementCommunityStats(G,
@@ -513,21 +581,24 @@ void TestRefinementCommunityStatsCache()
                                       refined,
                                       cpm,
                                       subset,
-                                      in_subset);
+                                      subset_mark,
+                                      subset_generation);
     CheckCachedStatsAgainstDirect("Test J initial cached stats",
                                   G,
                                   stats,
                                   refined,
                                   cpm,
                                   subset,
-                                  in_subset,
+                                  subset_mark,
+                                  subset_generation,
                                   cached);
 
     UpdateRefinementCommunityStatsForMove(G,
                                           stats,
                                           refined,
                                           cpm,
-                                          in_subset,
+                                          subset_mark,
+                                          subset_generation,
                                           0,
                                           1,
                                           cached);
@@ -538,14 +609,16 @@ void TestRefinementCommunityStatsCache()
                                   refined,
                                   cpm,
                                   subset,
-                                  in_subset,
+                                  subset_mark,
+                                  subset_generation,
                                   cached);
 
     UpdateRefinementCommunityStatsForMove(G,
                                           stats,
                                           refined,
                                           cpm,
-                                          in_subset,
+                                          subset_mark,
+                                          subset_generation,
                                           1,
                                           1,
                                           cached);
@@ -556,14 +629,16 @@ void TestRefinementCommunityStatsCache()
                                   refined,
                                   cpm,
                                   subset,
-                                  in_subset,
+                                  subset_mark,
+                                  subset_generation,
                                   cached);
 
     UpdateRefinementCommunityStatsForMove(G,
                                           stats,
                                           refined,
                                           cpm,
-                                          in_subset,
+                                          subset_mark,
+                                          subset_generation,
                                           3,
                                           1,
                                           cached);
@@ -574,8 +649,165 @@ void TestRefinementCommunityStatsCache()
                                   refined,
                                   cpm,
                                   subset,
-                                  in_subset,
+                                  subset_mark,
+                                  subset_generation,
                                   cached);
+}
+
+void TestLocalStatsConstructionValues()
+{
+    const Graph G = MakeStatsUpdateGraph();
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    const LeidenPartition refined = MakePartition(G, stats, {0, 0, 1, 2, 3});
+    const CPMQualityFunction cpm(0.1);
+    const std::vector<Vertex> subset = {0, 1, 2, 3};
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+    MarkSubsetForTest(G, subset, subset_mark, subset_generation);
+
+    const RefinementCommunityStats community_stats =
+        BuildRefinementCommunityStats(G,
+                                      stats,
+                                      refined,
+                                      cpm,
+                                      subset,
+                                      subset_mark,
+                                      subset_generation);
+
+    CheckTrue("Test K local stats entry count",
+              community_stats.entries.size() == 3U);
+    CheckTrue("Test K local stats active order",
+              community_stats.active_communities ==
+                  std::vector<Community>({0, 1, 2}));
+    CheckEntryNear("Test K community 0", community_stats, 0, 2, 2.0, 5.25);
+    CheckEntryNear("Test K community 1", community_stats, 1, 1, 1.0, 2.75);
+    CheckEntryNear("Test K community 2", community_stats, 2, 1, 1.0, 3.5);
+}
+
+void TestLocalStatsMoveUpdateValues()
+{
+    const Graph G = MakeStatsUpdateGraph();
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    LeidenPartition refined = MakePartition(G, stats, {0, 0, 1, 2, 3});
+    const CPMQualityFunction cpm(0.1);
+    const std::vector<Vertex> subset = {0, 1, 2, 3};
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+    MarkSubsetForTest(G, subset, subset_mark, subset_generation);
+
+    RefinementCommunityStats community_stats =
+        BuildRefinementCommunityStats(G,
+                                      stats,
+                                      refined,
+                                      cpm,
+                                      subset,
+                                      subset_mark,
+                                      subset_generation);
+
+    UpdateRefinementCommunityStatsForMove(G,
+                                          stats,
+                                          refined,
+                                          cpm,
+                                          subset_mark,
+                                          subset_generation,
+                                          0,
+                                          1,
+                                          community_stats);
+    MoveNodeToCommunity(G, stats, refined, 0, 1);
+
+    CheckCachedStatsAgainstDirect("Test L local stats after move",
+                                  G,
+                                  stats,
+                                  refined,
+                                  cpm,
+                                  subset,
+                                  subset_mark,
+                                  subset_generation,
+                                  community_stats);
+    CheckTrue("Test L local stats entry count",
+              community_stats.entries.size() == 3U);
+    CheckTrue("Test L local stats active order",
+              community_stats.active_communities ==
+                  std::vector<Community>({0, 1, 2}));
+    CheckEntryNear("Test L community 0", community_stats, 0, 1, 1.0, 1.25);
+    CheckEntryNear("Test L community 1", community_stats, 1, 2, 2.0, 4.75);
+    CheckEntryNear("Test L community 2", community_stats, 2, 1, 1.0, 3.5);
+}
+
+void TestLocalStatsSparseCommunityIds()
+{
+    Graph G = MakeGraph(2);
+    add_undirected_edge(G, 0, 1, 7.0);
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    LeidenPartition refined;
+    refined.community_of = {3, 1000000};
+    const CPMQualityFunction cpm(0.1);
+    const std::vector<Vertex> subset = {0, 1};
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+    MarkSubsetForTest(G, subset, subset_mark, subset_generation);
+
+    const RefinementCommunityStats community_stats =
+        BuildRefinementCommunityStats(G,
+                                      stats,
+                                      refined,
+                                      cpm,
+                                      subset,
+                                      subset_mark,
+                                      subset_generation);
+
+    CheckTrue("Test M sparse local entry count",
+              community_stats.entries.size() == 2U);
+    CheckTrue("Test M sparse active order",
+              community_stats.active_communities ==
+                  std::vector<Community>({3, 1000000}));
+    CheckEntryNear("Test M community 3", community_stats, 3, 1, 1.0, 7.0);
+    CheckEntryNear("Test M community 1000000",
+                   community_stats,
+                   1000000,
+                   1,
+                   1.0,
+                   7.0);
+}
+
+void TestSubsetMarkerMembershipEquivalence()
+{
+    const Graph G = MakeGraph(10);
+    const std::vector<Vertex> subset = {1, 4, 7};
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+    MarkSubsetForTest(G, subset, subset_mark, subset_generation);
+
+    for (Vertex v = 0; v < num_vertices(G); ++v) {
+        const bool expected = (v == 1 || v == 4 || v == 7);
+        CheckTrue("Test N marker membership",
+                  IsInSubsetForTest(subset_mark,
+                                    subset_generation,
+                                    v) == expected);
+    }
+}
+
+void TestSubsetMarkerConsecutiveSubsets()
+{
+    const Graph G = MakeGraph(8);
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+
+    MarkSubsetForTest(G, {1, 4}, subset_mark, subset_generation);
+    CheckTrue("Test O generation 1 member 1",
+              IsInSubsetForTest(subset_mark, subset_generation, 1));
+    CheckTrue("Test O generation 1 member 4",
+              IsInSubsetForTest(subset_mark, subset_generation, 4));
+
+    MarkSubsetForTest(G, {2, 5}, subset_mark, subset_generation);
+    CheckTrue("Test O generation 2 member 2",
+              IsInSubsetForTest(subset_mark, subset_generation, 2));
+    CheckTrue("Test O generation 2 member 5",
+              IsInSubsetForTest(subset_mark, subset_generation, 5));
+    CheckTrue("Test O generation 2 stale 1",
+              !IsInSubsetForTest(subset_mark, subset_generation, 1));
+    CheckTrue("Test O generation 2 stale 4",
+              !IsInSubsetForTest(subset_mark, subset_generation, 4));
 }
 
 } // namespace
@@ -592,6 +824,11 @@ int main()
     TestModularityMass();
     TestThetaValidation();
     TestRefinementCommunityStatsCache();
+    TestLocalStatsConstructionValues();
+    TestLocalStatsMoveUpdateValues();
+    TestLocalStatsSparseCommunityIds();
+    TestSubsetMarkerMembershipEquivalence();
+    TestSubsetMarkerConsecutiveSubsets();
 
     std::cout << "All refinement tests passed.\n";
     return EXIT_SUCCESS;

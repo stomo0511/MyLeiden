@@ -1,9 +1,12 @@
 #include "Leiden.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <deque>
 #include <functional>
+#include <iostream>
+#include <limits>
 #include <numeric>
 #include <stdexcept>
 #include <unordered_map>
@@ -26,6 +29,34 @@ struct WeightedEdge {
     int v;
     double weight;
 };
+
+using Clock = std::chrono::steady_clock;
+
+double ElapsedSeconds(Clock::time_point begin, Clock::time_point end)
+{
+    return std::chrono::duration<double>(end - begin).count();
+}
+
+bool DebugEnabled(const LeidenOptions* options)
+{
+    return options != nullptr && options->debug;
+}
+
+std::size_t DebugInterval(const LeidenOptions* options)
+{
+    if (options == nullptr || options->debug_interval == 0) {
+        return 100000;
+    }
+    return options->debug_interval;
+}
+
+std::size_t CountActiveCommunities(const LeidenPartition& partition)
+{
+    std::vector<Community> active = partition.community_of;
+    std::sort(active.begin(), active.end());
+    active.erase(std::unique(active.begin(), active.end()), active.end());
+    return active.size();
+}
 
 double LookupWeight(const std::unordered_map<Community, double>& weights,
                     Community community)
@@ -72,30 +103,27 @@ double RefinedCommunityMassInSubset(const LeidenGraphStats& stats,
     return mass;
 }
 
-void EnsureRefinementCommunityStatsSize(RefinementCommunityStats& community_stats,
-                                        Community community)
+RefinementCommunityEntry& EnsureRefinementCommunityEntry(
+    RefinementCommunityStats& community_stats,
+    Community community)
 {
     if (community < 0) {
         throw std::out_of_range("community id out of range");
     }
-    const std::size_t need = static_cast<std::size_t>(community) + 1;
-    if (community_stats.member_count.size() < need) {
-        community_stats.member_count.resize(need, 0);
-        community_stats.mass.resize(need, 0.0);
-        community_stats.external_weight.resize(need, 0.0);
-    }
+    return community_stats.entries[community];
 }
 
 void RefreshActiveCommunities(RefinementCommunityStats& community_stats)
 {
     community_stats.active_communities.clear();
-    for (Community c = 0;
-         c < static_cast<Community>(community_stats.member_count.size());
-         ++c) {
-        if (community_stats.member_count[c] > 0) {
-            community_stats.active_communities.push_back(c);
+    community_stats.active_communities.reserve(community_stats.entries.size());
+    for (const auto& item : community_stats.entries) {
+        if (item.second.member_count > 0) {
+            community_stats.active_communities.push_back(item.first);
         }
     }
+    std::sort(community_stats.active_communities.begin(),
+              community_stats.active_communities.end());
 }
 
 std::vector<std::vector<Vertex>> BuildPartitionMembers(
@@ -114,15 +142,26 @@ std::vector<std::vector<Vertex>> BuildPartitionMembers(
     return members;
 }
 
-std::vector<bool> BuildSubsetMask(const Graph& G,
-                                  const std::vector<Vertex>& subset)
+void MarkSubset(const Graph& G,
+                const std::vector<Vertex>& subset,
+                std::vector<std::size_t>& subset_mark,
+                std::size_t& subset_generation)
 {
-    std::vector<bool> in_subset(num_vertices(G), false);
+    if (subset_mark.size() != static_cast<std::size_t>(num_vertices(G))) {
+        throw std::invalid_argument("subset mark size does not match graph");
+    }
+
+    if (subset_generation == std::numeric_limits<std::size_t>::max()) {
+        std::fill(subset_mark.begin(), subset_mark.end(), 0);
+        subset_generation = 1;
+    } else {
+        ++subset_generation;
+    }
+
     for (Vertex v : subset) {
         ValidateVertex(v, G);
-        in_subset[v] = true;
+        subset_mark[v] = subset_generation;
     }
-    return in_subset;
 }
 
 std::vector<Community> BuildCandidateCommunities(
@@ -173,6 +212,9 @@ void ValidateLeidenInput(const Graph& G,
     }
     if (options.theta <= 0.0) {
         throw std::invalid_argument("theta must be positive");
+    }
+    if (options.debug_interval == 0) {
+        throw std::invalid_argument("debug_interval must be positive");
     }
 }
 
@@ -239,16 +281,17 @@ std::vector<Community> CompactAssignment(
 
 double EdgeWeightFromNodeToSubset(const Graph& G,
                                   Vertex v,
-                                  const std::vector<bool>& in_subset)
+                                  const std::vector<std::size_t>& subset_mark,
+                                  std::size_t subset_generation)
 {
     ValidateVertex(v, G);
-    if (static_cast<int>(in_subset.size()) != num_vertices(G)) {
-        throw std::invalid_argument("subset mask size does not match graph");
+    if (subset_mark.size() != static_cast<std::size_t>(num_vertices(G))) {
+        throw std::invalid_argument("subset mark size does not match graph");
     }
 
     double weight = 0.0;
     for (const Edge& e : G.adj[v]) {
-        if (e.to != v && in_subset[e.to]) {
+        if (e.to != v && subset_mark[e.to] == subset_generation) {
             weight += e.weight;
         }
     }
@@ -259,11 +302,13 @@ bool IsNodeWellConnectedToSubset(const Graph& G,
                                  const LeidenGraphStats& stats,
                                  const QualityFunction& quality_function,
                                  Vertex v,
-                                 const std::vector<bool>& in_subset,
+                                 const std::vector<std::size_t>& subset_mark,
+                                 std::size_t subset_generation,
                                  double subset_mass)
 {
     const double node_mass = quality_function.refinementNodeMass(stats, v);
-    const double edge_weight = EdgeWeightFromNodeToSubset(G, v, in_subset);
+    const double edge_weight =
+        EdgeWeightFromNodeToSubset(G, v, subset_mark, subset_generation);
     const double threshold =
         quality_function.refinementResolution(stats) *
         node_mass *
@@ -278,11 +323,15 @@ bool IsCommunityWellConnectedToSubset(
     const QualityFunction& quality_function,
     Community community,
     const std::vector<Vertex>& subset,
-    const std::vector<bool>& in_subset)
+    const std::vector<std::size_t>& subset_mark,
+    std::size_t subset_generation)
 {
     if (community < 0 ||
         static_cast<std::size_t>(community) >= refined.community_size.size()) {
         return false;
+    }
+    if (subset_mark.size() != static_cast<std::size_t>(num_vertices(G))) {
+        throw std::invalid_argument("subset mark size does not match graph");
     }
 
     double edge_weight = 0.0;
@@ -291,7 +340,8 @@ bool IsCommunityWellConnectedToSubset(
             continue;
         }
         for (const Edge& e : G.adj[v]) {
-            if (e.to != v && in_subset[e.to] &&
+            if (e.to != v &&
+                subset_mark[e.to] == subset_generation &&
                 refined.community_of[e.to] != community) {
                 edge_weight += e.weight;
             }
@@ -318,41 +368,44 @@ RefinementCommunityStats BuildRefinementCommunityStats(
     const LeidenPartition& refined,
     const QualityFunction& quality_function,
     const std::vector<Vertex>& subset,
-    const std::vector<bool>& in_subset)
+    const std::vector<std::size_t>& subset_mark,
+    std::size_t subset_generation)
 {
-    if (static_cast<int>(in_subset.size()) != num_vertices(G)) {
-        throw std::invalid_argument("subset mask size does not match graph");
+    if (subset_mark.size() != static_cast<std::size_t>(num_vertices(G))) {
+        throw std::invalid_argument("subset mark size does not match graph");
     }
 
     RefinementCommunityStats community_stats;
-    community_stats.member_count.assign(refined.community_size.size(), 0);
-    community_stats.mass.assign(refined.community_size.size(), 0.0);
-    community_stats.external_weight.assign(refined.community_size.size(), 0.0);
+    community_stats.entries.reserve(subset.size());
 
     for (Vertex v : subset) {
         ValidateVertex(v, G);
         const Community community = refined.community_of[v];
-        EnsureRefinementCommunityStatsSize(community_stats, community);
-        ++community_stats.member_count[community];
-        community_stats.mass[community] +=
-            quality_function.refinementNodeMass(stats, v);
+        RefinementCommunityEntry& entry =
+            EnsureRefinementCommunityEntry(community_stats, community);
+        ++entry.member_count;
+        entry.mass += quality_function.refinementNodeMass(stats, v);
     }
 
     for (Vertex u : subset) {
         ValidateVertex(u, G);
         const Community cu = refined.community_of[u];
-        EnsureRefinementCommunityStatsSize(community_stats, cu);
+        RefinementCommunityEntry& cu_entry =
+            EnsureRefinementCommunityEntry(community_stats, cu);
 
         for (const Edge& e : G.adj[u]) {
-            if (e.to == u || !in_subset[e.to] || u > e.to) {
+            if (e.to == u ||
+                subset_mark[e.to] != subset_generation ||
+                u > e.to) {
                 continue;
             }
 
             const Community cv = refined.community_of[e.to];
-            EnsureRefinementCommunityStatsSize(community_stats, cv);
+            RefinementCommunityEntry& cv_entry =
+                EnsureRefinementCommunityEntry(community_stats, cv);
             if (cu != cv) {
-                community_stats.external_weight[cu] += e.weight;
-                community_stats.external_weight[cv] += e.weight;
+                cu_entry.external_weight += e.weight;
+                cv_entry.external_weight += e.weight;
             }
         }
     }
@@ -368,18 +421,21 @@ bool IsCommunityWellConnectedFromStats(
     double subset_mass,
     const RefinementCommunityStats& community_stats)
 {
-    if (community < 0 ||
-        static_cast<std::size_t>(community) >= community_stats.member_count.size() ||
-        community_stats.member_count[community] <= 0) {
+    if (community < 0) {
+        return false;
+    }
+    const auto it = community_stats.entries.find(community);
+    if (it == community_stats.entries.end() ||
+        it->second.member_count <= 0) {
         return false;
     }
 
-    const double community_mass = community_stats.mass[community];
+    const double community_mass = it->second.mass;
     const double threshold =
         quality_function.refinementResolution(stats) *
         community_mass *
         (subset_mass - community_mass);
-    return community_stats.external_weight[community] >= threshold;
+    return it->second.external_weight >= threshold;
 }
 
 void UpdateRefinementCommunityStatsForMove(
@@ -387,14 +443,15 @@ void UpdateRefinementCommunityStatsForMove(
     const LeidenGraphStats& stats,
     const LeidenPartition& refined_before_move,
     const QualityFunction& quality_function,
-    const std::vector<bool>& in_subset,
+    const std::vector<std::size_t>& subset_mark,
+    std::size_t subset_generation,
     Vertex v,
     Community target,
     RefinementCommunityStats& community_stats)
 {
     ValidateVertex(v, G);
-    if (static_cast<int>(in_subset.size()) != num_vertices(G)) {
-        throw std::invalid_argument("subset mask size does not match graph");
+    if (subset_mark.size() != static_cast<std::size_t>(num_vertices(G))) {
+        throw std::invalid_argument("subset mark size does not match graph");
     }
 
     const Community source = refined_before_move.community_of[v];
@@ -402,15 +459,17 @@ void UpdateRefinementCommunityStatsForMove(
         return;
     }
 
-    EnsureRefinementCommunityStatsSize(community_stats, source);
-    EnsureRefinementCommunityStatsSize(community_stats, target);
+    EnsureRefinementCommunityEntry(community_stats, source);
+    EnsureRefinementCommunityEntry(community_stats, target);
+    RefinementCommunityEntry& source_entry = community_stats.entries[source];
+    RefinementCommunityEntry& target_entry = community_stats.entries[target];
 
     const double node_mass =
         quality_function.refinementNodeMass(stats, v);
-    --community_stats.member_count[source];
-    ++community_stats.member_count[target];
-    community_stats.mass[source] -= node_mass;
-    community_stats.mass[target] += node_mass;
+    --source_entry.member_count;
+    ++target_entry.member_count;
+    source_entry.mass -= node_mass;
+    target_entry.mass += node_mass;
 
     // For each subset-internal edge (v,u), update E(C,S-C) using communities
     // before the move A -> B:
@@ -421,20 +480,20 @@ void UpdateRefinementCommunityStatsForMove(
     // unchanged. Self-loops and subset-external edges are ignored.
     for (const Edge& e : G.adj[v]) {
         const Vertex u = e.to;
-        if (u == v || !in_subset[u]) {
+        if (u == v || subset_mark[u] != subset_generation) {
             continue;
         }
 
         const Community neighbor_community = refined_before_move.community_of[u];
         if (neighbor_community == source) {
-            community_stats.external_weight[source] += e.weight;
-            community_stats.external_weight[target] += e.weight;
+            source_entry.external_weight += e.weight;
+            target_entry.external_weight += e.weight;
         } else if (neighbor_community == target) {
-            community_stats.external_weight[source] -= e.weight;
-            community_stats.external_weight[target] -= e.weight;
+            source_entry.external_weight -= e.weight;
+            target_entry.external_weight -= e.weight;
         } else {
-            community_stats.external_weight[source] -= e.weight;
-            community_stats.external_weight[target] += e.weight;
+            source_entry.external_weight -= e.weight;
+            target_entry.external_weight += e.weight;
         }
     }
 
@@ -445,7 +504,8 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
                                   const LeidenGraphStats& stats,
                                   LeidenPartition partition,
                                   const QualityFunction& quality_function,
-                                  std::mt19937& rng)
+                                  std::mt19937& rng,
+                                  const LeidenOptions* options)
 {
     const int n = num_vertices(G);
     std::vector<Vertex> order(n);
@@ -461,6 +521,8 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
 
     MoveNodesFastResult result;
     result.partition = std::move(partition);
+    const bool debug = DebugEnabled(options);
+    const std::size_t debug_interval = DebugInterval(options);
 
     while (!queue.empty()) {
         const Vertex v = queue.front();
@@ -516,6 +578,12 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
                 }
             }
         }
+
+        if (debug && result.num_visits % debug_interval == 0) {
+            std::cerr << "[MoveNodesFast] visits=" << result.num_visits
+                      << " moves=" << result.num_moves
+                      << " queue=" << queue.size() << "\n";
+        }
     }
 
     return result;
@@ -527,7 +595,10 @@ void MergeNodesSubset(const Graph& G,
                       const std::vector<Vertex>& subset,
                       const QualityFunction& quality_function,
                       double theta,
-                      std::mt19937& rng)
+                      std::mt19937& rng,
+                      const std::vector<std::size_t>& subset_mark,
+                      std::size_t subset_generation,
+                      const LeidenOptions* options)
 {
     if (theta <= 0.0) {
         throw std::invalid_argument("theta must be positive");
@@ -536,7 +607,16 @@ void MergeNodesSubset(const Graph& G,
         return;
     }
 
-    const std::vector<bool> in_subset = BuildSubsetMask(G, subset);
+    const bool debug = DebugEnabled(options);
+    const std::size_t debug_interval = DebugInterval(options);
+    std::size_t next_vertex_report = debug_interval;
+    std::size_t processed_vertices = 0;
+
+    // if (debug) {
+    //     std::cerr << "[MergeNodesSubset] start subset_size=" << subset.size()
+    //               << "\n";
+    // }
+
     const double subset_mass = SubsetMass(stats, quality_function, subset);
     std::vector<Vertex> candidates;
     candidates.reserve(subset.size());
@@ -545,7 +625,8 @@ void MergeNodesSubset(const Graph& G,
                                         stats,
                                         quality_function,
                                         v,
-                                        in_subset,
+                                        subset_mark,
+                                        subset_generation,
                                         subset_mass)) {
             candidates.push_back(v);
         }
@@ -558,12 +639,24 @@ void MergeNodesSubset(const Graph& G,
                                       refined,
                                       quality_function,
                                       subset,
-                                      in_subset);
+                                      subset_mark,
+                                      subset_generation);
     for (Vertex v : candidates) {
+        ++processed_vertices;
         const Community source = refined.community_of[v];
+        const auto source_entry = community_stats.entries.find(source);
         if (source < 0 ||
-            static_cast<std::size_t>(source) >= community_stats.member_count.size() ||
-            community_stats.member_count[source] != 1) {
+            source_entry == community_stats.entries.end() ||
+            source_entry->second.member_count != 1) {
+            if (debug && processed_vertices >= next_vertex_report) {
+                std::cerr << "[MergeNodesSubset] processed_vertices="
+                          << processed_vertices
+                          << " candidate_vertices=" << candidates.size()
+                          << " current_subset_size=" << subset.size()
+                          << " active_refined_communities="
+                          << community_stats.active_communities.size() << "\n";
+                next_vertex_report += debug_interval;
+            }
             continue;
         }
 
@@ -633,13 +726,33 @@ void MergeNodesSubset(const Graph& G,
                                                   stats,
                                                   refined,
                                                   quality_function,
-                                                  in_subset,
+                                                  subset_mark,
+                                                  subset_generation,
                                                   v,
                                                   target,
                                                   community_stats);
             MoveNodeToCommunity(G, stats, refined, v, target);
         }
+
+        if (debug && processed_vertices >= next_vertex_report) {
+            std::cerr << "[MergeNodesSubset] processed_vertices="
+                      << processed_vertices
+                      << " candidate_vertices=" << candidates.size()
+                      << " current_subset_size=" << subset.size()
+                      << " active_refined_communities="
+                      << community_stats.active_communities.size() << "\n";
+            next_vertex_report += debug_interval;
+        }
     }
+
+    // if (debug) {
+    //     std::cerr << "[MergeNodesSubset] done processed_vertices="
+    //               << processed_vertices
+    //               << " candidate_vertices=" << candidates.size()
+    //               << " current_subset_size=" << subset.size()
+    //               << " active_refined_communities="
+    //               << community_stats.active_communities.size() << "\n";
+    // }
 }
 
 LeidenPartition RefinePartition(const Graph& G,
@@ -647,7 +760,8 @@ LeidenPartition RefinePartition(const Graph& G,
                                 const LeidenPartition& partition,
                                 const QualityFunction& quality_function,
                                 double theta,
-                                std::mt19937& rng)
+                                std::mt19937& rng,
+                                const LeidenOptions* options)
 {
     if (theta <= 0.0) {
         throw std::invalid_argument("theta must be positive");
@@ -656,16 +770,62 @@ LeidenPartition RefinePartition(const Graph& G,
     LeidenPartition refined = MakeSingletonPartition(G, stats);
     const std::vector<std::vector<Vertex>> members =
         BuildPartitionMembers(partition);
+    const bool debug = DebugEnabled(options);
+    const std::size_t debug_interval = DebugInterval(options);
+    const std::size_t total_parent_communities =
+        static_cast<std::size_t>(
+            std::count_if(members.begin(),
+                          members.end(),
+                          [](const std::vector<Vertex>& subset) {
+                              return !subset.empty();
+                          }));
+    std::size_t processed_parent_communities = 0;
+    std::size_t processed_vertices = 0;
+    std::size_t next_parent_report = debug_interval;
+    std::size_t next_vertex_report = debug_interval;
+    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
+    std::size_t subset_generation = 0;
+
     for (const std::vector<Vertex>& subset : members) {
         if (!subset.empty()) {
+            MarkSubset(G, subset, subset_mark, subset_generation);
             MergeNodesSubset(G,
                              stats,
                              refined,
                              subset,
                              quality_function,
                              theta,
-                             rng);
+                             rng,
+                             subset_mark,
+                             subset_generation,
+                             options);
+            ++processed_parent_communities;
+            processed_vertices += subset.size();
+            if (debug &&
+                (processed_parent_communities >= next_parent_report ||
+                 processed_vertices >= next_vertex_report)) {
+                std::cerr << "[RefinePartition] processed_parent_communities="
+                          << processed_parent_communities
+                          << " total_parent_communities="
+                          << total_parent_communities
+                          << " processed_vertices=" << processed_vertices
+                          << " current_subset_size=" << subset.size()
+                          << "\n";
+                while (processed_parent_communities >= next_parent_report) {
+                    next_parent_report += debug_interval;
+                }
+                while (processed_vertices >= next_vertex_report) {
+                    next_vertex_report += debug_interval;
+                }
+            }
         }
+    }
+    if (debug) {
+        std::cerr << "[RefinePartition] done processed_parent_communities="
+                  << processed_parent_communities
+                  << " total_parent_communities=" << total_parent_communities
+                  << " processed_vertices=" << processed_vertices
+                  << "\n";
     }
     return refined;
 }
@@ -808,49 +968,173 @@ LeidenResult Leiden(const Graph& G,
     const int n_original = num_vertices(G);
     if (n_original == 0) {
         result.partition = MakePartition(G, stats, {});
+        if (options.debug) {
+            std::cerr << "[Leiden] converged because num_moves == 0\n";
+        }
         return result;
     }
 
+    if (options.debug)
+        std::cerr << "[Leiden] graph copy start\n";
+
+    const auto t0 = Clock::now();
     Graph current_graph = G;
+    const auto t1 = Clock::now();
+
+    if (options.debug)
+        std::cerr << "[Leiden] graph copy done elapsed="
+                << ElapsedSeconds(t0, t1)
+                << " seconds\n";
+
+
+    if (options.debug)
+        std::cerr << "[Leiden] stats copy start\n";
+
+    const auto t2 = Clock::now();
     LeidenGraphStats current_stats = stats;
+    const auto t3 = Clock::now();
+
+    if (options.debug)
+        std::cerr << "[Leiden] stats copy done elapsed="
+                << ElapsedSeconds(t2, t3)
+                << " seconds\n";
+
+
+    if (options.debug)
+        std::cerr << "[Leiden] singleton partition start\n";
+
+    const auto t4 = Clock::now();
     LeidenPartition current_partition =
         MakeSingletonPartition(current_graph, current_stats);
+    const auto t5 = Clock::now();
 
-    // original_to_current[v] is the current coarse-graph vertex that
-    // represents original vertex v at the start of each level.
+    if (options.debug)
+        std::cerr << "[Leiden] singleton partition done elapsed="
+                << ElapsedSeconds(t4, t5)
+                << " seconds\n";
+
+
+    if (options.debug)
+        std::cerr << "[Leiden] original mapping initialization start\n";
+
+    const auto t6 = Clock::now();
     std::vector<Vertex> original_to_current(n_original);
-    std::iota(original_to_current.begin(), original_to_current.end(), 0);
+    std::iota(original_to_current.begin(),
+            original_to_current.end(), 0);
+    const auto t7 = Clock::now();
+
+    if (options.debug)
+        std::cerr << "[Leiden] original mapping initialization done elapsed="
+                << ElapsedSeconds(t6, t7)
+                << " seconds\n";
 
     std::mt19937 rng(options.seed);
+    bool stopped_by_max_levels = false;
+    bool converged = false;
 
     while (options.max_levels == 0 || result.num_levels < options.max_levels) {
+        const std::size_t level = result.num_levels + 1;
+        const Clock::time_point level_begin = Clock::now();
         const int n_before_aggregation = num_vertices(current_graph);
+        if (options.debug) {
+            std::cerr << "[Leiden] level " << level << " start\n"
+                      << "[Leiden] current number of vertices: "
+                      << num_vertices(current_graph) << "\n"
+                      << "[Leiden] current number of edges: "
+                      << num_edges(current_graph) << "\n";
+        }
+
+        if (options.debug) {
+            std::cerr << "[Leiden] MoveNodesFast start\n";
+        }
+        const Clock::time_point move_begin = Clock::now();
         MoveNodesFastResult moved =
             MoveNodesFast(current_graph,
                           current_stats,
                           current_partition,
                           quality_function,
-                          rng);
+                          rng,
+                          &options);
+        const Clock::time_point move_end = Clock::now();
         current_partition = std::move(moved.partition);
         ++result.num_levels;
         result.total_moves += moved.num_moves;
+        if (options.debug) {
+            std::cerr << "[Leiden] MoveNodesFast done\n"
+                      << "[Leiden] num_moves: " << moved.num_moves << "\n"
+                      << "[Leiden] num_visits: " << moved.num_visits << "\n"
+                      << "[Leiden] elapsed time: "
+                      << ElapsedSeconds(move_begin, move_end) << " seconds\n";
+        }
 
         if (moved.num_moves == 0 ||
             (options.max_levels != 0 && result.num_levels >= options.max_levels)) {
+            converged = (moved.num_moves == 0);
+            stopped_by_max_levels =
+                !converged &&
+                options.max_levels != 0 &&
+                result.num_levels >= options.max_levels;
+            if (options.debug) {
+                std::cerr << "[Leiden] total level time: "
+                          << ElapsedSeconds(level_begin, Clock::now())
+                          << " seconds\n";
+            }
             break;
         }
 
+        if (options.debug) {
+            std::cerr << "[Leiden] RefinePartition start\n";
+        }
+        const Clock::time_point refine_begin = Clock::now();
         LeidenPartition refined =
             RefinePartition(current_graph,
                             current_stats,
                             current_partition,
                             quality_function,
                             options.theta,
-                            rng);
+                            rng,
+                            &options);
+        const Clock::time_point refine_end = Clock::now();
+        if (options.debug) {
+            std::cerr << "[Leiden] RefinePartition done\n"
+                      << "[Leiden] number of refined communities: "
+                      << CountActiveCommunities(refined) << "\n"
+                      << "[Leiden] elapsed time: "
+                      << ElapsedSeconds(refine_begin, refine_end)
+                      << " seconds\n";
+        }
+
+        if (options.debug) {
+            std::cerr << "[Leiden] AggregateGraph start\n";
+        }
+        const Clock::time_point aggregate_begin = Clock::now();
         AggregateGraphResult aggregate =
             AggregateGraph(current_graph, current_stats, refined);
+        const Clock::time_point aggregate_end = Clock::now();
+        if (options.debug) {
+            std::cerr << "[Leiden] AggregateGraph done\n"
+                      << "[Leiden] aggregate vertices: "
+                      << num_vertices(aggregate.graph) << "\n"
+                      << "[Leiden] aggregate edges: "
+                      << num_edges(aggregate.graph) << "\n"
+                      << "[Leiden] elapsed time: "
+                      << ElapsedSeconds(aggregate_begin, aggregate_end)
+                      << " seconds\n";
+        }
+
+        if (options.debug) {
+            std::cerr << "[Leiden] BuildCoarsePartition start\n";
+        }
+        const Clock::time_point coarse_begin = Clock::now();
         LeidenPartition coarse_partition =
             BuildCoarsePartition(aggregate, current_partition, refined);
+        const Clock::time_point coarse_end = Clock::now();
+        if (options.debug) {
+            std::cerr << "[Leiden] BuildCoarsePartition done\n"
+                      << "[Leiden] elapsed time: "
+                      << ElapsedSeconds(coarse_begin, coarse_end)
+                      << " seconds\n";
+        }
 
         if (num_vertices(aggregate.graph) > n_before_aggregation) {
             throw std::logic_error("aggregation increased graph size");
@@ -868,6 +1152,18 @@ LeidenResult Leiden(const Graph& G,
         current_graph = std::move(aggregate.graph);
         current_stats = std::move(aggregate.stats);
         current_partition = std::move(coarse_partition);
+
+        if (options.debug) {
+            std::cerr << "[Leiden] total level time: "
+                      << ElapsedSeconds(level_begin, Clock::now())
+                      << " seconds\n";
+        }
+    }
+
+    if (!converged &&
+        options.max_levels != 0 &&
+        result.num_levels >= options.max_levels) {
+        stopped_by_max_levels = true;
     }
 
     std::vector<Community> final_assignment(n_original, -1);
@@ -882,5 +1178,14 @@ LeidenResult Leiden(const Graph& G,
 
     result.partition =
         MakePartition(G, stats, CompactAssignment(final_assignment));
+    if (options.debug) {
+        if (converged) {
+            std::cerr << "[Leiden] converged because num_moves == 0\n";
+        } else if (stopped_by_max_levels) {
+            std::cerr << "[Leiden] stopped because max_levels reached\n";
+        } else {
+            std::cerr << "[Leiden] converged because num_moves == 0\n";
+        }
+    }
     return result;
 }

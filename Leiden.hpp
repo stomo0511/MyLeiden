@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <random>
+#include <unordered_map>
 #include <vector>
 
 #include "QualityFunction.hpp"
@@ -12,10 +13,14 @@ struct MoveNodesFastResult {
     std::size_t num_visits = 0;
 };
 
+struct RefinementCommunityEntry {
+    int member_count = 0;
+    double mass = 0.0;
+    double external_weight = 0.0;
+};
+
 struct RefinementCommunityStats {
-    std::vector<int> member_count;
-    std::vector<double> mass;
-    std::vector<double> external_weight;
+    std::unordered_map<Community, RefinementCommunityEntry> entries;
     std::vector<Community> active_communities;
 };
 
@@ -29,6 +34,8 @@ struct LeidenOptions {
     double theta = 0.01;
     unsigned int seed = 0;
     std::size_t max_levels = 0;
+    bool debug = false;
+    std::size_t debug_interval = 100000;
 };
 
 struct LeidenResult {
@@ -41,17 +48,20 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
                                   const LeidenGraphStats& stats,
                                   LeidenPartition partition,
                                   const QualityFunction& quality_function,
-                                  std::mt19937& rng);
+                                  std::mt19937& rng,
+                                  const LeidenOptions* options = nullptr);
 
 double EdgeWeightFromNodeToSubset(const Graph& G,
                                   Vertex v,
-                                  const std::vector<bool>& in_subset);
+                                  const std::vector<std::size_t>& subset_mark,
+                                  std::size_t subset_generation);
 
 bool IsNodeWellConnectedToSubset(const Graph& G,
                                  const LeidenGraphStats& stats,
                                  const QualityFunction& quality_function,
                                  Vertex v,
-                                 const std::vector<bool>& in_subset,
+                                 const std::vector<std::size_t>& subset_mark,
+                                 std::size_t subset_generation,
                                  double subset_mass);
 
 bool IsCommunityWellConnectedToSubset(
@@ -61,7 +71,8 @@ bool IsCommunityWellConnectedToSubset(
     const QualityFunction& quality_function,
     Community community,
     const std::vector<Vertex>& subset,
-    const std::vector<bool>& in_subset);
+    const std::vector<std::size_t>& subset_mark,
+    std::size_t subset_generation);
 
 RefinementCommunityStats BuildRefinementCommunityStats(
     const Graph& G,
@@ -69,7 +80,8 @@ RefinementCommunityStats BuildRefinementCommunityStats(
     const LeidenPartition& refined,
     const QualityFunction& quality_function,
     const std::vector<Vertex>& subset,
-    const std::vector<bool>& in_subset);
+    const std::vector<std::size_t>& subset_mark,
+    std::size_t subset_generation);
 
 bool IsCommunityWellConnectedFromStats(
     const LeidenGraphStats& stats,
@@ -83,7 +95,8 @@ void UpdateRefinementCommunityStatsForMove(
     const LeidenGraphStats& stats,
     const LeidenPartition& refined_before_move,
     const QualityFunction& quality_function,
-    const std::vector<bool>& in_subset,
+    const std::vector<std::size_t>& subset_mark,
+    std::size_t subset_generation,
     Vertex v,
     Community target,
     RefinementCommunityStats& community_stats);
@@ -94,14 +107,18 @@ void MergeNodesSubset(const Graph& G,
                       const std::vector<Vertex>& subset,
                       const QualityFunction& quality_function,
                       double theta,
-                      std::mt19937& rng);
+                      std::mt19937& rng,
+                      const std::vector<std::size_t>& subset_mark,
+                      std::size_t subset_generation,
+                      const LeidenOptions* options = nullptr);
 
 LeidenPartition RefinePartition(const Graph& G,
                                 const LeidenGraphStats& stats,
                                 const LeidenPartition& partition,
                                 const QualityFunction& quality_function,
                                 double theta,
-                                std::mt19937& rng);
+                                std::mt19937& rng,
+                                const LeidenOptions* options = nullptr);
 
 AggregateGraphResult AggregateGraph(const Graph& G,
                                     const LeidenGraphStats& stats,

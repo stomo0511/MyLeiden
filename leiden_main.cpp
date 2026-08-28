@@ -5,6 +5,7 @@
 #include "common/MM_IO.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <exception>
@@ -27,10 +28,19 @@ constexpr const char* kResolutionExample = "1.0";
 #error "Define either LEIDEN_DRIVER_CPM or LEIDEN_DRIVER_MODULARITY"
 #endif
 
+using Clock = std::chrono::steady_clock;
+
+double ElapsedSeconds(Clock::time_point begin, Clock::time_point end)
+{
+    return std::chrono::duration<double>(end - begin).count();
+}
+
 void PrintUsage(const char* program_name)
 {
     std::cerr << "Usage:\n"
-              << "  " << program_name << " <matrix.mm> <resolution>\n\n"
+              << "  " << program_name
+              << " <matrix.mm> <resolution> [--debug] "
+              << "[--debug-interval <N>]\n\n"
               << "Example:\n"
               << "  " << program_name << " Saad.mm "
               << kResolutionExample << "\n";
@@ -76,6 +86,25 @@ double ParsePositiveResolution(const std::string& text)
         throw std::invalid_argument("resolution must be finite and positive");
     }
     return value;
+}
+
+std::size_t ParsePositiveSize(const std::string& text,
+                              const std::string& option_name)
+{
+    std::size_t consumed = 0;
+    unsigned long long value = 0;
+    try {
+        value = std::stoull(text, &consumed);
+    } catch (const std::exception&) {
+        throw std::invalid_argument(option_name + " is not a valid integer: " + text);
+    }
+    if (consumed != text.size()) {
+        throw std::invalid_argument(option_name + " has trailing characters: " + text);
+    }
+    if (value == 0) {
+        throw std::invalid_argument(option_name + " must be positive");
+    }
+    return static_cast<std::size_t>(value);
 }
 
 void SetBinaryEdgeWeights(Graph& G)
@@ -168,7 +197,7 @@ void ValidateColoring(const Graph& block_graph,
 int main(int argc, char** argv)
 {
     const char* program_name = (argc > 0) ? argv[0] : kMethodName;
-    if (argc != 3) {
+    if (argc < 3) {
         PrintUsage(program_name);
         return EXIT_FAILURE;
     }
@@ -186,16 +215,71 @@ int main(int argc, char** argv)
         }
 
         const double resolution = ParsePositiveResolution(resolution_text);
-        Graph G = Read_MM_UD(matrix_file);
-        SetBinaryEdgeWeights(G);
-        const LeidenGraphStats stats = BuildLeidenGraphStats(G);
-        const std::unique_ptr<QualityFunction> quality =
-            MakeQualityFunction(resolution);
-
         LeidenOptions options;
         options.theta = 0.01;
         options.seed = 0;
         options.max_levels = 0;
+        options.debug = false;
+        options.debug_interval = 100000;
+
+        for (int i = 3; i < argc; ++i) {
+            const std::string arg = argv[i];
+            if (arg == "--debug") {
+                options.debug = true;
+            } else if (arg == "--debug-interval") {
+                if (i + 1 >= argc) {
+                    throw std::invalid_argument("--debug-interval requires <N>");
+                }
+                options.debug_interval =
+                    ParsePositiveSize(argv[++i], "--debug-interval");
+            } else {
+                throw std::invalid_argument("unknown option: " + arg);
+            }
+        }
+
+        if (options.debug) {
+            std::cerr << "[Driver] Matrix read start: " << matrix_file << "\n";
+        }
+        const Clock::time_point read_begin = Clock::now();
+        Graph G = Read_MM_UD(matrix_file);
+        const Clock::time_point read_end = Clock::now();
+        if (options.debug) {
+            std::cerr << "[Driver] Matrix read done"
+                      << " elapsed=" << ElapsedSeconds(read_begin, read_end)
+                      << " seconds"
+                      << " vertices=" << num_vertices(G)
+                      << " edges=" << num_edges(G)
+                      << "\n";
+        }
+
+        if (options.debug) {
+            std::cerr << "[Driver] Binary edge-weight conversion start\n";
+        }
+        const Clock::time_point binary_begin = Clock::now();
+        SetBinaryEdgeWeights(G);
+        const Clock::time_point binary_end = Clock::now();
+        if (options.debug) {
+            std::cerr << "[Driver] Binary edge-weight conversion done"
+                      << " elapsed="
+                      << ElapsedSeconds(binary_begin, binary_end)
+                      << " seconds\n";
+        }
+
+        if (options.debug) {
+            std::cerr << "[Driver] BuildLeidenGraphStats start\n";
+        }
+        const Clock::time_point stats_begin = Clock::now();
+        const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+        const Clock::time_point stats_end = Clock::now();
+        if (options.debug) {
+            std::cerr << "[Driver] BuildLeidenGraphStats done"
+                      << " elapsed="
+                      << ElapsedSeconds(stats_begin, stats_end)
+                      << " seconds\n";
+        }
+
+        const std::unique_ptr<QualityFunction> quality =
+            MakeQualityFunction(resolution);
 
         const LeidenResult result = Leiden(G, stats, *quality, options);
         const BlockPartition block_partition =
