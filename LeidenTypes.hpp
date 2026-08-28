@@ -81,3 +81,14 @@ void MoveNodeToCommunity(const Graph& G,
                          LeidenPartition& partition,
                          Vertex v,
                          Community community);
+
+// Optimized MoveNodesFast path: reuse precomputed neighbor-community weights
+// to avoid rescanning G.adj[v] for the source and target communities.
+void MoveNodeToCommunityFromWeights(const Graph& G,
+                                    const LeidenGraphStats& stats,
+                                    LeidenPartition& partition,
+                                    Vertex v,
+                                    Community community,
+                                    double weight_to_source,
+                                    double weight_to_target,
+                                    double self_loop_weight);

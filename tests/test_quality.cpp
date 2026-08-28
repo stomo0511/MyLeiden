@@ -350,6 +350,72 @@ void TestNeighborCommunityScratch()
                LookupNeighborCommunityWeight(scratch, 3));
 }
 
+void CheckMoveFromWeightsEquivalent(
+    const std::string& test_name,
+    const Graph& G,
+    const std::vector<Community>& assignment,
+    Vertex v,
+    Community target)
+{
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    LeidenPartition regular = MakePartition(G, stats, assignment);
+    LeidenPartition fast = regular;
+
+    NeighborCommunityScratch scratch;
+    BuildNeighborCommunityWeights(G, fast, v, scratch);
+    const Community source = fast.community_of[v];
+    const double weight_to_source =
+        LookupNeighborCommunityWeight(scratch, source);
+    const double weight_to_target =
+        LookupNeighborCommunityWeight(scratch, target);
+    const double self_loop_weight = SelfLoopWeight(G, v);
+
+    MoveNodeToCommunity(G, stats, regular, v, target);
+    MoveNodeToCommunityFromWeights(G,
+                                   stats,
+                                   fast,
+                                   v,
+                                   target,
+                                   weight_to_source,
+                                   weight_to_target,
+                                   self_loop_weight);
+
+    if (regular.community_of != fast.community_of ||
+        regular.empty_communities != fast.empty_communities ||
+        regular.community_size.size() != fast.community_size.size()) {
+        std::cerr << test_name << " failed: partition structure differs\n";
+        std::exit(EXIT_FAILURE);
+    }
+    for (std::size_t c = 0; c < regular.community_size.size(); ++c) {
+        CheckNear(test_name + " community_size",
+                  regular.community_size[c], fast.community_size[c]);
+        CheckNear(test_name + " community_strength",
+                  regular.community_strength[c], fast.community_strength[c]);
+        CheckNear(test_name + " internal_edge_weight",
+                  regular.internal_edge_weight[c],
+                  fast.internal_edge_weight[c]);
+    }
+}
+
+void TestMoveNodeToCommunityFromWeights()
+{
+    Graph G = MakeGraph(5);
+    add_undirected_edge(G, 0, 0, 5.0);
+    add_undirected_edge(G, 0, 1, 1.0);
+    add_undirected_edge(G, 0, 2, 2.0);
+    add_undirected_edge(G, 0, 3, 4.0);
+    const std::vector<Community> assignment = {0, 1, 1, 3, 4};
+
+    CheckMoveFromWeightsEquivalent(
+        "Test I fast move parallel/self-loop", G, assignment, 0, 1);
+    CheckMoveFromWeightsEquivalent(
+        "Test I fast move empty target", G, assignment, 0, 2);
+    CheckMoveFromWeightsEquivalent(
+        "Test I fast move existing target", G, assignment, 0, 3);
+    CheckMoveFromWeightsEquivalent(
+        "Test I fast move expanded target", G, assignment, 0, 7);
+}
+
 } // namespace
 
 int main()
@@ -362,6 +428,7 @@ int main()
     TestNewTargetCommunity();
     TestActualMoveSequence();
     TestNeighborCommunityScratch();
+    TestMoveNodeToCommunityFromWeights();
 
     std::cout << "All quality-function tests passed.\n";
     return EXIT_SUCCESS;

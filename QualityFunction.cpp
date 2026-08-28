@@ -349,6 +349,49 @@ void MoveNodeToCommunity(const Graph& G,
     InsertNodeIntoCommunity(G, stats, partition, v, community);
 }
 
+void MoveNodeToCommunityFromWeights(const Graph& G,
+                                    const LeidenGraphStats& stats,
+                                    LeidenPartition& partition,
+                                    Vertex v,
+                                    Community community,
+                                    double weight_to_source,
+                                    double weight_to_target,
+                                    double self_loop_weight)
+{
+    ValidateStatsSize(G, stats);
+    ValidatePartitionSize(G, partition);
+    ValidateVertex(v, G);
+
+    const Community source = partition.community_of[v];
+    if (source < 0 ||
+        static_cast<std::size_t>(source) >= partition.community_size.size()) {
+        throw std::invalid_argument("node is not assigned to a valid community");
+    }
+    if (source == community) {
+        return;
+    }
+
+    EnsureCommunity(partition, community);
+    const double source_internal_incident =
+        weight_to_source + self_loop_weight;
+    const double target_internal_incident =
+        weight_to_target + self_loop_weight;
+
+    partition.community_size[source] -= stats.node_size[v];
+    partition.community_strength[source] -= stats.node_strength[v];
+    partition.internal_edge_weight[source] -= source_internal_incident;
+    partition.community_of[v] = -1;
+    if (partition.community_size[source] == 0.0) {
+        partition.empty_communities.insert(source);
+    }
+
+    partition.community_of[v] = community;
+    partition.community_size[community] += stats.node_size[v];
+    partition.community_strength[community] += stats.node_strength[v];
+    partition.internal_edge_weight[community] += target_internal_incident;
+    partition.empty_communities.erase(community);
+}
+
 CPMQualityFunction::CPMQualityFunction(double gamma)
     : gamma_(gamma)
 {

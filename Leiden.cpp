@@ -522,7 +522,18 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
 
         if (best_delta > 0.0 && best_community != source) {
             MNF_PROFILE_BEGIN(move_node);
-            MoveNodeToCommunity(G, stats, result.partition, v, best_community);
+            const double weight_to_target =
+                LookupNeighborCommunityWeight(neighbor_scratch,
+                                              best_community);
+            const double self_loop_weight = SelfLoopWeight(G, v);
+            MoveNodeToCommunityFromWeights(G,
+                                           stats,
+                                           result.partition,
+                                           v,
+                                           best_community,
+                                           weight_to_source,
+                                           weight_to_target,
+                                           self_loop_weight);
             MNF_PROFILE_END(move_node, move_node);
             ++result.num_moves;
 
