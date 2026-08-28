@@ -36,8 +36,13 @@ void ValidatePartitionSize(const Graph& G, const LeidenPartition& partition)
     }
     const std::size_t nc = partition.community_size.size();
     if (partition.community_strength.size() != nc ||
-        partition.internal_edge_weight.size() != nc) {
+        partition.internal_edge_weight.size() != nc ||
+        partition.community_is_empty.size() != nc) {
         throw std::invalid_argument("community statistic arrays have inconsistent sizes");
+    }
+    if (partition.smallest_empty_community < 0 ||
+        static_cast<std::size_t>(partition.smallest_empty_community) > nc) {
+        throw std::invalid_argument("smallest empty community is out of range");
     }
 }
 
@@ -52,12 +57,42 @@ void ValidateStatsPartitionVertex(const LeidenGraphStats& stats,
     }
     const std::size_t nc = partition.community_size.size();
     if (partition.community_strength.size() != nc ||
-        partition.internal_edge_weight.size() != nc) {
+        partition.internal_edge_weight.size() != nc ||
+        partition.community_is_empty.size() != nc) {
         throw std::invalid_argument("community statistic arrays have inconsistent sizes");
+    }
+    if (partition.smallest_empty_community < 0 ||
+        static_cast<std::size_t>(partition.smallest_empty_community) > nc) {
+        throw std::invalid_argument("smallest empty community is out of range");
     }
     const Community source = partition.community_of[v];
     if (source < 0 || static_cast<std::size_t>(source) >= nc) {
         throw std::invalid_argument("node is not assigned to a valid community");
+    }
+}
+
+void RefreshSmallestEmptyCommunity(LeidenPartition& partition)
+{
+    const Community nc = static_cast<Community>(partition.community_is_empty.size());
+    while (partition.smallest_empty_community < nc &&
+           !partition.community_is_empty[partition.smallest_empty_community]) {
+        ++partition.smallest_empty_community;
+    }
+}
+
+void MarkCommunityEmpty(LeidenPartition& partition, Community community)
+{
+    partition.community_is_empty[community] = 1;
+    if (community < partition.smallest_empty_community) {
+        partition.smallest_empty_community = community;
+    }
+}
+
+void MarkCommunityNonEmpty(LeidenPartition& partition, Community community)
+{
+    partition.community_is_empty[community] = 0;
+    if (community == partition.smallest_empty_community) {
+        RefreshSmallestEmptyCommunity(partition);
     }
 }
 
@@ -72,8 +107,11 @@ void EnsureCommunity(LeidenPartition& partition, Community community)
         partition.community_size.resize(need, 0.0);
         partition.community_strength.resize(need, 0.0);
         partition.internal_edge_weight.resize(need, 0.0);
-        for (std::size_t c = old_size; c < need; ++c) {
-            partition.empty_communities.insert(static_cast<Community>(c));
+        partition.community_is_empty.resize(need, 1);
+        if (static_cast<Community>(old_size) <
+            partition.smallest_empty_community) {
+            partition.smallest_empty_community =
+                static_cast<Community>(old_size);
         }
     }
 }
@@ -230,6 +268,8 @@ LeidenPartition MakePartition(const Graph& G,
     partition.community_size.assign(nc, 0.0);
     partition.community_strength.assign(nc, 0.0);
     partition.internal_edge_weight.assign(nc, 0.0);
+    partition.community_is_empty.assign(nc, 0);
+    partition.smallest_empty_community = nc;
 
     for (int v = 0; v < num_vertices(G); ++v) {
         const Community c = community_of[v];
@@ -242,7 +282,7 @@ LeidenPartition MakePartition(const Graph& G,
 
     for (Community c = 0; c < nc; ++c) {
         if (partition.community_size[c] == 0.0) {
-            partition.empty_communities.insert(c);
+            MarkCommunityEmpty(partition, c);
         }
     }
 
@@ -319,7 +359,7 @@ void RemoveNodeFromCommunity(const Graph& G,
     partition.internal_edge_weight[source] -= internal_incident;
     partition.community_of[v] = -1;
     if (partition.community_size[source] == 0.0) {
-        partition.empty_communities.insert(source);
+        MarkCommunityEmpty(partition, source);
     }
 }
 
@@ -345,7 +385,7 @@ void InsertNodeIntoCommunity(const Graph& G,
     partition.community_size[community] += stats.node_size[v];
     partition.community_strength[community] += stats.node_strength[v];
     partition.internal_edge_weight[community] += internal_incident;
-    partition.empty_communities.erase(community);
+    MarkCommunityNonEmpty(partition, community);
 }
 
 void MoveNodeToCommunity(const Graph& G,
@@ -436,7 +476,7 @@ void MoveNodeToCommunityFromWeights(const Graph& G,
 #endif
 
     if (partition.community_size[source] == 0.0) {
-        partition.empty_communities.insert(source);
+        MarkCommunityEmpty(partition, source);
     }
 #ifdef ENABLE_MOVENODESFAST_PROFILE
     // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
@@ -462,7 +502,7 @@ void MoveNodeToCommunityFromWeights(const Graph& G,
     const Clock::time_point empty_second_begin = statistics_second_end;
 #endif
 
-    partition.empty_communities.erase(community);
+    MarkCommunityNonEmpty(partition, community);
 #ifdef ENABLE_MOVENODESFAST_PROFILE
     // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
     if (profile != nullptr) {

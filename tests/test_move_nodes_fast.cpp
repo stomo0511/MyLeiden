@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <random>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -65,7 +66,11 @@ void CheckValidPartition(const std::string& test_name,
     const std::size_t nc = partition.community_size.size();
     CheckTrue(test_name + " statistic sizes",
               partition.community_strength.size() == nc &&
-              partition.internal_edge_weight.size() == nc);
+              partition.internal_edge_weight.size() == nc &&
+              partition.community_is_empty.size() == nc);
+    CheckTrue(test_name + " smallest empty range",
+              partition.smallest_empty_community >= 0 &&
+              static_cast<std::size_t>(partition.smallest_empty_community) <= nc);
 
     for (Vertex v = 0; v < num_vertices(G); ++v) {
         const Community c = partition.community_of[v];
@@ -77,7 +82,7 @@ void CheckValidPartition(const std::string& test_name,
     for (Community c = 0; c < static_cast<Community>(nc); ++c) {
         CheckTrue(test_name + " empty-community index",
                   (partition.community_size[c] == 0.0) ==
-                      (partition.empty_communities.count(c) == 1));
+                      (partition.community_is_empty[c] != 0));
     }
 }
 
@@ -288,8 +293,12 @@ void TestEmptyCommunityManagement()
     const LeidenGraphStats stats = BuildLeidenGraphStats(G);
 
     const LeidenPartition singleton = MakeSingletonPartition(G, stats);
-    CheckTrue("Test G singleton empty set",
-              singleton.empty_communities.empty());
+    CheckTrue("Test G singleton flags",
+              std::all_of(singleton.community_is_empty.begin(),
+                          singleton.community_is_empty.end(),
+                          [](unsigned char flag) { return flag == 0; }));
+    CheckTrue("Test G singleton hint",
+              singleton.smallest_empty_community == 8);
     CheckTrue("Test G singleton next community",
               EmptyCommunityForMove(singleton) == 8);
 
@@ -297,7 +306,9 @@ void TestEmptyCommunityManagement()
         MakePartition(G, stats, {0, 1, 2, 3, 4, 5, 6, 7});
     MoveNodeToCommunity(G, stats, partition, 3, 0);
     CheckTrue("Test G community becomes empty",
-              partition.empty_communities.count(3) == 1);
+              partition.community_is_empty[3] != 0);
+    CheckTrue("Test G newly empty updates hint",
+              partition.smallest_empty_community <= 3);
     CheckTrue("Test G newly empty is smallest",
               EmptyCommunityForMove(partition) == 3);
 
@@ -308,12 +319,16 @@ void TestEmptyCommunityManagement()
         sparse_stats,
         {0, 0, 1, 3, 4, 5, 6, 8, 9, 11, 11, 11});
     CheckTrue("Test G sparse empty communities",
-              sparse.empty_communities == std::set<Community>({2, 7, 10}));
+              sparse.community_is_empty[2] != 0 &&
+              sparse.community_is_empty[7] != 0 &&
+              sparse.community_is_empty[10] != 0);
+    CheckTrue("Test G sparse smallest hint",
+              sparse.smallest_empty_community == 2);
     CheckTrue("Test G smallest sparse empty",
               EmptyCommunityForMove(sparse) == 2);
     MoveNodeToCommunity(sparse_graph, sparse_stats, sparse, 0, 2);
     CheckTrue("Test G reused community removed",
-              sparse.empty_communities.count(2) == 0);
+              sparse.community_is_empty[2] == 0);
     CheckTrue("Test G next sparse empty",
               EmptyCommunityForMove(sparse) == 7);
 
@@ -324,14 +339,92 @@ void TestEmptyCommunityManagement()
         MakeSingletonPartition(expansion_graph, expansion_stats);
     MoveNodeToCommunity(expansion_graph, expansion_stats, expanded, 0, 7);
     CheckTrue("Test G expansion gaps empty",
-              expanded.empty_communities.count(5) == 1 &&
-              expanded.empty_communities.count(6) == 1);
+              expanded.community_is_empty[0] != 0 &&
+              expanded.community_is_empty[5] != 0 &&
+              expanded.community_is_empty[6] != 0);
     CheckTrue("Test G expansion target active",
-              expanded.empty_communities.count(7) == 0);
+              expanded.community_is_empty[7] == 0);
+    CheckTrue("Test G expansion smallest",
+              EmptyCommunityForMove(expanded) == 0);
 
     const LeidenPartition copied = expanded;
     CheckTrue("Test G copy preserves empty communities",
-              copied.empty_communities == expanded.empty_communities);
+              copied.community_is_empty == expanded.community_is_empty &&
+              copied.smallest_empty_community ==
+                  expanded.smallest_empty_community);
+}
+
+Community ReferenceEmptyCommunityForMove(const std::set<Community>& empty,
+                                         std::size_t community_count)
+{
+    if (!empty.empty()) {
+        return *empty.begin();
+    }
+    return static_cast<Community>(community_count);
+}
+
+void ReferenceEnsureCommunity(std::set<Community>& empty,
+                              std::size_t& community_count,
+                              Community community)
+{
+    const std::size_t need = static_cast<std::size_t>(community) + 1;
+    for (std::size_t c = community_count; c < need; ++c) {
+        empty.insert(static_cast<Community>(c));
+    }
+    community_count = std::max(community_count, need);
+}
+
+void TestEmptyCommunityReferenceEquivalence()
+{
+    const Graph G = MakeGraph(6);
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    LeidenPartition partition =
+        MakePartition(G, stats, {0, 0, 1, 3, 5, 5});
+
+    std::set<Community> reference_empty = {2, 4};
+    std::size_t reference_count = 6;
+    CheckTrue("Test H initial reference empty",
+              EmptyCommunityForMove(partition) ==
+                  ReferenceEmptyCommunityForMove(reference_empty,
+                                                 reference_count));
+
+    const std::vector<std::pair<Vertex, Community>> moves = {
+        {0, 2},
+        {2, 4},
+        {3, 0},
+        {1, 3},
+        {4, 1},
+        {5, 7},
+        {0, 6}
+    };
+
+    std::vector<Community> reference_assignment = partition.community_of;
+    std::vector<double> reference_size = partition.community_size;
+    for (std::size_t i = 0; i < moves.size(); ++i) {
+        const Vertex v = moves[i].first;
+        const Community target = moves[i].second;
+        const Community source = reference_assignment[v];
+
+        ReferenceEnsureCommunity(reference_empty, reference_count, target);
+        reference_size.resize(reference_count, 0.0);
+        reference_size[source] -= stats.node_size[v];
+        reference_assignment[v] = -1;
+        if (reference_size[source] == 0.0) {
+            reference_empty.insert(source);
+        }
+        reference_assignment[v] = target;
+        reference_size[target] += stats.node_size[v];
+        reference_empty.erase(target);
+
+        MoveNodeToCommunity(G, stats, partition, v, target);
+
+        const std::string label =
+            "Test H step " + std::to_string(i);
+        CheckTrue(label,
+                  EmptyCommunityForMove(partition) ==
+                      ReferenceEmptyCommunityForMove(reference_empty,
+                                                     reference_count));
+    }
 }
 
 } // namespace
@@ -345,6 +438,7 @@ int main()
     TestReproducibility();
     TestDifferentSeeds();
     TestEmptyCommunityManagement();
+    TestEmptyCommunityReferenceEquivalence();
 
     std::cout << "All MoveNodesFast tests passed.\n";
     return EXIT_SUCCESS;

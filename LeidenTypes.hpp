@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <set>
 #include <stdexcept>
 #include <vector>
 
@@ -24,15 +23,15 @@ struct LeidenPartition {
     std::vector<double> community_size;
     std::vector<double> community_strength;
     std::vector<double> internal_edge_weight;
-    std::set<Community> empty_communities;
+    // Array-based empty-community tracking.
+    // smallest_empty_community is a lazy hint to the minimum empty ID.
+    std::vector<unsigned char> community_is_empty;
+    Community smallest_empty_community = 0;
 };
 
 inline Community EmptyCommunityForMove(const LeidenPartition& partition)
 {
-    if (!partition.empty_communities.empty()) {
-        return *partition.empty_communities.begin();
-    }
-    return static_cast<Community>(partition.community_size.size());
+    return partition.smallest_empty_community;
 }
 
 inline void ValidateVertex(Vertex v, const Graph& G)

@@ -381,7 +381,8 @@ void CheckMoveFromWeightsEquivalent(
                                    self_loop_weight);
 
     if (regular.community_of != fast.community_of ||
-        regular.empty_communities != fast.empty_communities ||
+        regular.community_is_empty != fast.community_is_empty ||
+        regular.smallest_empty_community != fast.smallest_empty_community ||
         regular.community_size.size() != fast.community_size.size()) {
         std::cerr << test_name << " failed: partition structure differs\n";
         std::exit(EXIT_FAILURE);
