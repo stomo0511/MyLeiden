@@ -64,16 +64,6 @@ bool IsNodeWellConnectedToSubset(const Graph& G,
                                  std::size_t subset_generation,
                                  double subset_mass);
 
-bool IsCommunityWellConnectedToSubset(
-    const Graph& G,
-    const LeidenGraphStats& stats,
-    const LeidenPartition& refined,
-    const QualityFunction& quality_function,
-    Community community,
-    const std::vector<Vertex>& subset,
-    const std::vector<std::size_t>& subset_mark,
-    std::size_t subset_generation);
-
 RefinementCommunityStats BuildRefinementCommunityStats(
     const Graph& G,
     const LeidenGraphStats& stats,

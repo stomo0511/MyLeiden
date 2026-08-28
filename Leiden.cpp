@@ -88,21 +88,6 @@ double SubsetMass(const LeidenGraphStats& stats,
     return mass;
 }
 
-double RefinedCommunityMassInSubset(const LeidenGraphStats& stats,
-                                    const LeidenPartition& refined,
-                                    const QualityFunction& quality_function,
-                                    Community community,
-                                    const std::vector<Vertex>& subset)
-{
-    double mass = 0.0;
-    for (Vertex v : subset) {
-        if (refined.community_of[v] == community) {
-            mass += quality_function.refinementNodeMass(stats, v);
-        }
-    }
-    return mass;
-}
-
 RefinementCommunityEntry& EnsureRefinementCommunityEntry(
     RefinementCommunityStats& community_stats,
     Community community)
@@ -313,52 +298,6 @@ bool IsNodeWellConnectedToSubset(const Graph& G,
         quality_function.refinementResolution(stats) *
         node_mass *
         (subset_mass - node_mass);
-    return edge_weight >= threshold;
-}
-
-bool IsCommunityWellConnectedToSubset(
-    const Graph& G,
-    const LeidenGraphStats& stats,
-    const LeidenPartition& refined,
-    const QualityFunction& quality_function,
-    Community community,
-    const std::vector<Vertex>& subset,
-    const std::vector<std::size_t>& subset_mark,
-    std::size_t subset_generation)
-{
-    if (community < 0 ||
-        static_cast<std::size_t>(community) >= refined.community_size.size()) {
-        return false;
-    }
-    if (subset_mark.size() != static_cast<std::size_t>(num_vertices(G))) {
-        throw std::invalid_argument("subset mark size does not match graph");
-    }
-
-    double edge_weight = 0.0;
-    for (Vertex v : subset) {
-        if (refined.community_of[v] != community) {
-            continue;
-        }
-        for (const Edge& e : G.adj[v]) {
-            if (e.to != v &&
-                subset_mark[e.to] == subset_generation &&
-                refined.community_of[e.to] != community) {
-                edge_weight += e.weight;
-            }
-        }
-    }
-
-    const double subset_mass = SubsetMass(stats, quality_function, subset);
-    const double community_mass =
-        RefinedCommunityMassInSubset(stats,
-                                     refined,
-                                     quality_function,
-                                     community,
-                                     subset);
-    const double threshold =
-        quality_function.refinementResolution(stats) *
-        community_mass *
-        (subset_mass - community_mass);
     return edge_weight >= threshold;
 }
 
