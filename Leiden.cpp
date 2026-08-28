@@ -139,14 +139,14 @@ void MarkSubset(const Graph& G,
 
 std::vector<Community> BuildCandidateCommunities(
     const LeidenPartition& partition,
-    const std::unordered_map<Community, double>& neighbor_weights)
+    const NeighborCommunityScratch& scratch)
 {
     std::vector<Community> candidates;
-    candidates.reserve(neighbor_weights.size() + 1);
+    candidates.reserve(scratch.touched.size() + 1);
 
-    for (const auto& item : neighbor_weights) {
-        if (item.first >= 0) {
-            candidates.push_back(item.first);
+    for (Community community : scratch.touched) {
+        if (community >= 0) {
+            candidates.push_back(community);
         }
     }
 
@@ -466,6 +466,10 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
 
     MoveNodesFastResult result;
     result.partition = std::move(partition);
+    NeighborCommunityScratch neighbor_scratch;
+    neighbor_scratch.weights.assign(result.partition.community_size.size(), 0.0);
+    neighbor_scratch.marks.assign(result.partition.community_size.size(), 0);
+    neighbor_scratch.touched.reserve(32);
     const bool debug = DebugEnabled(options);
     const std::size_t debug_interval = DebugInterval(options);
 
@@ -477,13 +481,14 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
 
         const Community source = result.partition.community_of[v];
         MNF_PROFILE_BEGIN(neighbor_weights);
-        const auto neighbor_weights =
-            BuildNeighborCommunityWeights(G, result.partition, v);
+        BuildNeighborCommunityWeights(
+            G, result.partition, v, neighbor_scratch);
         MNF_PROFILE_END(neighbor_weights, neighbor_weights);
-        const double weight_to_source = LookupWeight(neighbor_weights, source);
+        const double weight_to_source =
+            LookupNeighborCommunityWeight(neighbor_scratch, source);
         MNF_PROFILE_BEGIN(candidate_build);
         const std::vector<Community> candidates =
-            BuildCandidateCommunities(result.partition, neighbor_weights);
+            BuildCandidateCommunities(result.partition, neighbor_scratch);
         MNF_PROFILE_END(candidate_build, candidate_build);
         MNF_PROFILE_CANDIDATES(candidates.size());
 
@@ -504,7 +509,8 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
                           v,
                           candidate,
                           weight_to_source,
-                          LookupWeight(neighbor_weights, candidate));
+                          LookupNeighborCommunityWeight(neighbor_scratch,
+                                                        candidate));
 
             if (delta > best_delta ||
                 (delta == best_delta && candidate < best_community)) {

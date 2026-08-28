@@ -1,6 +1,7 @@
 #include "QualityFunction.hpp"
 
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace {
@@ -99,6 +100,61 @@ BuildNeighborCommunityWeights(const Graph& G,
         }
     }
     return weights;
+}
+
+void BuildNeighborCommunityWeights(const Graph& G,
+                                   const LeidenPartition& partition,
+                                   Vertex v,
+                                   NeighborCommunityScratch& scratch)
+{
+    ValidateVertex(v, G);
+    ValidatePartitionSize(G, partition);
+
+    const std::size_t community_count = partition.community_size.size();
+    if (scratch.weights.size() < community_count) {
+        scratch.weights.resize(community_count, 0.0);
+        scratch.marks.resize(community_count, 0);
+    }
+
+    if (scratch.generation == std::numeric_limits<std::size_t>::max()) {
+        std::fill(scratch.marks.begin(), scratch.marks.end(), 0);
+        scratch.generation = 1;
+    } else {
+        ++scratch.generation;
+    }
+    scratch.touched.clear();
+
+    for (const Edge& e : G.adj[v]) {
+        if (e.to == v) {
+            continue;
+        }
+        const Community community = partition.community_of[e.to];
+        if (community < 0) {
+            continue;
+        }
+
+        const std::size_t c = static_cast<std::size_t>(community);
+        if (scratch.marks[c] != scratch.generation) {
+            scratch.marks[c] = scratch.generation;
+            scratch.weights[c] = 0.0;
+            scratch.touched.push_back(community);
+        }
+        scratch.weights[c] += e.weight;
+    }
+}
+
+double LookupNeighborCommunityWeight(
+    const NeighborCommunityScratch& scratch,
+    Community community)
+{
+    if (community < 0 ||
+        static_cast<std::size_t>(community) >= scratch.weights.size()) {
+        return 0.0;
+    }
+    const std::size_t c = static_cast<std::size_t>(community);
+    return (scratch.marks[c] == scratch.generation)
+               ? scratch.weights[c]
+               : 0.0;
 }
 
 LeidenGraphStats BuildLeidenGraphStats(const Graph& G)

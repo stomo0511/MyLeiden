@@ -31,6 +31,13 @@ public:
     virtual double refinementResolution(const LeidenGraphStats& stats) const = 0;
 };
 
+struct NeighborCommunityScratch {
+    std::vector<double> weights;
+    std::vector<std::size_t> marks;
+    std::vector<Community> touched;
+    std::size_t generation = 0;
+};
+
 // Scans G.adj[v] once and sums edge weights by neighbor community.
 // Self-loops are excluded because deltaMoveFromWeights() uses the same
 // convention as deltaMove(): self-loop contribution is unchanged by moving v.
@@ -39,6 +46,17 @@ std::unordered_map<Community, double>
 BuildNeighborCommunityWeights(const Graph& G,
                               const LeidenPartition& partition,
                               Vertex v);
+
+// Scratch-buffer overload used by MoveNodesFast(). Storage is reused across
+// visits and marks make weights from earlier generations logically absent.
+void BuildNeighborCommunityWeights(const Graph& G,
+                                   const LeidenPartition& partition,
+                                   Vertex v,
+                                   NeighborCommunityScratch& scratch);
+
+double LookupNeighborCommunityWeight(
+    const NeighborCommunityScratch& scratch,
+    Community community);
 
 class CPMQualityFunction final : public QualityFunction {
 public:

@@ -315,6 +315,41 @@ void TestActualMoveSequence()
                             moves);
 }
 
+void TestNeighborCommunityScratch()
+{
+    Graph G = MakeGraph(4);
+    add_undirected_edge(G, 0, 1, 1.0);
+    add_undirected_edge(G, 0, 2, 2.0);
+    add_undirected_edge(G, 0, 3, 4.0);
+    add_undirected_edge(G, 0, 0, 9.0);
+
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    const LeidenPartition partition =
+        MakePartition(G, stats, {0, 1, 1, 3});
+
+    NeighborCommunityScratch scratch;
+    scratch.weights.assign(2, 0.0);
+    scratch.marks.assign(2, 0);
+
+    BuildNeighborCommunityWeights(G, partition, 0, scratch);
+    CheckEqual("Test H scratch parallel accumulation", 3.0,
+               LookupNeighborCommunityWeight(scratch, 1));
+    CheckEqual("Test H scratch second community", 4.0,
+               LookupNeighborCommunityWeight(scratch, 3));
+    CheckEqual("Test H scratch self-loop excluded", 0.0,
+               LookupNeighborCommunityWeight(scratch, 0));
+    CheckEqual("Test H scratch expanded", 4.0,
+               static_cast<double>(scratch.weights.size()));
+
+    BuildNeighborCommunityWeights(G, partition, 1, scratch);
+    CheckEqual("Test H scratch reused current value", 1.0,
+               LookupNeighborCommunityWeight(scratch, 0));
+    CheckEqual("Test H scratch reused old community one", 0.0,
+               LookupNeighborCommunityWeight(scratch, 1));
+    CheckEqual("Test H scratch reused old community three", 0.0,
+               LookupNeighborCommunityWeight(scratch, 3));
+}
+
 } // namespace
 
 int main()
@@ -326,6 +361,7 @@ int main()
     TestAggregateNodeSize();
     TestNewTargetCommunity();
     TestActualMoveSequence();
+    TestNeighborCommunityScratch();
 
     std::cout << "All quality-function tests passed.\n";
     return EXIT_SUCCESS;
