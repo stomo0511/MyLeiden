@@ -53,14 +53,7 @@ double LookupWeight(const std::unordered_map<Community, double>& weights,
 
 Community EmptyCommunityForTest(const LeidenPartition& partition)
 {
-    for (Community c = 0;
-         c < static_cast<Community>(partition.community_size.size());
-         ++c) {
-        if (partition.community_size[c] == 0.0) {
-            return c;
-        }
-    }
-    return static_cast<Community>(partition.community_size.size());
+    return EmptyCommunityForMove(partition);
 }
 
 void CheckValidPartition(const std::string& test_name,
@@ -79,6 +72,12 @@ void CheckValidPartition(const std::string& test_name,
         CheckTrue(test_name + " non-negative community", c >= 0);
         CheckTrue(test_name + " community in statistic range",
                   static_cast<std::size_t>(c) < nc);
+    }
+
+    for (Community c = 0; c < static_cast<Community>(nc); ++c) {
+        CheckTrue(test_name + " empty-community index",
+                  (partition.community_size[c] == 0.0) ==
+                      (partition.empty_communities.count(c) == 1));
     }
 }
 
@@ -283,6 +282,58 @@ void TestDifferentSeeds()
     RunAndCheck("Test F modularity seed 2", G, modularity, 2, false);
 }
 
+void TestEmptyCommunityManagement()
+{
+    const Graph G = MakeGraph(8);
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+
+    const LeidenPartition singleton = MakeSingletonPartition(G, stats);
+    CheckTrue("Test G singleton empty set",
+              singleton.empty_communities.empty());
+    CheckTrue("Test G singleton next community",
+              EmptyCommunityForMove(singleton) == 8);
+
+    LeidenPartition partition =
+        MakePartition(G, stats, {0, 1, 2, 3, 4, 5, 6, 7});
+    MoveNodeToCommunity(G, stats, partition, 3, 0);
+    CheckTrue("Test G community becomes empty",
+              partition.empty_communities.count(3) == 1);
+    CheckTrue("Test G newly empty is smallest",
+              EmptyCommunityForMove(partition) == 3);
+
+    const Graph sparse_graph = MakeGraph(12);
+    const LeidenGraphStats sparse_stats = BuildLeidenGraphStats(sparse_graph);
+    LeidenPartition sparse = MakePartition(
+        sparse_graph,
+        sparse_stats,
+        {0, 0, 1, 3, 4, 5, 6, 8, 9, 11, 11, 11});
+    CheckTrue("Test G sparse empty communities",
+              sparse.empty_communities == std::set<Community>({2, 7, 10}));
+    CheckTrue("Test G smallest sparse empty",
+              EmptyCommunityForMove(sparse) == 2);
+    MoveNodeToCommunity(sparse_graph, sparse_stats, sparse, 0, 2);
+    CheckTrue("Test G reused community removed",
+              sparse.empty_communities.count(2) == 0);
+    CheckTrue("Test G next sparse empty",
+              EmptyCommunityForMove(sparse) == 7);
+
+    Graph expansion_graph = MakeGraph(5);
+    const LeidenGraphStats expansion_stats =
+        BuildLeidenGraphStats(expansion_graph);
+    LeidenPartition expanded =
+        MakeSingletonPartition(expansion_graph, expansion_stats);
+    MoveNodeToCommunity(expansion_graph, expansion_stats, expanded, 0, 7);
+    CheckTrue("Test G expansion gaps empty",
+              expanded.empty_communities.count(5) == 1 &&
+              expanded.empty_communities.count(6) == 1);
+    CheckTrue("Test G expansion target active",
+              expanded.empty_communities.count(7) == 0);
+
+    const LeidenPartition copied = expanded;
+    CheckTrue("Test G copy preserves empty communities",
+              copied.empty_communities == expanded.empty_communities);
+}
+
 } // namespace
 
 int main()
@@ -293,6 +344,7 @@ int main()
     TestSelfLoop();
     TestReproducibility();
     TestDifferentSeeds();
+    TestEmptyCommunityManagement();
 
     std::cout << "All MoveNodesFast tests passed.\n";
     return EXIT_SUCCESS;

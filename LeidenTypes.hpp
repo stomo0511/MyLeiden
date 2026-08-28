@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <set>
 #include <stdexcept>
 #include <vector>
 
@@ -19,7 +20,16 @@ struct LeidenPartition {
     std::vector<double> community_size;
     std::vector<double> community_strength;
     std::vector<double> internal_edge_weight;
+    std::set<Community> empty_communities;
 };
+
+inline Community EmptyCommunityForMove(const LeidenPartition& partition)
+{
+    if (!partition.empty_communities.empty()) {
+        return *partition.empty_communities.begin();
+    }
+    return static_cast<Community>(partition.community_size.size());
+}
 
 inline void ValidateVertex(Vertex v, const Graph& G)
 {

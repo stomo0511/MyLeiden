@@ -252,6 +252,8 @@ int main(int argc, char** argv)
                       << "\n";
         }
 
+        const Clock::time_point exec_begin = Clock::now();
+
         if (options.debug) {
             std::cerr << "[Driver] Binary edge-weight conversion start\n";
         }
@@ -299,6 +301,10 @@ int main(int argc, char** argv)
                                         block_color.end());
         ValidateColoring(block_graph, block_color, num_colors);
 
+        const Clock::time_point exec_end = Clock::now();
+        const double execution_time =
+            ElapsedSeconds(exec_begin, exec_end);
+
         const std::string base = file_stem(matrix_file) + "_" +
                                  kMethodName + "_gamma" + resolution_text;
         const std::string block_file = base + ".blk";
@@ -321,6 +327,7 @@ int main(int argc, char** argv)
                   << "Number of colors    : " << num_colors << "\n"
                   << "Leiden levels       : " << result.num_levels << "\n"
                   << "Leiden moves        : " << result.total_moves << "\n"
+                  << "Execution time      : " << execution_time << " s\n"
                   << "Quality value (internal objective): "
                   << final_quality << "\n"
                   << "Block file          : " << block_file << "\n"

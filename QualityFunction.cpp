@@ -51,11 +51,15 @@ void EnsureCommunity(LeidenPartition& partition, Community community)
     if (community < 0) {
         throw std::out_of_range("community id out of range");
     }
+    const std::size_t old_size = partition.community_size.size();
     const std::size_t need = static_cast<std::size_t>(community) + 1;
-    if (partition.community_size.size() < need) {
+    if (old_size < need) {
         partition.community_size.resize(need, 0.0);
         partition.community_strength.resize(need, 0.0);
         partition.internal_edge_weight.resize(need, 0.0);
+        for (std::size_t c = old_size; c < need; ++c) {
+            partition.empty_communities.insert(static_cast<Community>(c));
+        }
     }
 }
 
@@ -166,6 +170,12 @@ LeidenPartition MakePartition(const Graph& G,
         partition.community_strength[c] += stats.node_strength[v];
     }
 
+    for (Community c = 0; c < nc; ++c) {
+        if (partition.community_size[c] == 0.0) {
+            partition.empty_communities.insert(c);
+        }
+    }
+
     // for (Community c = 0; c < nc; ++c) {
     //     partition.internal_edge_weight[c] = SumInternalEdgeWeight(G, partition, c);
     // }
@@ -238,6 +248,9 @@ void RemoveNodeFromCommunity(const Graph& G,
     partition.community_strength[source] -= stats.node_strength[v];
     partition.internal_edge_weight[source] -= internal_incident;
     partition.community_of[v] = -1;
+    if (partition.community_size[source] == 0.0) {
+        partition.empty_communities.insert(source);
+    }
 }
 
 void InsertNodeIntoCommunity(const Graph& G,
@@ -262,6 +275,7 @@ void InsertNodeIntoCommunity(const Graph& G,
     partition.community_size[community] += stats.node_size[v];
     partition.community_strength[community] += stats.node_strength[v];
     partition.internal_edge_weight[community] += internal_incident;
+    partition.empty_communities.erase(community);
 }
 
 void MoveNodeToCommunity(const Graph& G,

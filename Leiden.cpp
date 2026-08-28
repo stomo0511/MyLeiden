@@ -65,18 +65,6 @@ double LookupWeight(const std::unordered_map<Community, double>& weights,
     return (it == weights.end()) ? 0.0 : it->second;
 }
 
-Community EmptyCommunityForMove(const LeidenPartition& partition)
-{
-    for (Community c = 0;
-         c < static_cast<Community>(partition.community_size.size());
-         ++c) {
-        if (partition.community_size[c] == 0.0) {
-            return c;
-        }
-    }
-    return static_cast<Community>(partition.community_size.size());
-}
-
 double SubsetMass(const LeidenGraphStats& stats,
                   const QualityFunction& quality_function,
                   const std::vector<Vertex>& subset)
