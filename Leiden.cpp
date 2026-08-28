@@ -439,10 +439,15 @@ void UpdateRefinementCommunityStatsForMove(
     result.profile.field += ElapsedSeconds(name##_begin, Clock::now())
 #define MNF_PROFILE_CANDIDATES(count) \
     result.profile.total_candidates += (count)
+#define MNF_PROFILE_ADD(field, begin, end) \
+    result.profile.field += ElapsedSeconds((begin), (end))
+#define MNF_PROFILE_ARG (&result.profile)
 #else
 #define MNF_PROFILE_BEGIN(name)
 #define MNF_PROFILE_END(name, field)
 #define MNF_PROFILE_CANDIDATES(count)
+#define MNF_PROFILE_ADD(field, begin, end)
+#define MNF_PROFILE_ARG nullptr
 #endif
 
 MoveNodesFastResult MoveNodesFast(const Graph& G,
@@ -525,7 +530,18 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
             const double weight_to_target =
                 LookupNeighborCommunityWeight(neighbor_scratch,
                                               best_community);
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+            // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+            const Clock::time_point self_loop_begin = Clock::now();
+#endif
             const double self_loop_weight = SelfLoopWeight(G, v);
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+            // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+            const Clock::time_point self_loop_end = Clock::now();
+            MNF_PROFILE_ADD(move_self_loop_scan,
+                            self_loop_begin,
+                            self_loop_end);
+#endif
             MoveNodeToCommunityFromWeights(G,
                                            stats,
                                            result.partition,
@@ -533,7 +549,8 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
                                            best_community,
                                            weight_to_source,
                                            weight_to_target,
-                                           self_loop_weight);
+                                           self_loop_weight,
+                                           MNF_PROFILE_ARG);
             MNF_PROFILE_END(move_node, move_node);
             ++result.num_moves;
 
@@ -568,6 +585,8 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
 #undef MNF_PROFILE_BEGIN
 #undef MNF_PROFILE_END
 #undef MNF_PROFILE_CANDIDATES
+#undef MNF_PROFILE_ADD
+#undef MNF_PROFILE_ARG
 // END TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
 
 void MergeNodesSubset(const Graph& G,
@@ -1057,6 +1076,16 @@ LeidenResult Leiden(const Graph& G,
         result.move_nodes_fast_profile.delta_evaluation +=
             moved.profile.delta_evaluation;
         result.move_nodes_fast_profile.move_node += moved.profile.move_node;
+        result.move_nodes_fast_profile.move_self_loop_scan +=
+            moved.profile.move_self_loop_scan;
+        result.move_nodes_fast_profile.move_validation +=
+            moved.profile.move_validation;
+        result.move_nodes_fast_profile.move_ensure_community +=
+            moved.profile.move_ensure_community;
+        result.move_nodes_fast_profile.move_statistics_update +=
+            moved.profile.move_statistics_update;
+        result.move_nodes_fast_profile.move_empty_community +=
+            moved.profile.move_empty_community;
         result.move_nodes_fast_profile.neighbor_requeue +=
             moved.profile.neighbor_requeue;
         result.move_nodes_fast_profile.num_visits += moved.profile.num_visits;

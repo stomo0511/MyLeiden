@@ -2,7 +2,33 @@
 
 #include "LeidenTypes.hpp"
 
+#include <cstddef>
 #include <unordered_map>
+
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+// -----------------------------------------------------------------------------
+// TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+// Detailed profiling for MoveNodesFast(). Remove this block after performance
+// analysis. It is compiled only when ENABLE_MOVENODESFAST_PROFILE is defined.
+// -----------------------------------------------------------------------------
+struct MoveNodesFastProfile {
+    double neighbor_weights = 0.0;
+    double candidate_build = 0.0;
+    double delta_evaluation = 0.0;
+    double move_node = 0.0;
+
+    double move_self_loop_scan = 0.0;
+    double move_validation = 0.0;
+    double move_ensure_community = 0.0;
+    double move_statistics_update = 0.0;
+    double move_empty_community = 0.0;
+
+    double neighbor_requeue = 0.0;
+    std::size_t num_visits = 0;
+    std::size_t total_candidates = 0;
+};
+// END TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+#endif
 
 class QualityFunction {
 public:

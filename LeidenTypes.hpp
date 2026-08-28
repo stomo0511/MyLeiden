@@ -9,6 +9,10 @@
 
 using Community = int;
 
+// TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+struct MoveNodesFastProfile;
+// END TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+
 struct LeidenGraphStats {
     std::vector<double> node_size;
     std::vector<double> node_strength;
@@ -91,4 +95,6 @@ void MoveNodeToCommunityFromWeights(const Graph& G,
                                     Community community,
                                     double weight_to_source,
                                     double weight_to_target,
-                                    double self_loop_weight);
+                                    double self_loop_weight,
+                                    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+                                    MoveNodesFastProfile* profile = nullptr);

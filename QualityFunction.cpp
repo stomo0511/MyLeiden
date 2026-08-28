@@ -1,10 +1,24 @@
 #include "QualityFunction.hpp"
 
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+#include <chrono>
+#endif
 #include <cmath>
 #include <limits>
 #include <stdexcept>
 
 namespace {
+
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+// TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+using Clock = std::chrono::steady_clock;
+
+double ElapsedSeconds(Clock::time_point begin, Clock::time_point end)
+{
+    return std::chrono::duration<double>(end - begin).count();
+}
+// END TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+#endif
 
 void ValidateStatsSize(const Graph& G, const LeidenGraphStats& stats)
 {
@@ -356,11 +370,25 @@ void MoveNodeToCommunityFromWeights(const Graph& G,
                                     Community community,
                                     double weight_to_source,
                                     double weight_to_target,
-                                    double self_loop_weight)
+                                    double self_loop_weight,
+                                    MoveNodesFastProfile* profile)
 {
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    const Clock::time_point validation_begin = Clock::now();
+#else
+    (void)profile;
+#endif
     ValidateStatsSize(G, stats);
     ValidatePartitionSize(G, partition);
     ValidateVertex(v, G);
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    if (profile != nullptr) {
+        profile->move_validation +=
+            ElapsedSeconds(validation_begin, Clock::now());
+    }
+#endif
 
     const Community source = partition.community_of[v];
     if (source < 0 ||
@@ -371,7 +399,23 @@ void MoveNodeToCommunityFromWeights(const Graph& G,
         return;
     }
 
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    const Clock::time_point ensure_begin = Clock::now();
+#endif
     EnsureCommunity(partition, community);
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    if (profile != nullptr) {
+        profile->move_ensure_community +=
+            ElapsedSeconds(ensure_begin, Clock::now());
+    }
+#endif
+
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    const Clock::time_point statistics_begin = Clock::now();
+#endif
     const double source_internal_incident =
         weight_to_source + self_loop_weight;
     const double target_internal_incident =
@@ -381,15 +425,51 @@ void MoveNodeToCommunityFromWeights(const Graph& G,
     partition.community_strength[source] -= stats.node_strength[v];
     partition.internal_edge_weight[source] -= source_internal_incident;
     partition.community_of[v] = -1;
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    const Clock::time_point statistics_first_end = Clock::now();
+    if (profile != nullptr) {
+        profile->move_statistics_update +=
+            ElapsedSeconds(statistics_begin, statistics_first_end);
+    }
+    const Clock::time_point empty_first_begin = statistics_first_end;
+#endif
+
     if (partition.community_size[source] == 0.0) {
         partition.empty_communities.insert(source);
     }
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    const Clock::time_point empty_first_end = Clock::now();
+    if (profile != nullptr) {
+        profile->move_empty_community +=
+            ElapsedSeconds(empty_first_begin, empty_first_end);
+    }
+    const Clock::time_point statistics_second_begin = empty_first_end;
+#endif
 
     partition.community_of[v] = community;
     partition.community_size[community] += stats.node_size[v];
     partition.community_strength[community] += stats.node_strength[v];
     partition.internal_edge_weight[community] += target_internal_incident;
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    const Clock::time_point statistics_second_end = Clock::now();
+    if (profile != nullptr) {
+        profile->move_statistics_update +=
+            ElapsedSeconds(statistics_second_begin, statistics_second_end);
+    }
+    const Clock::time_point empty_second_begin = statistics_second_end;
+#endif
+
     partition.empty_communities.erase(community);
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    // TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+    if (profile != nullptr) {
+        profile->move_empty_community +=
+            ElapsedSeconds(empty_second_begin, Clock::now());
+    }
+#endif
 }
 
 CPMQualityFunction::CPMQualityFunction(double gamma)

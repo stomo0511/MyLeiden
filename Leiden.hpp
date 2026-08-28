@@ -7,24 +7,6 @@
 
 #include "QualityFunction.hpp"
 
-// -----------------------------------------------------------------------------
-// TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
-// Detailed profiling for MoveNodesFast(). Remove this block after performance
-// analysis. It is compiled only when ENABLE_MOVENODESFAST_PROFILE is defined.
-// -----------------------------------------------------------------------------
-#ifdef ENABLE_MOVENODESFAST_PROFILE
-struct MoveNodesFastProfile {
-    double neighbor_weights = 0.0;
-    double candidate_build = 0.0;
-    double delta_evaluation = 0.0;
-    double move_node = 0.0;
-    double neighbor_requeue = 0.0;
-    std::size_t num_visits = 0;
-    std::size_t total_candidates = 0;
-};
-#endif
-// END TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
-
 struct MoveNodesFastResult {
     LeidenPartition partition;
     std::size_t num_moves = 0;

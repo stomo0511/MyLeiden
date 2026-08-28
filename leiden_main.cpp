@@ -328,6 +328,14 @@ int main(int argc, char** argv)
             move_profile.neighbor_requeue;
         const double move_profile_residual =
             std::max(0.0, result.timing.move_nodes_fast - move_profile_sum);
+        const double move_node_profile_sum =
+            move_profile.move_self_loop_scan +
+            move_profile.move_validation +
+            move_profile.move_ensure_community +
+            move_profile.move_statistics_update +
+            move_profile.move_empty_community;
+        const double move_node_profile_residual =
+            std::max(0.0, move_profile.move_node - move_node_profile_sum);
 #endif
 
         std::cout << "Method              : " << kMethodName << "\n"
@@ -354,6 +362,18 @@ int main(int argc, char** argv)
                   << move_profile.delta_evaluation << " s\n"
                   << "  Move node time        : "
                   << move_profile.move_node << " s\n"
+                  << "    Self-loop scan time     : "
+                  << move_profile.move_self_loop_scan << " s\n"
+                  << "    Validation time         : "
+                  << move_profile.move_validation << " s\n"
+                  << "    EnsureCommunity time    : "
+                  << move_profile.move_ensure_community << " s\n"
+                  << "    Statistics update time  : "
+                  << move_profile.move_statistics_update << " s\n"
+                  << "    Empty-community time    : "
+                  << move_profile.move_empty_community << " s\n"
+                  << "    Move-node residual time : "
+                  << move_node_profile_residual << " s\n"
                   << "  Neighbor requeue time : "
                   << move_profile.neighbor_requeue << " s\n"
                   << "  Residual time         : "
