@@ -1,6 +1,7 @@
 #include "Leiden.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -8,8 +9,11 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <memory>
+#include <mutex>
 #include <numeric>
 #include <stdexcept>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -1426,6 +1430,442 @@ MoveNodesFastResult MoveNodesFastParallelStage4A(
     return result;
 }
 
+MoveNodesFastResult MoveNodesFastParallelStage4B(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    LeidenPartition partition,
+    const QualityFunction& quality_function,
+    std::uint64_t global_seed,
+    std::uint64_t leiden_level,
+    const LeidenOptions* options)
+{
+    // Experimental race-free asynchronous local-moving variant. Its execution
+    // order intentionally differs from sequential Leiden Algorithm A.2.
+    if (!quality_function.supportsConcurrentMoveEvaluation()) {
+        std::mt19937 fallback_rng(static_cast<unsigned int>(global_seed));
+        return MoveNodesFast(G, stats, std::move(partition), quality_function,
+                             fallback_rng, options);
+    }
+
+    const Clock::time_point total_begin = Clock::now();
+    const int n = num_vertices(G);
+    // Reserve the same practical ID space as singleton initialization. This
+    // preserves serial EmptyCommunityForMove semantics even when an input
+    // partition currently has fewer statistic slots than vertices.
+    const std::size_t nc = std::max(
+        partition.community_size.size(), static_cast<std::size_t>(n));
+    MoveNodesFastResult result;
+    if (n == 0) {
+        result.partition = std::move(partition);
+        return result;
+    }
+
+    struct ConcurrentMoveState {
+        std::unique_ptr<std::atomic<Community>[]> labels;
+        std::unique_ptr<std::atomic<int>[]> occupancy;
+        std::unique_ptr<std::mutex[]> community_locks;
+        std::vector<double> mass;
+        std::atomic<Community> empty_hint;
+
+        explicit ConcurrentMoveState(std::size_t count)
+            : labels(new std::atomic<Community>[count]),
+              occupancy(new std::atomic<int>[count]),
+              community_locks(new std::mutex[count]),
+              mass(count, 0.0),
+              empty_hint(static_cast<Community>(count))
+        {
+        }
+    } state(nc);
+
+    for (std::size_t c = 0; c < nc; ++c) {
+        state.occupancy[c].store(0, std::memory_order_relaxed);
+    }
+    for (Vertex v = 0; v < n; ++v) {
+        const Community c = partition.community_of[static_cast<std::size_t>(v)];
+        state.labels[static_cast<std::size_t>(v)].store(
+            c, std::memory_order_relaxed);
+        state.occupancy[static_cast<std::size_t>(c)].fetch_add(
+            1, std::memory_order_relaxed);
+        state.mass[static_cast<std::size_t>(c)] +=
+            quality_function.refinementNodeMass(stats, v);
+    }
+    for (Community c = 0; c < static_cast<Community>(nc); ++c) {
+        if (state.occupancy[static_cast<std::size_t>(c)].load(
+                std::memory_order_relaxed) == 0) {
+            state.empty_hint.store(c, std::memory_order_relaxed);
+            break;
+        }
+    }
+
+    struct ThreadProfile {
+        std::size_t processed = 0;
+        std::size_t moves = 0;
+        std::size_t failed = 0;
+        std::size_t neighbor_scans = 0;
+        std::size_t candidate_evaluations = 0;
+        std::size_t enqueue_attempts = 0;
+        std::size_t enqueues = 0;
+        std::size_t duplicates = 0;
+        std::size_t empty_attempts = 0;
+        std::size_t empty_failures = 0;
+        std::size_t commit_attempts = 0;
+        std::size_t retries = 0;
+        std::size_t lock_attempts = 0;
+        std::size_t lock_contentions = 0;
+        double neighbor_time = 0.0;
+        double candidate_time = 0.0;
+        double lock_wait = 0.0;
+        double commit_time = 0.0;
+        double affected_time = 0.0;
+        double queue_time = 0.0;
+    };
+
+#ifdef _OPENMP
+    const int worker_count = omp_get_max_threads();
+#else
+    const int worker_count = 1;
+#endif
+    std::vector<ThreadProfile> profiles(static_cast<std::size_t>(worker_count));
+    std::unique_ptr<std::atomic<unsigned char>[]> work_state(
+        new std::atomic<unsigned char>[static_cast<std::size_t>(n)]);
+    std::deque<Vertex> work_queue;
+    std::mutex queue_mutex;
+    std::atomic<std::size_t> outstanding(0);
+
+    auto lower_empty_hint = [&state](Community community) {
+        Community current = state.empty_hint.load(std::memory_order_relaxed);
+        while (community < current &&
+               !state.empty_hint.compare_exchange_weak(
+                   current, community, std::memory_order_release,
+                   std::memory_order_relaxed)) {
+        }
+    };
+
+    auto find_empty = [&state, nc]() {
+        Community begin = state.empty_hint.load(std::memory_order_acquire);
+        if (begin < 0) begin = 0;
+        for (Community c = begin; c < static_cast<Community>(nc); ++c) {
+            if (state.occupancy[static_cast<std::size_t>(c)].load(
+                    std::memory_order_acquire) == 0) {
+                return c;
+            }
+        }
+        return static_cast<Community>(nc);
+    };
+
+    std::vector<Vertex> initial_order(static_cast<std::size_t>(n));
+    std::iota(initial_order.begin(), initial_order.end(), 0);
+    std::mt19937 initial_rng(static_cast<unsigned int>(
+        global_seed ^ MixStage4A(leiden_level)));
+    std::shuffle(initial_order.begin(), initial_order.end(), initial_rng);
+
+    std::size_t verification_sweeps = 0;
+    while (true) {
+        for (Vertex v = 0; v < n; ++v) {
+            work_state[static_cast<std::size_t>(v)].store(
+                0, std::memory_order_relaxed);
+        }
+        {
+            std::lock_guard<std::mutex> guard(queue_mutex);
+            work_queue.clear();
+            for (Vertex v : initial_order) {
+                work_state[static_cast<std::size_t>(v)].store(
+                    1, std::memory_order_relaxed);
+                work_queue.push_back(v);
+            }
+        }
+        outstanding.store(static_cast<std::size_t>(n),
+                          std::memory_order_release);
+        std::atomic<std::size_t> phase_moves(0);
+
+#pragma omp parallel
+        {
+#ifdef _OPENMP
+            ThreadProfile& profile = profiles[static_cast<std::size_t>(
+                omp_get_thread_num())];
+#else
+            ThreadProfile& profile = profiles[0];
+#endif
+            std::vector<double> weights(nc, 0.0);
+            std::vector<std::size_t> marks(nc, 0);
+            std::vector<Community> touched;
+            touched.reserve(32);
+            std::size_t generation = 1;
+
+            auto enqueue = [&](Vertex vertex) {
+                ++profile.enqueue_attempts;
+                std::atomic<unsigned char>& marker =
+                    work_state[static_cast<std::size_t>(vertex)];
+                unsigned char expected = 0;
+                if (marker.compare_exchange_strong(
+                        expected, 1, std::memory_order_acq_rel)) {
+                    outstanding.fetch_add(1, std::memory_order_acq_rel);
+                    const Clock::time_point begin = Clock::now();
+                    {
+                        std::lock_guard<std::mutex> guard(queue_mutex);
+                        work_queue.push_back(vertex);
+                    }
+                    profile.queue_time += ElapsedSeconds(begin, Clock::now());
+                    ++profile.enqueues;
+                } else {
+                    if (expected == 1) {
+                        marker.compare_exchange_strong(
+                            expected, 2, std::memory_order_acq_rel);
+                    }
+                    ++profile.duplicates;
+                }
+            };
+
+            while (true) {
+                Vertex v = -1;
+                const Clock::time_point queue_begin = Clock::now();
+                {
+                    std::lock_guard<std::mutex> guard(queue_mutex);
+                    if (!work_queue.empty()) {
+                        v = work_queue.front();
+                        work_queue.pop_front();
+                    }
+                }
+                profile.queue_time +=
+                    ElapsedSeconds(queue_begin, Clock::now());
+                if (v < 0) {
+                    if (outstanding.load(std::memory_order_acquire) == 0) break;
+                    std::this_thread::yield();
+                    continue;
+                }
+
+                ++profile.processed;
+                const Community source =
+                    state.labels[static_cast<std::size_t>(v)].load(
+                        std::memory_order_acquire);
+                touched.clear();
+                if (++generation == 0) {
+                    std::fill(marks.begin(), marks.end(), 0);
+                    generation = 1;
+                }
+                const Clock::time_point neighbor_begin = Clock::now();
+                for (const Edge& e : G.adj[v]) {
+                    if (e.to == v) continue;
+                    ++profile.neighbor_scans;
+                    const Community c =
+                        state.labels[static_cast<std::size_t>(e.to)].load(
+                            std::memory_order_acquire);
+                    const std::size_t ci = static_cast<std::size_t>(c);
+                    if (marks[ci] != generation) {
+                        marks[ci] = generation;
+                        weights[ci] = 0.0;
+                        touched.push_back(c);
+                    }
+                    weights[ci] += e.weight;
+                }
+                profile.neighbor_time +=
+                    ElapsedSeconds(neighbor_begin, Clock::now());
+                std::sort(touched.begin(), touched.end());
+                touched.erase(std::unique(touched.begin(), touched.end()),
+                              touched.end());
+                const auto weight_to = [&](Community c) {
+                    const std::size_t ci = static_cast<std::size_t>(c);
+                    return marks[ci] == generation ? weights[ci] : 0.0;
+                };
+
+                const Clock::time_point candidate_begin = Clock::now();
+                double source_mass = 0.0;
+                {
+                    std::lock_guard<std::mutex> guard(
+                        state.community_locks[static_cast<std::size_t>(source)]);
+                    source_mass = state.mass[static_cast<std::size_t>(source)];
+                }
+                Community best = source;
+                double best_delta = 0.0;
+                for (Community candidate : touched) {
+                    if (candidate == source) continue;
+                    double target_mass = 0.0;
+                    {
+                        std::lock_guard<std::mutex> guard(
+                            state.community_locks[
+                                static_cast<std::size_t>(candidate)]);
+                        target_mass =
+                            state.mass[static_cast<std::size_t>(candidate)];
+                    }
+                    const double delta =
+                        quality_function.deltaMoveFromCommunitySnapshot(
+                            stats, v, source_mass, target_mass,
+                            weight_to(source), weight_to(candidate));
+                    ++profile.candidate_evaluations;
+                    if (delta > best_delta ||
+                        (delta == best_delta && candidate < best)) {
+                        best = candidate;
+                        best_delta = delta;
+                    }
+                }
+                const Community empty = find_empty();
+                if (empty < static_cast<Community>(nc) && empty != source) {
+                    ++profile.empty_attempts;
+                    const double delta =
+                        quality_function.deltaMoveFromCommunitySnapshot(
+                            stats, v, source_mass, 0.0,
+                            weight_to(source), weight_to(empty));
+                    ++profile.candidate_evaluations;
+                    if (delta > best_delta ||
+                        (delta == best_delta && empty < best)) {
+                        best = empty;
+                        best_delta = delta;
+                    }
+                }
+                profile.candidate_time +=
+                    ElapsedSeconds(candidate_begin, Clock::now());
+
+                bool moved = false;
+                if (best != source && best_delta > 0.0) {
+                    ++profile.commit_attempts;
+                    const Community first = std::min(source, best);
+                    const Community second = std::max(source, best);
+                    const Clock::time_point lock_begin = Clock::now();
+                    ++profile.lock_attempts;
+                    std::unique_lock<std::mutex> first_lock(
+                        state.community_locks[static_cast<std::size_t>(first)],
+                        std::defer_lock);
+                    if (!first_lock.try_lock()) {
+                        ++profile.lock_contentions;
+                        first_lock.lock();
+                    }
+                    std::unique_lock<std::mutex> second_lock(
+                        state.community_locks[static_cast<std::size_t>(second)],
+                        std::defer_lock);
+                    ++profile.lock_attempts;
+                    if (!second_lock.try_lock()) {
+                        ++profile.lock_contentions;
+                        second_lock.lock();
+                    }
+                    profile.lock_wait +=
+                        ElapsedSeconds(lock_begin, Clock::now());
+                    const Clock::time_point commit_begin = Clock::now();
+                    bool valid =
+                        state.labels[static_cast<std::size_t>(v)].load(
+                            std::memory_order_acquire) == source;
+                    if (valid && best == empty &&
+                        state.occupancy[static_cast<std::size_t>(best)].load(
+                            std::memory_order_acquire) != 0) {
+                        valid = false;
+                        ++profile.empty_failures;
+                    }
+                    double current_source_weight = 0.0;
+                    double current_target_weight = 0.0;
+                    if (valid) {
+                        for (const Edge& e : G.adj[v]) {
+                            if (e.to == v) continue;
+                            const Community c =
+                                state.labels[static_cast<std::size_t>(e.to)]
+                                    .load(std::memory_order_acquire);
+                            if (c == source) current_source_weight += e.weight;
+                            if (c == best) current_target_weight += e.weight;
+                        }
+                        const double current_delta =
+                            quality_function.deltaMoveFromCommunitySnapshot(
+                                stats, v,
+                                state.mass[static_cast<std::size_t>(source)],
+                                state.mass[static_cast<std::size_t>(best)],
+                                current_source_weight,
+                                current_target_weight);
+                        valid = current_delta > 0.0;
+                    }
+                    if (valid) {
+                        const double node_mass =
+                            quality_function.refinementNodeMass(stats, v);
+                        state.mass[static_cast<std::size_t>(source)] -= node_mass;
+                        state.mass[static_cast<std::size_t>(best)] += node_mass;
+                        const int source_count =
+                            state.occupancy[static_cast<std::size_t>(source)]
+                                .fetch_sub(1, std::memory_order_acq_rel) - 1;
+                        state.occupancy[static_cast<std::size_t>(best)].fetch_add(
+                            1, std::memory_order_acq_rel);
+                        state.labels[static_cast<std::size_t>(v)].store(
+                            best, std::memory_order_release);
+                        if (source_count == 0) lower_empty_hint(source);
+                        moved = true;
+                        ++profile.moves;
+                        phase_moves.fetch_add(1, std::memory_order_relaxed);
+                    } else {
+                        ++profile.failed;
+                        ++profile.retries;
+                    }
+                    profile.commit_time +=
+                        ElapsedSeconds(commit_begin, Clock::now());
+                }
+
+                if (moved) {
+                    const Clock::time_point affected_begin = Clock::now();
+                    for (const Edge& e : G.adj[v]) {
+                        if (e.to == v) continue;
+                        if (state.labels[static_cast<std::size_t>(e.to)].load(
+                                std::memory_order_acquire) != best) {
+                            enqueue(e.to);
+                        }
+                    }
+                    profile.affected_time +=
+                        ElapsedSeconds(affected_begin, Clock::now());
+                }
+
+                const unsigned char prior =
+                    work_state[static_cast<std::size_t>(v)].exchange(
+                        0, std::memory_order_acq_rel);
+                if (prior == 2) enqueue(v);
+                outstanding.fetch_sub(1, std::memory_order_acq_rel);
+            }
+        }
+
+        ++verification_sweeps;
+        if (phase_moves.load(std::memory_order_acquire) == 0) break;
+    }
+
+    const Clock::time_point rebuild_begin = Clock::now();
+    std::vector<Community> assignment(static_cast<std::size_t>(n));
+    for (Vertex v = 0; v < n; ++v) {
+        assignment[static_cast<std::size_t>(v)] =
+            state.labels[static_cast<std::size_t>(v)].load(
+                std::memory_order_acquire);
+    }
+    result.partition = MakePartition(G, stats, assignment);
+    const double rebuild_time = ElapsedSeconds(rebuild_begin, Clock::now());
+    for (const ThreadProfile& p : profiles) {
+        result.num_visits += p.processed;
+        result.num_moves += p.moves;
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+        result.profile.stage4b_neighbor_weights += p.neighbor_time;
+        result.profile.stage4b_candidate_evaluation += p.candidate_time;
+        result.profile.stage4b_lock_wait += p.lock_wait;
+        result.profile.stage4b_commit_revalidation += p.commit_time;
+        result.profile.stage4b_affected_update += p.affected_time;
+        result.profile.stage4b_queue_management += p.queue_time;
+        result.profile.stage4b_processed_vertices += p.processed;
+        result.profile.stage4b_successful_moves += p.moves;
+        result.profile.stage4b_failed_validations += p.failed;
+        result.profile.stage4b_neighbor_scans += p.neighbor_scans;
+        result.profile.stage4b_candidate_evaluations += p.candidate_evaluations;
+        result.profile.stage4b_enqueue_attempts += p.enqueue_attempts;
+        result.profile.stage4b_successful_enqueues += p.enqueues;
+        result.profile.stage4b_duplicate_suppressions += p.duplicates;
+        result.profile.stage4b_empty_target_attempts += p.empty_attempts;
+        result.profile.stage4b_empty_claim_failures += p.empty_failures;
+        result.profile.stage4b_commit_attempts += p.commit_attempts;
+        result.profile.stage4b_commit_retries += p.retries;
+        result.profile.stage4b_lock_attempts += p.lock_attempts;
+        result.profile.stage4b_lock_contentions += p.lock_contentions;
+#endif
+    }
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    result.profile.num_visits = result.num_visits;
+    result.profile.stage4b_final_rebuild = rebuild_time;
+    result.profile.stage4b_verification_sweeps = verification_sweeps;
+    result.profile.stage4b_total = ElapsedSeconds(total_begin, Clock::now());
+#else
+    (void)rebuild_time;
+    (void)verification_sweeps;
+    (void)total_begin;
+#endif
+    return result;
+}
+
 #undef MNF_PROFILE_BEGIN
 #undef MNF_PROFILE_END
 #undef MNF_PROFILE_CANDIDATES
@@ -2730,7 +3170,16 @@ LeidenResult Leiden(const Graph& G,
         }
         const Clock::time_point move_begin = Clock::now();
         MoveNodesFastResult moved =
-#ifdef ENABLE_MOVENODESFAST_STAGE4A
+#ifdef ENABLE_MOVENODESFAST_STAGE4B
+            MoveNodesFastParallelStage4B(
+                current_graph,
+                current_stats,
+                current_partition,
+                quality_function,
+                static_cast<std::uint64_t>(options.seed),
+                static_cast<std::uint64_t>(level),
+                &options);
+#elif defined(ENABLE_MOVENODESFAST_STAGE4A)
             MoveNodesFastParallelStage4A(
                 current_graph,
                 current_stats,
@@ -2813,6 +3262,32 @@ LeidenResult Leiden(const Graph& G,
             moved.profile.stage4a_reactivation_new_activations;
         result.move_nodes_fast_profile.stage4a_reactivation_duplicate_attempts +=
             moved.profile.stage4a_reactivation_duplicate_attempts;
+#define STAGE4B_ACCUMULATE(field) \
+        result.move_nodes_fast_profile.field += moved.profile.field
+        STAGE4B_ACCUMULATE(stage4b_neighbor_weights);
+        STAGE4B_ACCUMULATE(stage4b_candidate_evaluation);
+        STAGE4B_ACCUMULATE(stage4b_lock_wait);
+        STAGE4B_ACCUMULATE(stage4b_commit_revalidation);
+        STAGE4B_ACCUMULATE(stage4b_affected_update);
+        STAGE4B_ACCUMULATE(stage4b_queue_management);
+        STAGE4B_ACCUMULATE(stage4b_final_rebuild);
+        STAGE4B_ACCUMULATE(stage4b_total);
+        STAGE4B_ACCUMULATE(stage4b_processed_vertices);
+        STAGE4B_ACCUMULATE(stage4b_successful_moves);
+        STAGE4B_ACCUMULATE(stage4b_failed_validations);
+        STAGE4B_ACCUMULATE(stage4b_neighbor_scans);
+        STAGE4B_ACCUMULATE(stage4b_candidate_evaluations);
+        STAGE4B_ACCUMULATE(stage4b_enqueue_attempts);
+        STAGE4B_ACCUMULATE(stage4b_successful_enqueues);
+        STAGE4B_ACCUMULATE(stage4b_duplicate_suppressions);
+        STAGE4B_ACCUMULATE(stage4b_empty_target_attempts);
+        STAGE4B_ACCUMULATE(stage4b_empty_claim_failures);
+        STAGE4B_ACCUMULATE(stage4b_commit_attempts);
+        STAGE4B_ACCUMULATE(stage4b_commit_retries);
+        STAGE4B_ACCUMULATE(stage4b_lock_attempts);
+        STAGE4B_ACCUMULATE(stage4b_lock_contentions);
+        STAGE4B_ACCUMULATE(stage4b_verification_sweeps);
+#undef STAGE4B_ACCUMULATE
 #endif
         current_partition = std::move(moved.partition);
         ++result.num_levels;

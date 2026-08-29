@@ -132,6 +132,13 @@ void EnsureCommunity(LeidenPartition& partition, Community community)
 
 } // namespace
 
+double QualityFunction::deltaMoveFromCommunitySnapshot(
+    const LeidenGraphStats&, Vertex, double, double, double, double) const
+{
+    throw std::logic_error(
+        "quality function does not support concurrent move evaluation");
+}
+
 std::unordered_map<Community, double>
 BuildNeighborCommunityWeights(const Graph& G,
                               const LeidenPartition& partition,
@@ -596,6 +603,19 @@ double CPMQualityFunction::deltaMoveFromWeights(const LeidenGraphStats& stats,
            - gamma_ * stats.node_size[v] * (target_size - source_size_without_v);
 }
 
+double CPMQualityFunction::deltaMoveFromCommunitySnapshot(
+    const LeidenGraphStats& stats,
+    Vertex v,
+    double source_mass,
+    double target_mass,
+    double weight_to_source,
+    double weight_to_target) const
+{
+    const double node_mass = stats.node_size.at(static_cast<std::size_t>(v));
+    return (weight_to_target - weight_to_source) -
+           gamma_ * node_mass * (target_mass - (source_mass - node_mass));
+}
+
 double CPMQualityFunction::refinementNodeMass(const LeidenGraphStats& stats,
                                               Vertex v) const
 {
@@ -707,6 +727,23 @@ double ModularityQualityFunction::deltaMoveFromWeights(
     return 2.0 * (weight_to_target - weight_to_source)
            - gamma_ * kv * (target_strength - source_strength_without_v)
                  / stats.total_edge_weight;
+}
+
+double ModularityQualityFunction::deltaMoveFromCommunitySnapshot(
+    const LeidenGraphStats& stats,
+    Vertex v,
+    double source_mass,
+    double target_mass,
+    double weight_to_source,
+    double weight_to_target) const
+{
+    if (stats.total_edge_weight == 0.0) return 0.0;
+    const double node_mass =
+        stats.node_strength.at(static_cast<std::size_t>(v));
+    return 2.0 * (weight_to_target - weight_to_source) -
+           gamma_ * node_mass *
+               (target_mass - (source_mass - node_mass)) /
+               stats.total_edge_weight;
 }
 
 double ModularityQualityFunction::refinementNodeMass(

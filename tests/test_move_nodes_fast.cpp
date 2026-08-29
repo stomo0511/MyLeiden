@@ -587,6 +587,78 @@ void TestStage4A1TargetedReactivation()
               affected[2] == 1 && duplicate.duplicate_attempts == 1);
 }
 
+void RunStage4BAndCheck(const std::string& name,
+                        const Graph& G,
+                        const LeidenPartition& initial,
+                        const QualityFunction& quality,
+                        int threads)
+{
+#ifdef _OPENMP
+    omp_set_num_threads(threads);
+#else
+    (void)threads;
+#endif
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    const MoveNodesFastResult result = MoveNodesFastParallelStage4B(
+        G, stats, initial, quality, 4242, 1);
+    CheckValidPartition(name, G, result.partition);
+    CheckPartitionStatsAgainstRecompute(name, G, stats, result.partition);
+    const double objective = quality.quality(G, stats, result.partition);
+    CheckTrue(name + " finite quality", std::isfinite(objective));
+    CheckLocalOptimality(name, G, stats, result.partition, quality);
+}
+
+void TestStage4BRaceFreeCases()
+{
+    const CPMQualityFunction cpm(0.1);
+    const ModularityQualityFunction modularity(1.0);
+    for (int threads : {1, 2, 4}) {
+        Graph single = MakeGraph(1);
+        LeidenGraphStats single_stats = BuildLeidenGraphStats(single);
+        RunStage4BAndCheck("Stage4B single", single,
+                          MakeSingletonPartition(single, single_stats),
+                          cpm, threads);
+
+        Graph no_edges = MakeGraph(6);
+        LeidenGraphStats no_edge_stats = BuildLeidenGraphStats(no_edges);
+        RunStage4BAndCheck("Stage4B no edges/empty collision", no_edges,
+                          MakePartition(no_edges, no_edge_stats,
+                                        {0, 0, 0, 0, 0, 0}),
+                          cpm, threads);
+
+        Graph chain = MakeGraph(8);
+        for (Vertex v = 0; v + 1 < 8; ++v) {
+            add_undirected_edge(chain, v, v + 1, 1.0 + 0.1 * v);
+        }
+        LeidenGraphStats chain_stats = BuildLeidenGraphStats(chain);
+        RunStage4BAndCheck("Stage4B chain same target", chain,
+                          MakeSingletonPartition(chain, chain_stats),
+                          modularity, threads);
+
+        Graph disconnected = MakeGraph(8);
+        add_undirected_edge(disconnected, 0, 1, 2.0);
+        add_undirected_edge(disconnected, 1, 2, 1.0);
+        add_undirected_edge(disconnected, 3, 4, 3.0);
+        add_undirected_edge(disconnected, 5, 6, 1.5);
+        LeidenGraphStats disconnected_stats =
+            BuildLeidenGraphStats(disconnected);
+        RunStage4BAndCheck("Stage4B disconnected", disconnected,
+                          MakeSingletonPartition(disconnected,
+                                                 disconnected_stats),
+                          modularity, threads);
+
+        Graph contention = MakeWeightedGraph();
+        add_undirected_edge(contention, 0, 1, 0.75);
+        add_undirected_edge(contention, 0, 0, 0.25);
+        LeidenGraphStats contention_stats = BuildLeidenGraphStats(contention);
+        RunStage4BAndCheck("Stage4B weighted self parallel contention",
+                          contention,
+                          MakePartition(contention, contention_stats,
+                                        {0, 0, 1, 1, 2}),
+                          cpm, threads);
+    }
+}
+
 } // namespace
 
 int main()
@@ -603,6 +675,7 @@ int main()
     TestStage4AEmptyCommunityCollision();
     TestStage4AThreadReproducibility();
     TestStage4A1TargetedReactivation();
+    TestStage4BRaceFreeCases();
 
     std::cout << "All MoveNodesFast tests passed.\n";
     return EXIT_SUCCESS;

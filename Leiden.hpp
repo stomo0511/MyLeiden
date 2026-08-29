@@ -100,6 +100,17 @@ MoveNodesFastResult MoveNodesFastParallelStage4A(
     std::uint64_t leiden_level,
     const LeidenOptions* options = nullptr);
 
+// Experimental Stage-4B race-free asynchronous local-moving variant. It is
+// intentionally not the sequential Algorithm A.2 execution order.
+MoveNodesFastResult MoveNodesFastParallelStage4B(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    LeidenPartition partition,
+    const QualityFunction& quality_function,
+    std::uint64_t global_seed,
+    std::uint64_t leiden_level,
+    const LeidenOptions* options = nullptr);
+
 // Observable result of the Stage-4A.1 serial affected-set update. Kept
 // independent of profiling macros so targeted correctness tests can exercise
 // the exact production reactivation rule.
