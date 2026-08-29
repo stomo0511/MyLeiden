@@ -384,7 +384,7 @@ int main(int argc, char** argv)
                   << result.total_moves << "\n"
                   << "  Total candidates      : "
                   << move_profile.total_candidates << "\n"
-                  // TEMPORARY MOVENODESFAST STAGE4A PROFILING
+                  // TEMPORARY MOVENODESFAST STAGE4A1 PROFILING
                   << "  Stage4A rounds        : "
                   << move_profile.stage4a_rounds << "\n"
                   << "  Stage4A active scan   : "
@@ -413,6 +413,23 @@ int main(int argc, char** argv)
                   << move_profile.stage4a_committed_moves << "\n"
                   << "  Stage4A rejected proposals: "
                   << move_profile.stage4a_rejected_proposals << "\n"
+                  << "  Stage4A average active/round: "
+                  << (move_profile.stage4a_rounds == 0
+                          ? 0.0
+                          : static_cast<double>(
+                                move_profile.stage4a_active_vertices) /
+                                static_cast<double>(move_profile.stage4a_rounds))
+                  << "\n"
+                  << "  Stage4A maximum active/round: "
+                  << move_profile.stage4a_max_active_vertices << "\n"
+                  << "  Stage4A reactivation neighbor scans: "
+                  << move_profile.stage4a_reactivation_neighbor_scans << "\n"
+                  << "  Stage4A target-community exclusions: "
+                  << move_profile.stage4a_reactivation_target_exclusions << "\n"
+                  << "  Stage4A newly activated neighbors: "
+                  << move_profile.stage4a_reactivation_new_activations << "\n"
+                  << "  Stage4A duplicate activation attempts: "
+                  << move_profile.stage4a_reactivation_duplicate_attempts << "\n"
                   << "  Stage4A commit/proposal ratio: "
                   << (move_profile.stage4a_positive_proposals == 0
                           ? 0.0

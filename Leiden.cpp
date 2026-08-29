@@ -381,6 +381,40 @@ std::vector<Community> CompactAssignment(
 
 } // namespace
 
+Stage4A1ReactivationStats UpdateStage4A1AffectedNeighbors(
+    const Graph& G,
+    const LeidenPartition& committed_partition,
+    Vertex moved_vertex,
+    Community committed_target,
+    std::vector<unsigned char>& affected_next)
+{
+    ValidateVertex(moved_vertex, G);
+    if (affected_next.size() != static_cast<std::size_t>(num_vertices(G))) {
+        throw std::invalid_argument("affected_next size does not match graph");
+    }
+
+    Stage4A1ReactivationStats stats;
+    for (const Edge& e : G.adj[moved_vertex]) {
+        const Vertex u = e.to;
+        if (u == moved_vertex) {
+            continue;
+        }
+        ++stats.neighbor_scans;
+        if (committed_partition.community_of[u] == committed_target) {
+            ++stats.target_community_exclusions;
+            continue;
+        }
+        unsigned char& mark = affected_next[static_cast<std::size_t>(u)];
+        if (mark == 0) {
+            mark = 1;
+            ++stats.newly_activated;
+        } else {
+            ++stats.duplicate_attempts;
+        }
+    }
+    return stats;
+}
+
 double EdgeWeightFromNodeToSubset(const Graph& G,
                                   Vertex v,
                                   const std::vector<std::size_t>& subset_mark,
@@ -820,7 +854,7 @@ MoveNodesFastResult MoveNodesFastParallelStage4A(
     std::uint64_t leiden_level,
     const LeidenOptions* options)
 {
-    // TEMPORARY MOVENODESFAST STAGE4A PROFILING
+    // TEMPORARY MOVENODESFAST STAGE4A1 PROFILING
     const Clock::time_point total_begin = Clock::now();
     const int n = num_vertices(G);
     MoveNodesFastResult result;
@@ -842,7 +876,6 @@ MoveNodesFastResult MoveNodesFastParallelStage4A(
                   return lhs_priority < rhs_priority ||
                          (lhs_priority == rhs_priority && lhs < rhs);
               });
-
     const bool debug = DebugEnabled(options);
     std::size_t round = 0;
     while (true) {
@@ -940,6 +973,8 @@ MoveNodesFastResult MoveNodesFastParallelStage4A(
 
         std::size_t committed = 0;
         std::size_t rejected = 0;
+        std::size_t next_active = 0;
+        Stage4A1ReactivationStats reactivation_stats;
         double revalidation_seconds = 0.0;
         double affected_seconds = 0.0;
         NeighborCommunityScratch commit_scratch;
@@ -995,7 +1030,12 @@ MoveNodesFastResult MoveNodesFastParallelStage4A(
                 ++rejected;
                 // Its snapshot suggestion may have been invalidated by an
                 // earlier serial commit. Reconsider it in the next round.
-                affected_next[static_cast<std::size_t>(v)] = 1;
+                unsigned char& mark =
+                    affected_next[static_cast<std::size_t>(v)];
+                if (mark == 0) {
+                    mark = 1;
+                    ++next_active;
+                }
                 continue;
             }
 
@@ -1013,16 +1053,18 @@ MoveNodesFastResult MoveNodesFastParallelStage4A(
             ++result.num_moves;
 
             const Clock::time_point affected_begin = Clock::now();
-            // Round-synchronous proposals can invalidate opportunities for
-            // neighbors already in the target community as well. Conservatively
-            // reactivate every non-self neighbor and the moved vertex itself.
-            affected_next[static_cast<std::size_t>(v)] = 1;
-            for (const Edge& e : G.adj[v]) {
-                const Vertex u = e.to;
-                if (u != v) {
-                    affected_next[static_cast<std::size_t>(u)] = 1;
-                }
-            }
+            // Match serial MoveNodesFast: after the commit, reactivate only
+            // non-self neighbors that are not in the committed target. The
+            // moved vertex is reconsidered only if a later move affects it.
+            const Stage4A1ReactivationStats update =
+                UpdateStage4A1AffectedNeighbors(
+                    G, result.partition, v, proposal.target, affected_next);
+            reactivation_stats.neighbor_scans += update.neighbor_scans;
+            reactivation_stats.target_community_exclusions +=
+                update.target_community_exclusions;
+            reactivation_stats.newly_activated += update.newly_activated;
+            reactivation_stats.duplicate_attempts += update.duplicate_attempts;
+            next_active += update.newly_activated;
             affected_seconds +=
                 ElapsedSeconds(affected_begin, Clock::now());
         }
@@ -1047,25 +1089,50 @@ MoveNodesFastResult MoveNodesFastParallelStage4A(
         result.profile.stage4a_positive_proposals += positive_proposals;
         result.profile.stage4a_committed_moves += committed;
         result.profile.stage4a_rejected_proposals += rejected;
+        result.profile.stage4a_max_active_vertices = std::max(
+            result.profile.stage4a_max_active_vertices, round_visits);
+        result.profile.stage4a_reactivation_neighbor_scans +=
+            reactivation_stats.neighbor_scans;
+        result.profile.stage4a_reactivation_target_exclusions +=
+            reactivation_stats.target_community_exclusions;
+        result.profile.stage4a_reactivation_new_activations +=
+            reactivation_stats.newly_activated;
+        result.profile.stage4a_reactivation_duplicate_attempts +=
+            reactivation_stats.duplicate_attempts;
 #else
         (void)proposal_begin;
         (void)proposal_end;
         (void)commit_begin;
         (void)commit_end;
 #endif
+        const bool needs_full_verification =
+            committed == 0 && round_visits != static_cast<std::size_t>(n);
+        if (needs_full_verification) {
+            next_active = static_cast<std::size_t>(n);
+        }
         if (debug) {
-            std::cerr << "[MoveNodesFast Stage4A] round=" << round
+            std::cerr << "[MoveNodesFast Stage4A.1] round=" << round
                       << " active=" << round_visits
                       << " positive=" << positive_proposals
                       << " committed=" << committed
-                      << " rejected=" << rejected << "\n";
+                      << " rejected=" << rejected
+                      << " next_active=" << next_active << "\n";
         }
-        if (committed == 0) {
+        if (committed == 0 && round_visits == static_cast<std::size_t>(n)) {
             break;
         }
 
-        affected_current.swap(affected_next);
+        // A partial affected set cannot prove global local optimality: a
+        // target-community neighbor may have become improving without being
+        // reactivated by the serial-compatible rule. Before termination, run
+        // one deterministic full verification round. If it finds moves, the
+        // ordinary double-buffer progression resumes.
+        if (needs_full_verification) {
+            std::fill(affected_next.begin(), affected_next.end(), 1);
+        }
+
         const Clock::time_point clear_begin = Clock::now();
+        affected_current.swap(affected_next);
         std::fill(affected_next.begin(), affected_next.end(), 0);
 #ifdef ENABLE_MOVENODESFAST_PROFILE
         result.profile.stage4a_buffer_clear +=
@@ -1999,6 +2066,17 @@ LeidenResult Leiden(const Graph& G,
             moved.profile.stage4a_committed_moves;
         result.move_nodes_fast_profile.stage4a_rejected_proposals +=
             moved.profile.stage4a_rejected_proposals;
+        result.move_nodes_fast_profile.stage4a_max_active_vertices = std::max(
+            result.move_nodes_fast_profile.stage4a_max_active_vertices,
+            moved.profile.stage4a_max_active_vertices);
+        result.move_nodes_fast_profile.stage4a_reactivation_neighbor_scans +=
+            moved.profile.stage4a_reactivation_neighbor_scans;
+        result.move_nodes_fast_profile.stage4a_reactivation_target_exclusions +=
+            moved.profile.stage4a_reactivation_target_exclusions;
+        result.move_nodes_fast_profile.stage4a_reactivation_new_activations +=
+            moved.profile.stage4a_reactivation_new_activations;
+        result.move_nodes_fast_profile.stage4a_reactivation_duplicate_attempts +=
+            moved.profile.stage4a_reactivation_duplicate_attempts;
 #endif
         current_partition = std::move(moved.partition);
         ++result.num_levels;

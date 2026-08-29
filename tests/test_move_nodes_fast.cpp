@@ -549,6 +549,44 @@ void TestStage4AThreadReproducibility()
                   results.back().partition.community_of);
 }
 
+void TestStage4A1TargetedReactivation()
+{
+    Graph G = MakeGraph(3);
+    add_undirected_edge(G, 0, 1, 1.0);
+    add_undirected_edge(G, 0, 2, 1.0);
+    add_undirected_edge(G, 1, 2, 1.0);
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+
+    // Model the state after vertex 0 committed A -> B. Vertex 1 is already
+    // in B, while vertex 2 is in C.
+    const LeidenPartition after_first =
+        MakePartition(G, stats, {1, 1, 2});
+    std::vector<unsigned char> affected(3, 0);
+    const Stage4A1ReactivationStats first =
+        UpdateStage4A1AffectedNeighbors(G, after_first, 0, 1, affected);
+    CheckTrue("Stage4A1 case 1 target neighbor excluded",
+              affected[1] == 0 && first.target_community_exclusions == 1);
+    CheckTrue("Stage4A1 case 2 other neighbor activated",
+              affected[2] == 1 && first.newly_activated == 1);
+    CheckTrue("Stage4A1 case 4 moved self not activated",
+              affected[0] == 0);
+
+    // A later move of neighbor 1 to C legitimately affects moved vertex 0.
+    const LeidenPartition after_later =
+        MakePartition(G, stats, {1, 2, 2});
+    const Stage4A1ReactivationStats later =
+        UpdateStage4A1AffectedNeighbors(G, after_later, 1, 2, affected);
+    CheckTrue("Stage4A1 case 5 moved vertex later reactivated",
+              affected[0] == 1 && later.newly_activated == 1);
+
+    // Vertices 0 and 1 share neighbor 2. It was already marked by the first
+    // committed move, so another eligible attempt remains a single flag.
+    const Stage4A1ReactivationStats duplicate =
+        UpdateStage4A1AffectedNeighbors(G, after_first, 1, 1, affected);
+    CheckTrue("Stage4A1 case 3 shared neighbor once",
+              affected[2] == 1 && duplicate.duplicate_attempts == 1);
+}
+
 } // namespace
 
 int main()
@@ -564,6 +602,7 @@ int main()
     TestStage4ABasicAndEdgeCases();
     TestStage4AEmptyCommunityCollision();
     TestStage4AThreadReproducibility();
+    TestStage4A1TargetedReactivation();
 
     std::cout << "All MoveNodesFast tests passed.\n";
     return EXIT_SUCCESS;

@@ -76,7 +76,7 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
                                   std::mt19937& rng,
                                   const LeidenOptions* options = nullptr);
 
-// Experimental Stage-4A implementation. Proposal generation is parallel and
+// Experimental Stage-4A.1 implementation. Proposal generation is parallel and
 // read-only; deterministic commit is serial. The production serial reference
 // above intentionally remains available.
 MoveNodesFastResult MoveNodesFastParallelStage4A(
@@ -87,6 +87,23 @@ MoveNodesFastResult MoveNodesFastParallelStage4A(
     std::uint64_t global_seed,
     std::uint64_t leiden_level,
     const LeidenOptions* options = nullptr);
+
+// Observable result of the Stage-4A.1 serial affected-set update. Kept
+// independent of profiling macros so targeted correctness tests can exercise
+// the exact production reactivation rule.
+struct Stage4A1ReactivationStats {
+    std::size_t neighbor_scans = 0;
+    std::size_t target_community_exclusions = 0;
+    std::size_t newly_activated = 0;
+    std::size_t duplicate_attempts = 0;
+};
+
+Stage4A1ReactivationStats UpdateStage4A1AffectedNeighbors(
+    const Graph& G,
+    const LeidenPartition& committed_partition,
+    Vertex moved_vertex,
+    Community committed_target,
+    std::vector<unsigned char>& affected_next);
 
 double EdgeWeightFromNodeToSubset(const Graph& G,
                                   Vertex v,
