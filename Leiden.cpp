@@ -67,6 +67,48 @@ struct LocalRefinementResult {
     Community local_community_count = 0;
 };
 
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+// TEMPORARY REFINEPARTITION DETAILED PROFILING
+struct RefineSubsetProfile {
+    Community parent = -1;
+    std::size_t vertices = 0;
+    std::size_t adjacency_volume = 0;
+    std::size_t candidates = 0;
+    std::size_t processed_candidates = 0;
+    std::size_t singleton_source_skips = 0;
+    std::size_t neighbor_builds = 0;
+    std::size_t neighbor_adjacency_scans = 0;
+    std::size_t touched_communities = 0;
+    std::size_t active_community_iterations = 0;
+    std::size_t delta_evaluations = 0;
+    std::size_t nondecreasing_candidates = 0;
+    std::size_t stochastic_selections = 0;
+    std::size_t refinement_moves = 0;
+    std::size_t stats_build_vertices = 0;
+    std::size_t stats_build_adjacency_scans = 0;
+    std::size_t stats_update_calls = 0;
+    std::size_t stats_update_adjacency_scans = 0;
+    Community local_community_count = 0;
+    double reset_time = 0.0;
+    double subset_mass_time = 0.0;
+    double candidate_scan_time = 0.0;
+    double shuffle_time = 0.0;
+    double scratch_init_time = 0.0;
+    double stats_build_time = 0.0;
+    double candidate_processing_time = 0.0;
+    double result_compaction_time = 0.0;
+    double total_time = 0.0;
+};
+
+struct RefineThreadProfile {
+    std::size_t subsets = 0;
+    std::size_t vertices = 0;
+    std::size_t adjacency_volume = 0;
+    double initialization_time = 0.0;
+    double subset_work_time = 0.0;
+};
+#endif
+
 struct MoveProposal {
     bool active = false;
     bool positive = false;
@@ -1335,8 +1377,20 @@ LocalRefinementResult MergeNodesSubsetLocal(
     Community parent,
     const QualityFunction& quality_function,
     double theta,
-    std::mt19937& local_rng)
+    std::mt19937& local_rng
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    , RefineSubsetProfile* detail
+#endif
+    )
 {
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    const Clock::time_point detail_total_begin = Clock::now();
+    detail->parent = parent;
+    detail->vertices = subset.size();
+    for (Vertex v : subset) {
+        detail->adjacency_volume += G.adj[v].size();
+    }
+#endif
     if (theta <= 0.0) {
         throw std::invalid_argument("theta must be positive");
     }
@@ -1348,13 +1402,24 @@ LocalRefinementResult MergeNodesSubsetLocal(
         return result;
     }
 
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    Clock::time_point detail_begin = Clock::now();
+#endif
     ResetLocalSingletonsForSubset(G,
                                   stats,
                                   singleton_internal_edge_weight,
                                   local_refined,
                                   subset);
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    detail->reset_time = ElapsedSeconds(detail_begin, Clock::now());
+    detail_begin = Clock::now();
+#endif
 
     const double subset_mass = SubsetMass(stats, quality_function, subset);
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    detail->subset_mass_time = ElapsedSeconds(detail_begin, Clock::now());
+    detail_begin = Clock::now();
+#endif
     std::vector<Vertex> candidates;
     candidates.reserve(subset.size());
     for (Vertex v : subset) {
@@ -1368,12 +1433,25 @@ LocalRefinementResult MergeNodesSubsetLocal(
             candidates.push_back(v);
         }
     }
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    detail->candidates = candidates.size();
+    detail->candidate_scan_time = ElapsedSeconds(detail_begin, Clock::now());
+    detail_begin = Clock::now();
+#endif
     std::shuffle(candidates.begin(), candidates.end(), local_rng);
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    detail->shuffle_time = ElapsedSeconds(detail_begin, Clock::now());
+    detail_begin = Clock::now();
+#endif
 
     NeighborCommunityScratch neighbor_scratch;
     neighbor_scratch.weights.assign(local_refined.community_size.size(), 0.0);
     neighbor_scratch.marks.assign(local_refined.community_size.size(), 0);
     neighbor_scratch.touched.reserve(32);
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    detail->scratch_init_time = ElapsedSeconds(detail_begin, Clock::now());
+    detail_begin = Clock::now();
+#endif
 
     RefinementCommunityStats community_stats =
         BuildRefinementCommunityStatsForParent(G,
@@ -1383,17 +1461,36 @@ LocalRefinementResult MergeNodesSubsetLocal(
                                                quality_function,
                                                subset,
                                                parent);
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    detail->stats_build_time = ElapsedSeconds(detail_begin, Clock::now());
+    detail->stats_build_vertices = subset.size();
+    detail->stats_build_adjacency_scans = detail->adjacency_volume;
+    detail_begin = Clock::now();
+#endif
 
     for (Vertex v : candidates) {
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+        ++detail->processed_candidates;
+#endif
         const Community source = local_refined.community_of[v];
         const auto source_entry = community_stats.entries.find(source);
         if (source < 0 ||
             source_entry == community_stats.entries.end() ||
             source_entry->second.member_count != 1) {
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+            ++detail->singleton_source_skips;
+#endif
             continue;
         }
 
         BuildNeighborCommunityWeights(G, local_refined, v, neighbor_scratch);
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+        ++detail->neighbor_builds;
+        detail->neighbor_adjacency_scans += G.adj[v].size();
+        detail->touched_communities += neighbor_scratch.touched.size();
+        detail->active_community_iterations +=
+            community_stats.active_communities.size();
+#endif
         const double weight_to_source =
             LookupNeighborCommunityWeight(neighbor_scratch, source);
 
@@ -1425,9 +1522,17 @@ LocalRefinementResult MergeNodesSubsetLocal(
                           weight_to_source,
                           LookupNeighborCommunityWeight(neighbor_scratch,
                                                         community));
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+            if (community != source) {
+                ++detail->delta_evaluations;
+            }
+#endif
 
             if (delta >= 0.0) {
                 nondecreasing_candidates.push_back({community, delta});
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+                ++detail->nondecreasing_candidates;
+#endif
             }
         }
 
@@ -1450,6 +1555,9 @@ LocalRefinementResult MergeNodesSubsetLocal(
                                                              weights.end());
         const Community target =
             nondecreasing_candidates[distribution(local_rng)].community;
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+        ++detail->stochastic_selections;
+#endif
 
         if (target != source) {
             UpdateRefinementCommunityStatsForParentMove(G,
@@ -1461,9 +1569,19 @@ LocalRefinementResult MergeNodesSubsetLocal(
                                                         parent,
                                                         target,
                                                         community_stats);
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+            ++detail->stats_update_calls;
+            detail->stats_update_adjacency_scans += G.adj[v].size();
+            ++detail->refinement_moves;
+#endif
             MoveNodeToCommunity(G, stats, local_refined, v, target);
         }
     }
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    detail->candidate_processing_time =
+        ElapsedSeconds(detail_begin, Clock::now());
+    detail_begin = Clock::now();
+#endif
 
     std::vector<Community> local_communities;
     local_communities.reserve(subset.size());
@@ -1478,6 +1596,13 @@ LocalRefinementResult MergeNodesSubsetLocal(
         result.local_assignment[i] =
             compact_map[local_refined.community_of[subset[i]]];
     }
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    detail->local_community_count = result.local_community_count;
+    detail->result_compaction_time =
+        ElapsedSeconds(detail_begin, Clock::now());
+    detail->total_time =
+        ElapsedSeconds(detail_total_begin, Clock::now());
+#endif
     return result;
 }
 
@@ -1520,6 +1645,17 @@ LeidenPartition RefinePartition(const Graph& G,
                           }));
 
     std::vector<LocalRefinementResult> local_results(members.size());
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    // TEMPORARY REFINEPARTITION DETAILED PROFILING
+    std::vector<RefineSubsetProfile> subset_profiles(members.size());
+#ifdef _OPENMP
+    const int refine_profile_threads = omp_get_max_threads();
+#else
+    const int refine_profile_threads = 1;
+#endif
+    std::vector<RefineThreadProfile> thread_profiles(
+        static_cast<std::size_t>(refine_profile_threads));
+#endif
     std::vector<double> singleton_internal_edge_weight(num_vertices(G), 0.0);
     for (Vertex v = 0; v < num_vertices(G); ++v) {
         singleton_internal_edge_weight[v] = SelfLoopWeight(G, v);
@@ -1535,10 +1671,24 @@ LeidenPartition RefinePartition(const Graph& G,
 #pragma omp parallel
 #endif
     {
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+#ifdef _OPENMP
+        const int refine_thread_id = omp_get_thread_num();
+#else
+        const int refine_thread_id = 0;
+#endif
+        RefineThreadProfile& thread_profile =
+            thread_profiles[static_cast<std::size_t>(refine_thread_id)];
+        const Clock::time_point thread_init_begin = Clock::now();
+#endif
         LeidenPartition local_refined =
             MakeThreadLocalSingletonPartition(G,
                                               stats,
                                               singleton_internal_edge_weight);
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+        thread_profile.initialization_time =
+            ElapsedSeconds(thread_init_begin, Clock::now());
+#endif
 
 #ifdef _OPENMP
 #ifdef REFINEMENT_DYNAMIC_SCHEDULE
@@ -1559,6 +1709,9 @@ LeidenPartition RefinePartition(const Graph& G,
                 MakeSubsetRng(global_seed,
                               level,
                               static_cast<std::uint64_t>(parent));
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+            const Clock::time_point subset_work_begin = Clock::now();
+#endif
             local_results[parent] =
                 MergeNodesSubsetLocal(G,
                                       stats,
@@ -1569,7 +1722,22 @@ LeidenPartition RefinePartition(const Graph& G,
                                       parent,
                                       quality_function,
                                       theta,
-                                      local_rng);
+                                      local_rng
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+                                      , &subset_profiles[
+                                            static_cast<std::size_t>(parent)]
+#endif
+                                      );
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+            const double subset_work =
+                ElapsedSeconds(subset_work_begin, Clock::now());
+            ++thread_profile.subsets;
+            thread_profile.vertices += subset.size();
+            thread_profile.adjacency_volume +=
+                subset_profiles[static_cast<std::size_t>(parent)]
+                    .adjacency_volume;
+            thread_profile.subset_work_time += subset_work;
+#endif
         }
     }
 #ifdef ENABLE_REFINEPARTITION_PROFILE
@@ -1646,6 +1814,193 @@ LeidenPartition RefinePartition(const Graph& G,
                   << refine_total_time << " s\n";
     }
     // END TEMPORARY REFINEPARTITION PERFORMANCE PROFILING
+#endif
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    // TEMPORARY REFINEPARTITION DETAILED PROFILING
+    RefineSubsetProfile aggregate_detail;
+    std::size_t subset_size_1 = 0;
+    std::size_t subset_size_2_10 = 0;
+    std::size_t subset_size_11_100 = 0;
+    std::size_t subset_size_101_1000 = 0;
+    std::size_t subset_size_gt_1000 = 0;
+    std::size_t max_subset_size = 0;
+    std::size_t max_adjacency_volume = 0;
+    std::size_t min_subset_size = std::numeric_limits<std::size_t>::max();
+    Community max_local_community_count = 0;
+    std::size_t total_local_community_count = 0;
+    std::vector<std::size_t> heavy_indices;
+    heavy_indices.reserve(total_parent_communities);
+    for (std::size_t parent = 0; parent < subset_profiles.size(); ++parent) {
+        const RefineSubsetProfile& p = subset_profiles[parent];
+        if (p.vertices == 0) {
+            continue;
+        }
+        heavy_indices.push_back(parent);
+        max_subset_size = std::max(max_subset_size, p.vertices);
+        min_subset_size = std::min(min_subset_size, p.vertices);
+        max_adjacency_volume =
+            std::max(max_adjacency_volume, p.adjacency_volume);
+        if (p.vertices == 1) ++subset_size_1;
+        else if (p.vertices <= 10) ++subset_size_2_10;
+        else if (p.vertices <= 100) ++subset_size_11_100;
+        else if (p.vertices <= 1000) ++subset_size_101_1000;
+        else ++subset_size_gt_1000;
+#define REFINE_SUM(field) aggregate_detail.field += p.field
+        REFINE_SUM(vertices);
+        REFINE_SUM(adjacency_volume);
+        REFINE_SUM(candidates);
+        REFINE_SUM(processed_candidates);
+        REFINE_SUM(singleton_source_skips);
+        REFINE_SUM(neighbor_builds);
+        REFINE_SUM(neighbor_adjacency_scans);
+        REFINE_SUM(touched_communities);
+        REFINE_SUM(active_community_iterations);
+        REFINE_SUM(delta_evaluations);
+        REFINE_SUM(nondecreasing_candidates);
+        REFINE_SUM(stochastic_selections);
+        REFINE_SUM(refinement_moves);
+        REFINE_SUM(stats_build_vertices);
+        REFINE_SUM(stats_build_adjacency_scans);
+        REFINE_SUM(stats_update_calls);
+        REFINE_SUM(stats_update_adjacency_scans);
+        REFINE_SUM(reset_time);
+        REFINE_SUM(subset_mass_time);
+        REFINE_SUM(candidate_scan_time);
+        REFINE_SUM(shuffle_time);
+        REFINE_SUM(scratch_init_time);
+        REFINE_SUM(stats_build_time);
+        REFINE_SUM(candidate_processing_time);
+        REFINE_SUM(result_compaction_time);
+        REFINE_SUM(total_time);
+#undef REFINE_SUM
+        total_local_community_count +=
+            static_cast<std::size_t>(p.local_community_count);
+        max_local_community_count =
+            std::max(max_local_community_count, p.local_community_count);
+    }
+    std::sort(heavy_indices.begin(), heavy_indices.end(),
+              [&subset_profiles](std::size_t lhs, std::size_t rhs) {
+                  return subset_profiles[lhs].total_time >
+                         subset_profiles[rhs].total_time;
+              });
+
+    double init_total = 0.0;
+    double init_max = 0.0;
+    double thread_work_total = 0.0;
+    double thread_work_max = 0.0;
+    double thread_work_min = std::numeric_limits<double>::max();
+    for (const RefineThreadProfile& p : thread_profiles) {
+        init_total += p.initialization_time;
+        init_max = std::max(init_max, p.initialization_time);
+        thread_work_total += p.subset_work_time;
+        thread_work_max = std::max(thread_work_max, p.subset_work_time);
+        thread_work_min = std::min(thread_work_min, p.subset_work_time);
+    }
+    const double thread_count = static_cast<double>(thread_profiles.size());
+    const double thread_work_average = thread_work_total / thread_count;
+    const std::size_t community_slots = partition.community_size.size();
+    const std::size_t empty_slots = static_cast<std::size_t>(std::count(
+        partition.community_is_empty.begin(),
+        partition.community_is_empty.end(),
+        static_cast<unsigned char>(1)));
+    const auto minmax_id = std::minmax_element(partition.community_of.begin(),
+                                               partition.community_of.end());
+    const std::size_t scratch_bytes_per_thread =
+        static_cast<std::size_t>(num_vertices(G)) *
+        (sizeof(Community) + 3 * sizeof(double) + sizeof(unsigned char));
+
+    std::cout
+        << "[RefineDetailed] level=" << level
+        << " n=" << num_vertices(G)
+        << " m=" << num_edges(G)
+        << " community_slots=" << community_slots
+        << " active_parents=" << total_parent_communities
+        << " empty_slots=" << empty_slots
+        << " min_id=" << (partition.community_of.empty() ? -1 : *minmax_id.first)
+        << " max_id=" << (partition.community_of.empty() ? -1 : *minmax_id.second)
+        << " member_vectors=" << members.size() << "\n"
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+        << "[RefineDetailed] wall_times member_construction="
+        << member_construction_time
+        << " subset_processing=" << subset_processing_time
+        << " global_id_prefix=" << global_id_prefix_time
+        << " global_assignment=" << global_assignment_time
+        << " make_partition=" << make_partition_time
+        << " total=" << refine_total_time << "\n"
+#endif
+        << "[RefineDetailed] subsets=" << total_parent_communities
+        << " vertices=" << aggregate_detail.vertices
+        << " min_size=" << (total_parent_communities == 0 ? 0 : min_subset_size)
+        << " max_size=" << max_subset_size
+        << " avg_size=" << (total_parent_communities == 0 ? 0.0 :
+             static_cast<double>(aggregate_detail.vertices) /
+             static_cast<double>(total_parent_communities))
+        << " adjacency_volume=" << aggregate_detail.adjacency_volume
+        << " max_adjacency_volume=" << max_adjacency_volume
+        << " avg_adjacency_volume=" << (total_parent_communities == 0 ? 0.0 :
+             static_cast<double>(aggregate_detail.adjacency_volume) /
+             static_cast<double>(total_parent_communities)) << "\n"
+        << "[RefineDetailed] size_bins=" << subset_size_1 << ","
+        << subset_size_2_10 << "," << subset_size_11_100 << ","
+        << subset_size_101_1000 << "," << subset_size_gt_1000 << "\n"
+        << "[RefineDetailed] candidates=" << aggregate_detail.candidates
+        << " processed=" << aggregate_detail.processed_candidates
+        << " singleton_skips=" << aggregate_detail.singleton_source_skips
+        << " neighbor_builds=" << aggregate_detail.neighbor_builds
+        << " neighbor_adjacency_scans="
+        << aggregate_detail.neighbor_adjacency_scans
+        << " touched=" << aggregate_detail.touched_communities
+        << " active_iterations=" << aggregate_detail.active_community_iterations
+        << " delta_evaluations=" << aggregate_detail.delta_evaluations
+        << " nondecreasing=" << aggregate_detail.nondecreasing_candidates
+        << " selections=" << aggregate_detail.stochastic_selections
+        << " moves=" << aggregate_detail.refinement_moves << "\n"
+        << "[RefineDetailed] stats_build_calls=" << total_parent_communities
+        << " stats_build_vertices=" << aggregate_detail.stats_build_vertices
+        << " stats_build_adjacency_scans="
+        << aggregate_detail.stats_build_adjacency_scans
+        << " stats_update_calls=" << aggregate_detail.stats_update_calls
+        << " stats_update_adjacency_scans="
+        << aggregate_detail.stats_update_adjacency_scans << "\n"
+        << "[RefineDetailed] cpu_times reset=" << aggregate_detail.reset_time
+        << " mass=" << aggregate_detail.subset_mass_time
+        << " candidate_scan=" << aggregate_detail.candidate_scan_time
+        << " shuffle=" << aggregate_detail.shuffle_time
+        << " scratch_init=" << aggregate_detail.scratch_init_time
+        << " stats_build=" << aggregate_detail.stats_build_time
+        << " candidate_processing=" << aggregate_detail.candidate_processing_time
+        << " compaction=" << aggregate_detail.result_compaction_time
+        << " subset_total=" << aggregate_detail.total_time << "\n"
+        << "[RefineDetailed] local_communities_total="
+        << total_local_community_count
+        << " average=" << (total_parent_communities == 0 ? 0.0 :
+             static_cast<double>(total_local_community_count) /
+             static_cast<double>(total_parent_communities))
+        << " max=" << max_local_community_count
+        << " local_result_vertices=" << processed_vertices
+        << " local_assignment_entries=" << processed_vertices << "\n"
+        << "[RefineDetailed] threads=" << thread_profiles.size()
+        << " init_total_cpu=" << init_total
+        << " init_max_wall_proxy=" << init_max
+        << " init_avg=" << init_total / thread_count
+        << " scratch_bytes_per_thread=" << scratch_bytes_per_thread
+        << " scratch_bytes_total="
+        << scratch_bytes_per_thread * thread_profiles.size() << "\n"
+        << "[RefineDetailed] thread_work_min=" << thread_work_min
+        << " max=" << thread_work_max
+        << " avg=" << thread_work_average
+        << " max_avg=" << (thread_work_average == 0.0 ? 0.0 :
+             thread_work_max / thread_work_average) << "\n";
+    for (std::size_t rank = 0;
+         rank < std::min<std::size_t>(5, heavy_indices.size()); ++rank) {
+        const RefineSubsetProfile& p = subset_profiles[heavy_indices[rank]];
+        std::cout << "[RefineDetailed top] rank=" << rank + 1
+                  << " parent=" << p.parent
+                  << " size=" << p.vertices
+                  << " adjacency_volume=" << p.adjacency_volume
+                  << " time=" << p.total_time
+                  << " local_communities=" << p.local_community_count << "\n";
+    }
 #endif
     return refined;
 }
