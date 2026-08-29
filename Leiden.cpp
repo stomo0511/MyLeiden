@@ -13,20 +13,18 @@
 #include <utility>
 #include <vector>
 
-namespace {
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
-struct EdgePairHash {
-    std::size_t operator()(const std::pair<int, int>& p) const
-    {
-        const std::size_t a = std::hash<int>{}(p.first);
-        const std::size_t b = std::hash<int>{}(p.second);
-        return a ^ (b + 0x9e3779b97f4a7c15ULL + (a << 6U) + (a >> 2U));
-    }
-};
+namespace {
 
 struct WeightedEdge {
     int u;
     int v;
+    int input_u;
+    int input_v;
+    std::size_t input_index;
     double weight;
 };
 
@@ -850,41 +848,121 @@ AggregateGraphResult AggregateGraph(const Graph& G,
     result.coarse_of.assign(num_vertices(G), -1);
     std::vector<double> coarse_node_size(n_coarse, 0.0);
 
-    for (Vertex v = 0; v < num_vertices(G); ++v) {
-        const Community coarse = community_to_coarse[refined.community_of[v]];
-        result.coarse_of[v] = coarse;
-        coarse_node_size[coarse] += stats.node_size[v];
+    int num_threads = 1;
+#ifdef _OPENMP
+    num_threads = omp_get_max_threads();
+#endif
+    std::vector<std::vector<double>> local_node_size(
+        num_threads, std::vector<double>(n_coarse, 0.0));
+
+    // Parallel coarse mapping: node-size accumulation is kept thread-local
+    // and reduced in a fixed order to avoid races and scheduling-dependent sums.
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        int tid = 0;
+#ifdef _OPENMP
+        tid = omp_get_thread_num();
+#endif
+        std::vector<double>& local_size = local_node_size[tid];
+
+#ifdef _OPENMP
+#pragma omp for schedule(static)
+#endif
+        for (Vertex v = 0; v < num_vertices(G); ++v) {
+            const Community coarse =
+                community_to_coarse[refined.community_of[v]];
+            result.coarse_of[v] = coarse;
+            local_size[coarse] += stats.node_size[v];
+        }
     }
 
-    std::unordered_map<std::pair<int, int>, double, EdgePairHash> edge_weight;
-    edge_weight.reserve(num_edges(G));
-
-    // Each undirected input edge is processed once. Edges inside a refined
-    // community become aggregate self-loops; inter-community and parallel
-    // edges are summed by canonical (min,max) coarse pair.
-    for_each_undirected_edge(G, [&](int u, int v, double w) {
-        int cu = result.coarse_of[u];
-        int cv = result.coarse_of[v];
-        if (cu > cv) {
-            std::swap(cu, cv);
+    for (const std::vector<double>& local_size : local_node_size) {
+        for (Community coarse = 0; coarse < n_coarse; ++coarse) {
+            coarse_node_size[coarse] += local_size[coarse];
         }
-        edge_weight[std::make_pair(cu, cv)] += w;
-    });
+    }
+
+    std::vector<std::vector<WeightedEdge>> local_edges(num_threads);
+    const std::size_t reserve_per_thread =
+        num_edges(G) / static_cast<std::size_t>(num_threads) + 1;
+    for (std::vector<WeightedEdge>& local : local_edges) {
+        local.reserve(reserve_per_thread);
+    }
+
+    // Parallel aggregation: each thread collects coarse edges into a private
+    // buffer, avoiding synchronization on a shared hash table.
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        int tid = 0;
+#ifdef _OPENMP
+        tid = omp_get_thread_num();
+#endif
+        std::vector<WeightedEdge>& local = local_edges[tid];
+
+#ifdef _OPENMP
+#pragma omp for schedule(static)
+#endif
+        for (Vertex u = 0; u < num_vertices(G); ++u) {
+            for (std::size_t edge_index = 0; edge_index < G.adj[u].size();
+                 ++edge_index) {
+                const Edge& e = G.adj[u][edge_index];
+                if (u > e.to) {
+                    continue;
+                }
+
+                int cu = result.coarse_of[u];
+                int cv = result.coarse_of[e.to];
+                if (cu > cv) {
+                    std::swap(cu, cv);
+                }
+                local.push_back({cu, cv, u, e.to, edge_index, e.weight});
+            }
+        }
+    }
 
     std::vector<WeightedEdge> edges;
-    edges.reserve(edge_weight.size());
-    for (const auto& item : edge_weight) {
-        edges.push_back({item.first.first, item.first.second, item.second});
+    std::size_t total_edges = 0;
+    for (const std::vector<WeightedEdge>& local : local_edges) {
+        total_edges += local.size();
     }
+    edges.reserve(total_edges);
+    for (const std::vector<WeightedEdge>& local : local_edges) {
+        edges.insert(edges.end(), local.begin(), local.end());
+    }
+
     std::sort(edges.begin(), edges.end(), [](const WeightedEdge& a,
                                              const WeightedEdge& b) {
         if (a.u != b.u) {
             return a.u < b.u;
         }
-        return a.v < b.v;
+        if (a.v != b.v) {
+            return a.v < b.v;
+        }
+        if (a.input_u != b.input_u) {
+            return a.input_u < b.input_u;
+        }
+        if (a.input_v != b.input_v) {
+            return a.input_v < b.input_v;
+        }
+        return a.input_index < b.input_index;
     });
 
+    std::vector<WeightedEdge> reduced_edges;
+    reduced_edges.reserve(edges.size());
     for (const WeightedEdge& e : edges) {
+        if (reduced_edges.empty() || reduced_edges.back().u != e.u ||
+            reduced_edges.back().v != e.v) {
+            reduced_edges.push_back(e);
+        } else {
+            reduced_edges.back().weight += e.weight;
+        }
+    }
+
+    for (const WeightedEdge& e : reduced_edges) {
         add_undirected_edge(result.graph, e.u, e.v, e.weight);
     }
 

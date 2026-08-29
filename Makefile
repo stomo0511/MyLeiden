@@ -4,6 +4,16 @@ CPPFLAGS ?= -I. -Icommon
 LDFLAGS ?=
 LDLIBS ?=
 
+UNAME := $(shell uname)
+
+ifeq ($(UNAME),Darwin)
+CXXFLAGS += -Xpreprocessor -fopenmp -I/opt/homebrew/opt/libomp/include
+LDFLAGS += -L/opt/homebrew/opt/libomp/lib -lomp
+else
+CXXFLAGS += -fopenmp
+LDFLAGS += -fopenmp
+endif
+
 TEST_TARGETS := \
 	tests/test_quality \
 	tests/test_move_nodes_fast \
@@ -37,34 +47,34 @@ profile:
 	$(MAKE) CPPFLAGS="$(CPPFLAGS) -DENABLE_MOVENODESFAST_PROFILE" all
 
 tests/test_quality: $(TEST_QUALITY_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 tests/test_move_nodes_fast: $(TEST_MOVE_NODES_FAST_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 tests/test_refinement: $(TEST_REFINEMENT_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 tests/test_aggregate: $(TEST_AGGREGATE_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 tests/test_coarse_partition: $(TEST_COARSE_PARTITION_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 tests/test_leiden: $(TEST_LEIDEN_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 tests/test_block_eval: $(TEST_BLOCK_EVAL_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 LeidenCP: $(LEIDEN_CP_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 LeidenMD: $(LEIDEN_MD_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 eblock: $(EBLOCK_OBJS)
-	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 leiden_main_cp.o: leiden_main.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DLEIDEN_DRIVER_CPM -MMD -MP -c $< -o $@
