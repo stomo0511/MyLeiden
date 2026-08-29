@@ -76,6 +76,18 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
                                   std::mt19937& rng,
                                   const LeidenOptions* options = nullptr);
 
+// Experimental Stage-4A implementation. Proposal generation is parallel and
+// read-only; deterministic commit is serial. The production serial reference
+// above intentionally remains available.
+MoveNodesFastResult MoveNodesFastParallelStage4A(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    LeidenPartition partition,
+    const QualityFunction& quality_function,
+    std::uint64_t global_seed,
+    std::uint64_t leiden_level,
+    const LeidenOptions* options = nullptr);
+
 double EdgeWeightFromNodeToSubset(const Graph& G,
                                   Vertex v,
                                   const std::vector<std::size_t>& subset_mark,

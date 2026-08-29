@@ -10,6 +10,10 @@
 #include <unordered_map>
 #include <vector>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 namespace {
 
 constexpr double kTolerance = 1.0e-10;
@@ -173,6 +177,31 @@ MoveNodesFastResult RunAndCheck(const std::string& test_name,
     const double quality_after = qf.quality(G, stats, result.partition);
 
     CheckValidPartition(test_name, G, result.partition);
+    CheckTrue(test_name + " quality nondecreasing",
+              quality_after + kTolerance >= quality_before);
+    if (require_move) {
+        CheckTrue(test_name + " at least one move", result.num_moves > 0);
+    }
+    CheckPartitionStatsAgainstRecompute(test_name, G, stats, result.partition);
+    CheckLocalOptimality(test_name, G, stats, result.partition, qf);
+    return result;
+}
+
+MoveNodesFastResult RunStage4AAndCheck(const std::string& test_name,
+                                       const Graph& G,
+                                       const QualityFunction& qf,
+                                       std::uint64_t seed,
+                                       bool require_move,
+                                       std::uint64_t level = 1)
+{
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    const LeidenPartition initial = MakeSingletonPartition(G, stats);
+    const double quality_before = qf.quality(G, stats, initial);
+    const MoveNodesFastResult result = MoveNodesFastParallelStage4A(
+        G, stats, initial, qf, seed, level);
+    const double quality_after = qf.quality(G, stats, result.partition);
+    CheckValidPartition(test_name, G, result.partition);
+    CheckTrue(test_name + " finite quality", std::isfinite(quality_after));
     CheckTrue(test_name + " quality nondecreasing",
               quality_after + kTolerance >= quality_before);
     if (require_move) {
@@ -427,6 +456,99 @@ void TestEmptyCommunityReferenceEquivalence()
     }
 }
 
+void TestStage4ABasicAndEdgeCases()
+{
+    const CPMQualityFunction cpm(0.35);
+    const ModularityQualityFunction modularity(1.0);
+
+    RunStage4AAndCheck("Stage4A single vertex",
+                       MakeGraph(1), cpm, 11, false);
+    RunStage4AAndCheck("Stage4A no-edge",
+                       MakeGraph(6), modularity, 12, false);
+
+    Graph two = MakeGraph(2);
+    add_undirected_edge(two, 0, 1, 2.0);
+    RunStage4AAndCheck("Stage4A two connected", two, cpm, 13, true);
+    RunStage4AAndCheck("Stage4A multiple communities",
+                       MakeUnweightedGraph(), modularity, 14, true);
+    RunStage4AAndCheck("Stage4A self-loop",
+                       MakeSelfLoopGraph(), modularity, 15, false);
+
+    Graph parallel = MakeGraph(3);
+    add_undirected_edge(parallel, 0, 1, 1.0);
+    add_undirected_edge(parallel, 0, 1, 2.0);
+    add_undirected_edge(parallel, 1, 2, 0.5);
+    RunStage4AAndCheck("Stage4A parallel edges", parallel, cpm, 16, true);
+    RunStage4AAndCheck("Stage4A weighted edges",
+                       MakeWeightedGraph(), modularity, 17, true);
+
+    // Several singleton vertices see the same snapshot empty-community hint
+    // after the first serial move. Revalidation must prevent two vertices
+    // from claiming an empty target as though it were still empty.
+    Graph collision = MakeGraph(4);
+    add_undirected_edge(collision, 0, 1, 3.0);
+    add_undirected_edge(collision, 2, 3, 3.0);
+    RunStage4AAndCheck("Stage4A empty target collision and stale proposal",
+                       collision, cpm, 18, true);
+
+    RunStage4AAndCheck("Stage4A CPM", MakeWeightedGraph(), cpm, 19, true);
+    RunStage4AAndCheck("Stage4A Modularity",
+                       MakeWeightedGraph(), modularity, 20, true);
+}
+
+void TestStage4AEmptyCommunityCollision()
+{
+    const Graph G = MakeGraph(4);
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    // Community 1 is empty. On the immutable first-round snapshot, every
+    // vertex proposes splitting from community 0 into that same empty ID.
+    const LeidenPartition initial = MakePartition(G, stats, {0, 0, 0, 0});
+    const CPMQualityFunction cpm(1.0);
+    const MoveNodesFastResult result = MoveNodesFastParallelStage4A(
+        G, stats, initial, cpm, 99, 2);
+    CheckValidPartition("Stage4A explicit empty collision", G,
+                        result.partition);
+    CheckPartitionStatsAgainstRecompute("Stage4A explicit empty collision",
+                                        G, stats, result.partition);
+    CheckLocalOptimality("Stage4A explicit empty collision",
+                         G, stats, result.partition, cpm);
+    CheckTrue("Stage4A explicit empty collision moves",
+              result.num_moves > 0);
+}
+
+void TestStage4AThreadReproducibility()
+{
+    const Graph G = MakeWeightedGraph();
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    const LeidenPartition initial = MakeSingletonPartition(G, stats);
+    const ModularityQualityFunction modularity(1.0);
+    std::vector<MoveNodesFastResult> results;
+    for (int threads : {1, 2, 4, 8}) {
+#ifdef _OPENMP
+        omp_set_num_threads(threads);
+#else
+        (void)threads;
+#endif
+        results.push_back(MoveNodesFastParallelStage4A(
+            G, stats, initial, modularity, 2026, 3));
+    }
+    for (std::size_t i = 1; i < results.size(); ++i) {
+        CheckTrue("Stage4A thread reproducibility assignment",
+                  results[0].partition.community_of ==
+                      results[i].partition.community_of);
+        CheckTrue("Stage4A thread reproducibility moves",
+                  results[0].num_moves == results[i].num_moves);
+        CheckNear("Stage4A thread reproducibility quality",
+                  modularity.quality(G, stats, results[0].partition),
+                  modularity.quality(G, stats, results[i].partition));
+    }
+    const MoveNodesFastResult repeated = MoveNodesFastParallelStage4A(
+        G, stats, initial, modularity, 2026, 3);
+    CheckTrue("Stage4A same-seed reproducibility",
+              repeated.partition.community_of ==
+                  results.back().partition.community_of);
+}
+
 } // namespace
 
 int main()
@@ -439,6 +561,9 @@ int main()
     TestDifferentSeeds();
     TestEmptyCommunityManagement();
     TestEmptyCommunityReferenceEquivalence();
+    TestStage4ABasicAndEdgeCases();
+    TestStage4AEmptyCommunityCollision();
+    TestStage4AThreadReproducibility();
 
     std::cout << "All MoveNodesFast tests passed.\n";
     return EXIT_SUCCESS;

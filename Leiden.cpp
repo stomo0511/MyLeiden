@@ -67,6 +67,35 @@ struct LocalRefinementResult {
     Community local_community_count = 0;
 };
 
+struct MoveProposal {
+    bool active = false;
+    bool positive = false;
+    bool target_was_empty = false;
+    Vertex vertex = -1;
+    Community source = -1;
+    Community target = -1;
+    double delta = 0.0;
+};
+
+std::uint64_t MixStage4A(std::uint64_t value)
+{
+    value += 0x9e3779b97f4a7c15ULL;
+    value = (value ^ (value >> 30U)) * 0xbf58476d1ce4e5b9ULL;
+    value = (value ^ (value >> 27U)) * 0x94d049bb133111ebULL;
+    return value ^ (value >> 31U);
+}
+
+std::uint64_t Stage4APriority(std::uint64_t seed,
+                              std::uint64_t level,
+                              Vertex vertex)
+{
+    std::uint64_t value = MixStage4A(seed);
+    value ^= MixStage4A(level + 0x632be59bd9b4e019ULL);
+    value ^= MixStage4A(static_cast<std::uint64_t>(vertex) +
+                        0x85157af5ULL);
+    return MixStage4A(value);
+}
+
 using Clock = std::chrono::steady_clock;
 
 double ElapsedSeconds(Clock::time_point begin, Clock::time_point end)
@@ -778,6 +807,280 @@ MoveNodesFastResult MoveNodesFast(const Graph& G,
 
 #ifdef ENABLE_MOVENODESFAST_PROFILE
     result.profile.num_visits = result.num_visits;
+#endif
+    return result;
+}
+
+MoveNodesFastResult MoveNodesFastParallelStage4A(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    LeidenPartition partition,
+    const QualityFunction& quality_function,
+    std::uint64_t global_seed,
+    std::uint64_t leiden_level,
+    const LeidenOptions* options)
+{
+    // TEMPORARY MOVENODESFAST STAGE4A PROFILING
+    const Clock::time_point total_begin = Clock::now();
+    const int n = num_vertices(G);
+    MoveNodesFastResult result;
+    result.partition = std::move(partition);
+
+    std::vector<unsigned char> affected_current(
+        static_cast<std::size_t>(n), 1);
+    std::vector<unsigned char> affected_next(
+        static_cast<std::size_t>(n), 0);
+    std::vector<MoveProposal> proposals(static_cast<std::size_t>(n));
+    std::vector<Vertex> deterministic_order(static_cast<std::size_t>(n));
+    std::iota(deterministic_order.begin(), deterministic_order.end(), 0);
+    std::sort(deterministic_order.begin(), deterministic_order.end(),
+              [global_seed, leiden_level](Vertex lhs, Vertex rhs) {
+                  const std::uint64_t lhs_priority =
+                      Stage4APriority(global_seed, leiden_level, lhs);
+                  const std::uint64_t rhs_priority =
+                      Stage4APriority(global_seed, leiden_level, rhs);
+                  return lhs_priority < rhs_priority ||
+                         (lhs_priority == rhs_priority && lhs < rhs);
+              });
+
+    const bool debug = DebugEnabled(options);
+    std::size_t round = 0;
+    while (true) {
+        ++round;
+        std::size_t round_visits = 0;
+        std::size_t positive_proposals = 0;
+        double neighbor_seconds = 0.0;
+        double candidate_seconds = 0.0;
+        const Clock::time_point proposal_begin = Clock::now();
+
+        // The partition is immutable throughout this region. Each iteration
+        // writes only proposals[v], and scratch storage belongs to its thread.
+#pragma omp parallel reduction(+:round_visits, positive_proposals, neighbor_seconds, candidate_seconds)
+        {
+            NeighborCommunityScratch scratch;
+            scratch.weights.assign(
+                result.partition.community_size.size(), 0.0);
+            scratch.marks.assign(
+                result.partition.community_size.size(), 0);
+            scratch.touched.reserve(32);
+
+#pragma omp for schedule(dynamic, 256)
+            for (Vertex v = 0; v < n; ++v) {
+                if (affected_current[static_cast<std::size_t>(v)] == 0) {
+                    continue;
+                }
+                ++round_visits;
+                MoveProposal proposal;
+                proposal.active = true;
+                proposal.vertex = v;
+                proposal.source = result.partition.community_of[v];
+                proposal.target = proposal.source;
+
+                const Clock::time_point neighbor_begin = Clock::now();
+                BuildNeighborCommunityWeights(
+                    G, result.partition, v, scratch);
+                neighbor_seconds +=
+                    ElapsedSeconds(neighbor_begin, Clock::now());
+
+                const Clock::time_point candidate_begin = Clock::now();
+                const double weight_to_source =
+                    LookupNeighborCommunityWeight(scratch, proposal.source);
+                Community best = proposal.source;
+                double best_delta = 0.0;
+                for (Community candidate : scratch.touched) {
+                    if (candidate == proposal.source) {
+                        continue;
+                    }
+                    const double delta =
+                        quality_function.deltaMoveFromWeights(
+                            stats,
+                            result.partition,
+                            v,
+                            candidate,
+                            weight_to_source,
+                            LookupNeighborCommunityWeight(scratch, candidate));
+                    if (delta > best_delta ||
+                        (delta == best_delta && candidate < best)) {
+                        best_delta = delta;
+                        best = candidate;
+                    }
+                }
+                const Community empty =
+                    EmptyCommunityForMove(result.partition);
+                if (empty != proposal.source) {
+                    const double delta =
+                        quality_function.deltaMoveFromWeights(
+                            stats,
+                            result.partition,
+                            v,
+                            empty,
+                            weight_to_source,
+                            LookupNeighborCommunityWeight(scratch, empty));
+                    if (delta > best_delta ||
+                        (delta == best_delta && empty < best)) {
+                        best_delta = delta;
+                        best = empty;
+                    }
+                }
+                proposal.target = best;
+                proposal.delta = best_delta;
+                proposal.positive =
+                    best_delta > 0.0 && best != proposal.source;
+                proposal.target_was_empty =
+                    proposal.positive && best == empty;
+                if (proposal.positive) {
+                    ++positive_proposals;
+                }
+                proposals[static_cast<std::size_t>(v)] = proposal;
+                candidate_seconds +=
+                    ElapsedSeconds(candidate_begin, Clock::now());
+            }
+        }
+        const Clock::time_point proposal_end = Clock::now();
+
+        std::size_t committed = 0;
+        std::size_t rejected = 0;
+        double revalidation_seconds = 0.0;
+        double affected_seconds = 0.0;
+        NeighborCommunityScratch commit_scratch;
+        commit_scratch.weights.assign(
+            result.partition.community_size.size(), 0.0);
+        commit_scratch.marks.assign(
+            result.partition.community_size.size(), 0);
+        commit_scratch.touched.reserve(32);
+        const Clock::time_point commit_begin = Clock::now();
+
+        for (Vertex v : deterministic_order) {
+            if (affected_current[static_cast<std::size_t>(v)] == 0) {
+                continue;
+            }
+            const MoveProposal& proposal =
+                proposals[static_cast<std::size_t>(v)];
+            if (!proposal.active || !proposal.positive) {
+                continue;
+            }
+
+            const Clock::time_point revalidation_begin = Clock::now();
+            bool valid = result.partition.community_of[v] == proposal.source;
+            if (valid && proposal.target_was_empty) {
+                valid = proposal.target >= 0 &&
+                        (static_cast<std::size_t>(proposal.target) >=
+                             result.partition.community_size.size() ||
+                         result.partition.community_is_empty[
+                             static_cast<std::size_t>(proposal.target)] != 0);
+            }
+            double weight_to_source = 0.0;
+            double weight_to_target = 0.0;
+            double current_delta = 0.0;
+            if (valid) {
+                BuildNeighborCommunityWeights(
+                    G, result.partition, v, commit_scratch);
+                weight_to_source = LookupNeighborCommunityWeight(
+                    commit_scratch, proposal.source);
+                weight_to_target = LookupNeighborCommunityWeight(
+                    commit_scratch, proposal.target);
+                current_delta = quality_function.deltaMoveFromWeights(
+                    stats,
+                    result.partition,
+                    v,
+                    proposal.target,
+                    weight_to_source,
+                    weight_to_target);
+                valid = current_delta > 0.0;
+            }
+            revalidation_seconds +=
+                ElapsedSeconds(revalidation_begin, Clock::now());
+
+            if (!valid) {
+                ++rejected;
+                // Its snapshot suggestion may have been invalidated by an
+                // earlier serial commit. Reconsider it in the next round.
+                affected_next[static_cast<std::size_t>(v)] = 1;
+                continue;
+            }
+
+            MoveNodeToCommunityFromWeights(
+                G,
+                stats,
+                result.partition,
+                v,
+                proposal.target,
+                weight_to_source,
+                weight_to_target,
+                SelfLoopWeight(G, v),
+                MNF_PROFILE_ARG);
+            ++committed;
+            ++result.num_moves;
+
+            const Clock::time_point affected_begin = Clock::now();
+            // Round-synchronous proposals can invalidate opportunities for
+            // neighbors already in the target community as well. Conservatively
+            // reactivate every non-self neighbor and the moved vertex itself.
+            affected_next[static_cast<std::size_t>(v)] = 1;
+            for (const Edge& e : G.adj[v]) {
+                const Vertex u = e.to;
+                if (u != v) {
+                    affected_next[static_cast<std::size_t>(u)] = 1;
+                }
+            }
+            affected_seconds +=
+                ElapsedSeconds(affected_begin, Clock::now());
+        }
+        const Clock::time_point commit_end = Clock::now();
+        result.num_visits += round_visits;
+
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+        result.profile.stage4a_active_scan +=
+            std::max(0.0,
+                     ElapsedSeconds(proposal_begin, proposal_end) -
+                         neighbor_seconds - candidate_seconds);
+        result.profile.stage4a_neighbor_weights += neighbor_seconds;
+        result.profile.stage4a_candidate_evaluation += candidate_seconds;
+        result.profile.stage4a_proposal_generation +=
+            ElapsedSeconds(proposal_begin, proposal_end);
+        result.profile.stage4a_deterministic_commit +=
+            ElapsedSeconds(commit_begin, commit_end);
+        result.profile.stage4a_commit_revalidation += revalidation_seconds;
+        result.profile.stage4a_affected_next_update += affected_seconds;
+        ++result.profile.stage4a_rounds;
+        result.profile.stage4a_active_vertices += round_visits;
+        result.profile.stage4a_positive_proposals += positive_proposals;
+        result.profile.stage4a_committed_moves += committed;
+        result.profile.stage4a_rejected_proposals += rejected;
+#else
+        (void)proposal_begin;
+        (void)proposal_end;
+        (void)commit_begin;
+        (void)commit_end;
+#endif
+        if (debug) {
+            std::cerr << "[MoveNodesFast Stage4A] round=" << round
+                      << " active=" << round_visits
+                      << " positive=" << positive_proposals
+                      << " committed=" << committed
+                      << " rejected=" << rejected << "\n";
+        }
+        if (committed == 0) {
+            break;
+        }
+
+        affected_current.swap(affected_next);
+        const Clock::time_point clear_begin = Clock::now();
+        std::fill(affected_next.begin(), affected_next.end(), 0);
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+        result.profile.stage4a_buffer_clear +=
+            ElapsedSeconds(clear_begin, Clock::now());
+#else
+        (void)clear_begin;
+#endif
+    }
+
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    result.profile.num_visits = result.num_visits;
+    result.profile.stage4a_total =
+        ElapsedSeconds(total_begin, Clock::now());
+#else
+    (void)total_begin;
 #endif
     return result;
 }
@@ -1601,7 +1904,9 @@ LeidenResult Leiden(const Graph& G,
                 << ElapsedSeconds(t6, t7)
                 << " seconds\n";
 
+#ifndef ENABLE_MOVENODESFAST_STAGE4A
     std::mt19937 rng(options.seed);
+#endif
     bool stopped_by_max_levels = false;
     bool converged = false;
 
@@ -1622,12 +1927,23 @@ LeidenResult Leiden(const Graph& G,
         }
         const Clock::time_point move_begin = Clock::now();
         MoveNodesFastResult moved =
+#ifdef ENABLE_MOVENODESFAST_STAGE4A
+            MoveNodesFastParallelStage4A(
+                current_graph,
+                current_stats,
+                current_partition,
+                quality_function,
+                static_cast<std::uint64_t>(options.seed),
+                static_cast<std::uint64_t>(level),
+                &options);
+#else
             MoveNodesFast(current_graph,
                           current_stats,
                           current_partition,
                           quality_function,
                           rng,
                           &options);
+#endif
         const Clock::time_point move_end = Clock::now();
         result.timing.move_nodes_fast +=
             ElapsedSeconds(move_begin, move_end);
@@ -1655,6 +1971,34 @@ LeidenResult Leiden(const Graph& G,
         result.move_nodes_fast_profile.num_visits += moved.profile.num_visits;
         result.move_nodes_fast_profile.total_candidates +=
             moved.profile.total_candidates;
+        result.move_nodes_fast_profile.stage4a_active_scan +=
+            moved.profile.stage4a_active_scan;
+        result.move_nodes_fast_profile.stage4a_neighbor_weights +=
+            moved.profile.stage4a_neighbor_weights;
+        result.move_nodes_fast_profile.stage4a_candidate_evaluation +=
+            moved.profile.stage4a_candidate_evaluation;
+        result.move_nodes_fast_profile.stage4a_proposal_generation +=
+            moved.profile.stage4a_proposal_generation;
+        result.move_nodes_fast_profile.stage4a_deterministic_commit +=
+            moved.profile.stage4a_deterministic_commit;
+        result.move_nodes_fast_profile.stage4a_commit_revalidation +=
+            moved.profile.stage4a_commit_revalidation;
+        result.move_nodes_fast_profile.stage4a_affected_next_update +=
+            moved.profile.stage4a_affected_next_update;
+        result.move_nodes_fast_profile.stage4a_buffer_clear +=
+            moved.profile.stage4a_buffer_clear;
+        result.move_nodes_fast_profile.stage4a_total +=
+            moved.profile.stage4a_total;
+        result.move_nodes_fast_profile.stage4a_rounds +=
+            moved.profile.stage4a_rounds;
+        result.move_nodes_fast_profile.stage4a_active_vertices +=
+            moved.profile.stage4a_active_vertices;
+        result.move_nodes_fast_profile.stage4a_positive_proposals +=
+            moved.profile.stage4a_positive_proposals;
+        result.move_nodes_fast_profile.stage4a_committed_moves +=
+            moved.profile.stage4a_committed_moves;
+        result.move_nodes_fast_profile.stage4a_rejected_proposals +=
+            moved.profile.stage4a_rejected_proposals;
 #endif
         current_partition = std::move(moved.partition);
         ++result.num_levels;

@@ -384,6 +384,43 @@ int main(int argc, char** argv)
                   << result.total_moves << "\n"
                   << "  Total candidates      : "
                   << move_profile.total_candidates << "\n"
+                  // TEMPORARY MOVENODESFAST STAGE4A PROFILING
+                  << "  Stage4A rounds        : "
+                  << move_profile.stage4a_rounds << "\n"
+                  << "  Stage4A active scan   : "
+                  << move_profile.stage4a_active_scan << " s\n"
+                  << "  Stage4A neighbor scan : "
+                  << move_profile.stage4a_neighbor_weights << " s\n"
+                  << "  Stage4A candidate eval: "
+                  << move_profile.stage4a_candidate_evaluation << " s\n"
+                  << "  Stage4A proposal total: "
+                  << move_profile.stage4a_proposal_generation << " s\n"
+                  << "  Stage4A commit total  : "
+                  << move_profile.stage4a_deterministic_commit << " s\n"
+                  << "  Stage4A revalidation  : "
+                  << move_profile.stage4a_commit_revalidation << " s\n"
+                  << "  Stage4A affected next : "
+                  << move_profile.stage4a_affected_next_update << " s\n"
+                  << "  Stage4A buffer clear  : "
+                  << move_profile.stage4a_buffer_clear << " s\n"
+                  << "  Stage4A total         : "
+                  << move_profile.stage4a_total << " s\n"
+                  << "  Stage4A active vertices: "
+                  << move_profile.stage4a_active_vertices << "\n"
+                  << "  Stage4A positive proposals: "
+                  << move_profile.stage4a_positive_proposals << "\n"
+                  << "  Stage4A committed moves: "
+                  << move_profile.stage4a_committed_moves << "\n"
+                  << "  Stage4A rejected proposals: "
+                  << move_profile.stage4a_rejected_proposals << "\n"
+                  << "  Stage4A commit/proposal ratio: "
+                  << (move_profile.stage4a_positive_proposals == 0
+                          ? 0.0
+                          : static_cast<double>(
+                                move_profile.stage4a_committed_moves) /
+                                static_cast<double>(
+                                    move_profile.stage4a_positive_proposals))
+                  << "\n"
 #endif
                   << "RefinePartition time: "
                   << result.timing.refine_partition << " s\n"

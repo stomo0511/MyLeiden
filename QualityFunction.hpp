@@ -26,6 +26,22 @@ struct MoveNodesFastProfile {
     double neighbor_requeue = 0.0;
     std::size_t num_visits = 0;
     std::size_t total_candidates = 0;
+
+    // TEMPORARY MOVENODESFAST STAGE4A PROFILING
+    double stage4a_active_scan = 0.0;
+    double stage4a_neighbor_weights = 0.0;
+    double stage4a_candidate_evaluation = 0.0;
+    double stage4a_proposal_generation = 0.0;
+    double stage4a_deterministic_commit = 0.0;
+    double stage4a_commit_revalidation = 0.0;
+    double stage4a_affected_next_update = 0.0;
+    double stage4a_buffer_clear = 0.0;
+    double stage4a_total = 0.0;
+    std::size_t stage4a_rounds = 0;
+    std::size_t stage4a_active_vertices = 0;
+    std::size_t stage4a_positive_proposals = 0;
+    std::size_t stage4a_committed_moves = 0;
+    std::size_t stage4a_rejected_proposals = 0;
 };
 // END TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
 #endif
