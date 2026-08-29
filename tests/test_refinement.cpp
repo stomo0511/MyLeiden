@@ -16,6 +16,36 @@ namespace {
 
 constexpr double kTolerance = 1.0e-10;
 
+class UnsupportedSparseCPM final : public QualityFunction {
+public:
+    explicit UnsupportedSparseCPM(double gamma) : delegate_(gamma) {}
+    double quality(const Graph& G, const LeidenGraphStats& stats,
+                   const LeidenPartition& partition) const override {
+        return delegate_.quality(G, stats, partition);
+    }
+    double deltaMove(const Graph& G, const LeidenGraphStats& stats,
+                     const LeidenPartition& partition, Vertex v,
+                     Community target) const override {
+        return delegate_.deltaMove(G, stats, partition, v, target);
+    }
+    double deltaMoveFromWeights(const LeidenGraphStats& stats,
+                                const LeidenPartition& partition, Vertex v,
+                                Community target, double source_weight,
+                                double target_weight) const override {
+        return delegate_.deltaMoveFromWeights(stats, partition, v, target,
+                                              source_weight, target_weight);
+    }
+    double refinementNodeMass(const LeidenGraphStats& stats,
+                              Vertex v) const override {
+        return delegate_.refinementNodeMass(stats, v);
+    }
+    double refinementResolution(const LeidenGraphStats& stats) const override {
+        return delegate_.refinementResolution(stats);
+    }
+private:
+    CPMQualityFunction delegate_;
+};
+
 void Fail(const std::string& test_name,
           const std::string& expected,
           const std::string& actual,
@@ -857,6 +887,96 @@ void TestSubsetMarkerConsecutiveSubsets()
               !IsInSubsetForTest(subset_mark, subset_generation, 4));
 }
 
+void TestExactSparseTargetCorners()
+{
+    Graph G = MakeGraph(4);
+    add_undirected_edge(G, 1, 2, 1.25);
+    add_undirected_edge(G, 1, 2, 2.75); // parallel weighted edge
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    const LeidenPartition singleton = MakeSingletonPartition(G, stats);
+    NeighborCommunityScratch scratch;
+    scratch.weights.assign(singleton.community_size.size(), 0.0);
+    scratch.marks.assign(singleton.community_size.size(), 0);
+    BuildNeighborCommunityWeights(G, singleton, 1, scratch);
+
+    RefinementCommunityStats community_stats;
+    for (Community c = 0; c < 4; ++c) {
+        RefinementCommunityEntry entry;
+        entry.member_count = 1;
+        entry.mass = stats.node_strength[static_cast<std::size_t>(c)];
+        community_stats.entries.emplace(c, entry);
+        community_stats.active_communities.push_back(c);
+        if (entry.mass <= 0.0) {
+            community_stats.nonpositive_mass_active_communities.push_back(c);
+        }
+    }
+
+    const ModularityQualityFunction modularity(1.0);
+    std::size_t exceptions = 0;
+    const std::vector<Community> targets =
+        BuildExactSparseRefinementTargets(stats,
+                                          modularity,
+                                          community_stats,
+                                          scratch,
+                                          1,
+                                          1,
+                                          &exceptions);
+    CheckTrue("Test P modularity zero-strength exception",
+              targets == std::vector<Community>({0, 1, 2, 3}));
+    CheckTrue("Test P modularity exception count", exceptions == 2);
+    CheckNear("Test P modularity nonneighbor zero delta",
+              0.0,
+              modularity.deltaMoveFromWeights(
+                  stats, singleton, 1, 3, 0.0, 0.0));
+
+    NeighborCommunityScratch isolated_scratch;
+    isolated_scratch.weights.assign(singleton.community_size.size(), 0.0);
+    isolated_scratch.marks.assign(singleton.community_size.size(), 0);
+    BuildNeighborCommunityWeights(G, singleton, 0, isolated_scratch);
+    const std::vector<Community> isolated_targets =
+        BuildExactSparseRefinementTargets(stats,
+                                          modularity,
+                                          community_stats,
+                                          isolated_scratch,
+                                          0,
+                                          0);
+    CheckTrue("Test P isolated source full fallback",
+              isolated_targets == community_stats.active_communities);
+
+    const LeidenGraphStats zero_size_stats =
+        BuildLeidenGraphStats(G, {1.0, 1.0, 1.0, 0.0});
+    RefinementCommunityStats cpm_stats = community_stats;
+    cpm_stats.nonpositive_mass_active_communities = {3};
+    for (Community c = 0; c < 4; ++c) {
+        cpm_stats.entries[c].mass =
+            zero_size_stats.node_size[static_cast<std::size_t>(c)];
+    }
+    const CPMQualityFunction cpm(0.5);
+    exceptions = 0;
+    const std::vector<Community> cpm_targets =
+        BuildExactSparseRefinementTargets(zero_size_stats,
+                                          cpm,
+                                          cpm_stats,
+                                          scratch,
+                                          1,
+                                          1,
+                                          &exceptions);
+    CheckTrue("Test P CPM zero-size exception",
+              cpm_targets == std::vector<Community>({1, 2, 3}));
+    CheckTrue("Test P CPM exception count", exceptions == 1);
+
+    const UnsupportedSparseCPM unsupported(0.5);
+    const std::vector<Community> fallback_targets =
+        BuildExactSparseRefinementTargets(zero_size_stats,
+                                          unsupported,
+                                          cpm_stats,
+                                          scratch,
+                                          1,
+                                          1);
+    CheckTrue("Test P unknown quality full fallback",
+              fallback_targets == cpm_stats.active_communities);
+}
+
 } // namespace
 
 int main()
@@ -878,6 +998,7 @@ int main()
     TestLocalStatsSparseCommunityIds();
     TestSubsetMarkerMembershipEquivalence();
     TestSubsetMarkerConsecutiveSubsets();
+    TestExactSparseTargetCorners();
 
     std::cout << "All refinement tests passed.\n";
     return EXIT_SUCCESS;

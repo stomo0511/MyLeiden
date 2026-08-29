@@ -80,6 +80,10 @@ struct RefineSubsetProfile {
     std::size_t neighbor_adjacency_scans = 0;
     std::size_t touched_communities = 0;
     std::size_t active_community_iterations = 0;
+    std::size_t sparse_target_iterations = 0;
+    std::size_t exceptional_targets_added = 0;
+    std::size_t max_sparse_targets = 0;
+    std::size_t max_active_communities = 0;
     std::size_t delta_evaluations = 0;
     std::size_t nondecreasing_candidates = 0;
     std::size_t stochastic_selections = 0;
@@ -282,14 +286,21 @@ RefinementCommunityEntry& EnsureRefinementCommunityEntry(
 void RefreshActiveCommunities(RefinementCommunityStats& community_stats)
 {
     community_stats.active_communities.clear();
+    community_stats.nonpositive_mass_active_communities.clear();
     community_stats.active_communities.reserve(community_stats.entries.size());
     for (const auto& item : community_stats.entries) {
         if (item.second.member_count > 0) {
             community_stats.active_communities.push_back(item.first);
+            if (item.second.mass <= 0.0) {
+                community_stats.nonpositive_mass_active_communities.push_back(
+                    item.first);
+            }
         }
     }
     std::sort(community_stats.active_communities.begin(),
               community_stats.active_communities.end());
+    std::sort(community_stats.nonpositive_mass_active_communities.begin(),
+              community_stats.nonpositive_mass_active_communities.end());
 }
 
 std::vector<std::vector<Vertex>> BuildPartitionMembers(
@@ -455,6 +466,53 @@ Stage4A1ReactivationStats UpdateStage4A1AffectedNeighbors(
         }
     }
     return stats;
+}
+
+std::vector<Community> BuildExactSparseRefinementTargets(
+    const LeidenGraphStats& stats,
+    const QualityFunction& quality_function,
+    const RefinementCommunityStats& community_stats,
+    const NeighborCommunityScratch& neighbor_scratch,
+    Vertex v,
+    Community source,
+    std::size_t* exceptional_targets_added)
+{
+    if (exceptional_targets_added != nullptr) {
+        *exceptional_targets_added = 0;
+    }
+    const bool sparse_is_exact =
+        quality_function.supportsExactSparseRefinementTargets() &&
+        quality_function.refinementNodeMass(stats, v) > 0.0 &&
+        quality_function.refinementResolution(stats) > 0.0;
+    if (!sparse_is_exact) {
+        return community_stats.active_communities;
+    }
+
+    std::vector<Community> targets;
+    targets.reserve(neighbor_scratch.touched.size() + 1 +
+                    community_stats.nonpositive_mass_active_communities.size());
+    for (Community community : neighbor_scratch.touched) {
+        const auto it = community_stats.entries.find(community);
+        if (it != community_stats.entries.end() &&
+            it->second.member_count > 0) {
+            targets.push_back(community);
+        }
+    }
+    targets.push_back(source);
+    std::sort(targets.begin(), targets.end());
+    targets.erase(std::unique(targets.begin(), targets.end()), targets.end());
+
+    for (Community community :
+         community_stats.nonpositive_mass_active_communities) {
+        if (!std::binary_search(targets.begin(), targets.end(), community)) {
+            targets.push_back(community);
+            if (exceptional_targets_added != nullptr) {
+                ++*exceptional_targets_added;
+            }
+        }
+    }
+    std::sort(targets.begin(), targets.end());
+    return targets;
 }
 
 double EdgeWeightFromNodeToSubset(const Graph& G,
@@ -1490,9 +1548,34 @@ LocalRefinementResult MergeNodesSubsetLocal(
         detail->touched_communities += neighbor_scratch.touched.size();
         detail->active_community_iterations +=
             community_stats.active_communities.size();
+        detail->max_active_communities = std::max(
+            detail->max_active_communities,
+            community_stats.active_communities.size());
 #endif
         const double weight_to_source =
             LookupNeighborCommunityWeight(neighbor_scratch, source);
+
+        std::size_t exceptional_targets_added = 0;
+        const std::vector<Community> sparse_targets =
+            BuildExactSparseRefinementTargets(stats,
+                                              quality_function,
+                                              community_stats,
+                                              neighbor_scratch,
+                                              v,
+                                              source,
+                                              &exceptional_targets_added);
+#ifdef REFINE_FULL_ACTIVE_SCAN
+        const std::vector<Community>& target_communities =
+            community_stats.active_communities;
+#else
+        const std::vector<Community>& target_communities = sparse_targets;
+#endif
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+        detail->sparse_target_iterations += sparse_targets.size();
+        detail->exceptional_targets_added += exceptional_targets_added;
+        detail->max_sparse_targets =
+            std::max(detail->max_sparse_targets, sparse_targets.size());
+#endif
 
         struct WeightedCandidate {
             Community community;
@@ -1500,9 +1583,9 @@ LocalRefinementResult MergeNodesSubsetLocal(
         };
         std::vector<WeightedCandidate> nondecreasing_candidates;
         nondecreasing_candidates.reserve(
-            community_stats.active_communities.size());
+            target_communities.size());
 
-        for (Community community : community_stats.active_communities) {
+        for (Community community : target_communities) {
             if (!IsCommunityWellConnectedFromStats(stats,
                                                   quality_function,
                                                   community,
@@ -1535,6 +1618,48 @@ LocalRefinementResult MergeNodesSubsetLocal(
 #endif
             }
         }
+
+#ifdef ENABLE_REFINEMENT_SPARSE_VERIFY
+        // TEMPORARY EXACT SPARSE REFINEMENT VERIFICATION
+        std::vector<WeightedCandidate> full_valid_targets;
+        full_valid_targets.reserve(community_stats.active_communities.size());
+        for (Community community : community_stats.active_communities) {
+            if (!IsCommunityWellConnectedFromStats(stats,
+                                                   quality_function,
+                                                   community,
+                                                   subset_mass,
+                                                   community_stats)) {
+                continue;
+            }
+            const double delta =
+                (community == source)
+                    ? 0.0
+                    : quality_function.deltaMoveFromWeights(
+                          stats,
+                          local_refined,
+                          v,
+                          community,
+                          weight_to_source,
+                          LookupNeighborCommunityWeight(neighbor_scratch,
+                                                        community));
+            if (delta >= 0.0) {
+                full_valid_targets.push_back({community, delta});
+            }
+        }
+        if (full_valid_targets.size() != nondecreasing_candidates.size()) {
+            throw std::logic_error(
+                "exact sparse refinement target count mismatch");
+        }
+        for (std::size_t i = 0; i < full_valid_targets.size(); ++i) {
+            if (full_valid_targets[i].community !=
+                    nondecreasing_candidates[i].community ||
+                std::abs(full_valid_targets[i].delta -
+                         nondecreasing_candidates[i].delta) > 1.0e-12) {
+                throw std::logic_error(
+                    "exact sparse refinement target mismatch");
+            }
+        }
+#endif
 
         if (nondecreasing_candidates.empty()) {
             continue;
@@ -1855,6 +1980,8 @@ LeidenPartition RefinePartition(const Graph& G,
         REFINE_SUM(neighbor_adjacency_scans);
         REFINE_SUM(touched_communities);
         REFINE_SUM(active_community_iterations);
+        REFINE_SUM(sparse_target_iterations);
+        REFINE_SUM(exceptional_targets_added);
         REFINE_SUM(delta_evaluations);
         REFINE_SUM(nondecreasing_candidates);
         REFINE_SUM(stochastic_selections);
@@ -1877,6 +2004,11 @@ LeidenPartition RefinePartition(const Graph& G,
             static_cast<std::size_t>(p.local_community_count);
         max_local_community_count =
             std::max(max_local_community_count, p.local_community_count);
+        aggregate_detail.max_sparse_targets = std::max(
+            aggregate_detail.max_sparse_targets, p.max_sparse_targets);
+        aggregate_detail.max_active_communities = std::max(
+            aggregate_detail.max_active_communities,
+            p.max_active_communities);
     }
     std::sort(heavy_indices.begin(), heavy_indices.end(),
               [&subset_profiles](std::size_t lhs, std::size_t rhs) {
@@ -1951,6 +2083,14 @@ LeidenPartition RefinePartition(const Graph& G,
         << aggregate_detail.neighbor_adjacency_scans
         << " touched=" << aggregate_detail.touched_communities
         << " active_iterations=" << aggregate_detail.active_community_iterations
+        << " sparse_iterations=" << aggregate_detail.sparse_target_iterations
+        << " sparse_full_ratio="
+        << (aggregate_detail.active_community_iterations == 0 ? 0.0 :
+            static_cast<double>(aggregate_detail.sparse_target_iterations) /
+            static_cast<double>(aggregate_detail.active_community_iterations))
+        << " exceptional_additions="
+        << aggregate_detail.exceptional_targets_added
+        << " max_sparse_targets=" << aggregate_detail.max_sparse_targets
         << " delta_evaluations=" << aggregate_detail.delta_evaluations
         << " nondecreasing=" << aggregate_detail.nondecreasing_candidates
         << " selections=" << aggregate_detail.stochastic_selections
@@ -1999,7 +2139,14 @@ LeidenPartition RefinePartition(const Graph& G,
                   << " size=" << p.vertices
                   << " adjacency_volume=" << p.adjacency_volume
                   << " time=" << p.total_time
-                  << " local_communities=" << p.local_community_count << "\n";
+                  << " local_communities=" << p.local_community_count
+                  << " max_active_communities=" << p.max_active_communities
+                  << " avg_sparse_targets="
+                  << (p.neighbor_builds == 0 ? 0.0 :
+                      static_cast<double>(p.sparse_target_iterations) /
+                      static_cast<double>(p.neighbor_builds))
+                  << " max_sparse_targets=" << p.max_sparse_targets
+                  << " delta_evaluations=" << p.delta_evaluations << "\n";
     }
 #endif
     return refined;

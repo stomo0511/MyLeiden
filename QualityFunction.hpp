@@ -76,6 +76,11 @@ public:
                                       Vertex v) const = 0;
 
     virtual double refinementResolution(const LeidenGraphStats& stats) const = 0;
+
+    // True only when a positive-refinement-mass vertex cannot have a
+    // nonnegative move delta to a non-neighbor community of positive mass.
+    // Unknown quality functions retain the exact full-scan fallback.
+    virtual bool supportsExactSparseRefinementTargets() const { return false; }
 };
 
 struct NeighborCommunityScratch {
@@ -131,6 +136,8 @@ public:
 
     double refinementResolution(const LeidenGraphStats& stats) const override;
 
+    bool supportsExactSparseRefinementTargets() const override { return true; }
+
     double gamma() const { return gamma_; }
 
 private:
@@ -162,6 +169,8 @@ public:
                               Vertex v) const override;
 
     double refinementResolution(const LeidenGraphStats& stats) const override;
+
+    bool supportsExactSparseRefinementTargets() const override { return true; }
 
     double gamma() const { return gamma_; }
 

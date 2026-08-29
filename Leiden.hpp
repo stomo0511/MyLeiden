@@ -27,7 +27,17 @@ struct RefinementCommunityEntry {
 struct RefinementCommunityStats {
     std::unordered_map<Community, RefinementCommunityEntry> entries;
     std::vector<Community> active_communities;
+    std::vector<Community> nonpositive_mass_active_communities;
 };
+
+std::vector<Community> BuildExactSparseRefinementTargets(
+    const LeidenGraphStats& stats,
+    const QualityFunction& quality_function,
+    const RefinementCommunityStats& community_stats,
+    const NeighborCommunityScratch& neighbor_scratch,
+    Vertex v,
+    Community source,
+    std::size_t* exceptional_targets_added = nullptr);
 
 struct AggregateGraphResult {
     Graph graph;
