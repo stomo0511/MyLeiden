@@ -1,0 +1,586 @@
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Write of size 8 at 0x7fffe8f14488 by main thread:
+    #0 std::_Vector_base<double, std::allocator<double> >::_Vector_impl_data::_Vector_impl_data() /usr/include/c++/11/bits/stl_vector.h:98 (test_move_nodes_fast_stage4b_tsan+0x6fd1)
+    #1 std::_Vector_base<double, std::allocator<double> >::_Vector_impl::_Vector_impl() /usr/include/c++/11/bits/stl_vector.h:133 (test_move_nodes_fast_stage4b_tsan+0x6fd1)
+    #2 std::_Vector_base<double, std::allocator<double> >::_Vector_base() /usr/include/c++/11/bits/stl_vector.h:288 (test_move_nodes_fast_stage4b_tsan+0x6fd1)
+    #3 std::vector<double, std::allocator<double> >::vector() /usr/include/c++/11/bits/stl_vector.h:487 (test_move_nodes_fast_stage4b_tsan+0x6fd1)
+    #4 LeidenPartition::LeidenPartition() /home/stomo/WorkSpace/MyLeiden/LeidenTypes.hpp:21 (test_move_nodes_fast_stage4b_tsan+0x6fd1)
+    #5 MakePartition(SimpleGraph const&, LeidenGraphStats const&, std::vector<int, std::allocator<int> > const&) /home/stomo/WorkSpace/MyLeiden/QualityFunction.cpp:273 (test_move_nodes_fast_stage4b_tsan+0x6fd1)
+    #6 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1880 (test_move_nodes_fast_stage4b_tsan+0x142fa)
+    #7 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #8 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #9 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Previous read of size 8 at 0x7fffe8f14488 by thread T2:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1616 (test_move_nodes_fast_stage4b_tsan+0x1f60c)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1f60c)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d488)
+
+  Thread T2 (tid=23, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /usr/include/c++/11/bits/stl_vector.h:98 in std::_Vector_base<double, std::allocator<double> >::_Vector_impl_data::_Vector_impl_data()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7b5400000138 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1891 (test_move_nodes_fast_stage4b_tsan+0x1463c)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Previous write of size 8 at 0x7b5400000138 by thread T1:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1643 (test_move_nodes_fast_stage4b_tsan+0x1f5f9)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1f5f9)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Location is heap block of size 640 at 0x7b5400000000 allocated by main thread:
+    #0 operator new(unsigned long) ../../../../src/libsanitizer/tsan/tsan_new_delete.cpp:64 (libtsan.so.0+0x8f162)
+    #1 allocate /usr/include/c++/11/ext/new_allocator.h:127 (test_move_nodes_fast_stage4b_tsan+0x137d1)
+    #2 allocate /usr/include/c++/11/bits/alloc_traits.h:464 (test_move_nodes_fast_stage4b_tsan+0x137d1)
+    #3 _M_allocate /usr/include/c++/11/bits/stl_vector.h:346 (test_move_nodes_fast_stage4b_tsan+0x137d1)
+    #4 _M_create_storage /usr/include/c++/11/bits/stl_vector.h:361 (test_move_nodes_fast_stage4b_tsan+0x137d1)
+    #5 _Vector_base /usr/include/c++/11/bits/stl_vector.h:305 (test_move_nodes_fast_stage4b_tsan+0x137d1)
+    #6 vector /usr/include/c++/11/bits/stl_vector.h:511 (test_move_nodes_fast_stage4b_tsan+0x137d1)
+    #7 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1534 (test_move_nodes_fast_stage4b_tsan+0x137d1)
+    #8 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #9 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #10 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1891 in MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*)
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Write of size 8 at 0x7fffe8f14358 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1550 (test_move_nodes_fast_stage4b_tsan+0x139f0)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:109 (test_move_nodes_fast_stage4b_tsan+0x29a0e)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Previous atomic read of size 8 at 0x7fffe8f14358 by thread T1:
+    #0 __tsan_atomic64_load ../../../../src/libsanitizer/tsan/tsan_interface_atomic.cpp:539 (libtsan.so.0+0x7fe0e)
+    #1 std::__atomic_base<unsigned long>::load(std::memory_order) const /usr/include/c++/11/bits/atomic_base.h:488 (test_move_nodes_fast_stage4b_tsan+0x1f61a)
+    #2 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1646 (test_move_nodes_fast_stage4b_tsan+0x1f61a)
+    #3 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1f61a)
+    #4 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d358)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1550 in MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*)
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f143c0 by thread T1:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1d9d2)
+    #1 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f143c0 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1843 (test_move_nodes_fast_stage4b_tsan+0x13e7e)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:109 (test_move_nodes_fast_stage4b_tsan+0x29a0e)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d3c0)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 in MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0]
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f14478 by thread T1:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1603 (test_move_nodes_fast_stage4b_tsan+0x1da12)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1da12)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f14478 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13d58)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:109 (test_move_nodes_fast_stage4b_tsan+0x29a0e)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d478)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1603 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f14480 by thread T1:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1612 (test_move_nodes_fast_stage4b_tsan+0x1dc6e)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1dc6e)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f14480 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13d72)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:109 (test_move_nodes_fast_stage4b_tsan+0x29a0e)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d480)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1612 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f14490 by thread T1:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1619 (test_move_nodes_fast_stage4b_tsan+0x1dcb6)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1dcb6)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f14490 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13d9f)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:109 (test_move_nodes_fast_stage4b_tsan+0x29a0e)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d490)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1619 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f14498 by thread T1:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1620 (test_move_nodes_fast_stage4b_tsan+0x1dcda)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1dcda)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f14498 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13db2)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:109 (test_move_nodes_fast_stage4b_tsan+0x29a0e)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d498)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1620 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Atomic read of size 1 at 0x7fffe8f14730 by thread T1:
+    #0 pthread_mutex_lock ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:4240 (libtsan.so.0+0x53908)
+    #1 __gthread_mutex_lock /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 (test_move_nodes_fast_stage4b_tsan+0x1dd1a)
+    #2 std::mutex::lock() /usr/include/c++/11/bits/std_mutex.h:100 (test_move_nodes_fast_stage4b_tsan+0x1dd1a)
+    #3 std::lock_guard<std::mutex>::lock_guard(std::mutex&) /usr/include/c++/11/bits/std_mutex.h:229 (test_move_nodes_fast_stage4b_tsan+0x1dd1a)
+    #4 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1637 (test_move_nodes_fast_stage4b_tsan+0x1dd1a)
+    #5 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1dd1a)
+    #6 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f14730 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1545 (test_move_nodes_fast_stage4b_tsan+0x139ad)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:109 (test_move_nodes_fast_stage4b_tsan+0x29a0e)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d730)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 in __gthread_mutex_lock
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f14380 by thread T3:
+    #0 operator[] /usr/include/c++/11/bits/stl_vector.h:1046 (test_move_nodes_fast_stage4b_tsan+0x1d9e9)
+    #1 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1602 (test_move_nodes_fast_stage4b_tsan+0x1d9e9)
+    #2 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1d9e9)
+    #3 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f14380 by main thread:
+    #0 _Vector_impl_data /usr/include/c++/11/bits/stl_vector.h:98 (test_move_nodes_fast_stage4b_tsan+0x1377f)
+    #1 _Vector_impl /usr/include/c++/11/bits/stl_vector.h:137 (test_move_nodes_fast_stage4b_tsan+0x1377f)
+    #2 _Vector_base /usr/include/c++/11/bits/stl_vector.h:304 (test_move_nodes_fast_stage4b_tsan+0x1377f)
+    #3 vector /usr/include/c++/11/bits/stl_vector.h:511 (test_move_nodes_fast_stage4b_tsan+0x1377f)
+    #4 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1534 (test_move_nodes_fast_stage4b_tsan+0x1377f)
+    #5 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #6 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:109 (test_move_nodes_fast_stage4b_tsan+0x29a0e)
+    #7 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d380)
+
+  Thread T3 (tid=24, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /usr/include/c++/11/bits/stl_vector.h:1046 in operator[]
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f14470 by thread T2:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1602 (test_move_nodes_fast_stage4b_tsan+0x1d9de)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1d9de)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 4 at 0x7fffe8f14470 by main thread (mutexes: write M12):
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1588 (test_move_nodes_fast_stage4b_tsan+0x13c43)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:109 (test_move_nodes_fast_stage4b_tsan+0x29a0e)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d470)
+
+  Mutex M12 (0x7fffe8f14730) created at:
+    #0 pthread_mutex_lock ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:4240 (libtsan.so.0+0x53908)
+    #1 __gthread_mutex_lock /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 (test_move_nodes_fast_stage4b_tsan+0x13fb8)
+    #2 std::mutex::lock() /usr/include/c++/11/bits/std_mutex.h:100 (test_move_nodes_fast_stage4b_tsan+0x13fb8)
+    #3 std::lock_guard<std::mutex>::lock_guard(std::mutex&) /usr/include/c++/11/bits/std_mutex.h:229 (test_move_nodes_fast_stage4b_tsan+0x13fb8)
+    #4 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1586 (test_move_nodes_fast_stage4b_tsan+0x13fb8)
+    #5 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #6 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #7 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Thread T2 (tid=23, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1602 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f144a0 by thread T3:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1653 (test_move_nodes_fast_stage4b_tsan+0x1de44)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1de44)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f144a0 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13dcc)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:141 (test_move_nodes_fast_stage4b_tsan+0x2a7dc)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d4a0)
+
+  Thread T3 (tid=24, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1653 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f144a8 by thread T2:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1661 (test_move_nodes_fast_stage4b_tsan+0x1dedb)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1dedb)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f144a8 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13de6)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:141 (test_move_nodes_fast_stage4b_tsan+0x2a7dc)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d4a8)
+
+  Thread T2 (tid=23, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1661 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f144c0 by thread T1:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1715 (test_move_nodes_fast_stage4b_tsan+0x1e603)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1e603)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f144c0 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13e34)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:125 (test_move_nodes_fast_stage4b_tsan+0x2a2d0)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d4c0)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1715 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f144b0 by thread T2:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1705 (test_move_nodes_fast_stage4b_tsan+0x1eb16)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1eb16)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f144b0 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13e00)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:125 (test_move_nodes_fast_stage4b_tsan+0x2a2d0)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d4b0)
+
+  Thread T2 (tid=23, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1705 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f144b8 by thread T1:
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1706 (test_move_nodes_fast_stage4b_tsan+0x1ebb0)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1ebb0)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f144b8 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13e1a)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:125 (test_move_nodes_fast_stage4b_tsan+0x2a2d0)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d4b8)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1706 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f144c8 by thread T1 (mutexes: write M346, write M347):
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1798 (test_move_nodes_fast_stage4b_tsan+0x1f32c)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1f32c)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f144c8 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13e4e)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:125 (test_move_nodes_fast_stage4b_tsan+0x2a2d0)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d4c8)
+
+  Mutex M346 (0x7b4c00000078) created at:
+    #0 pthread_mutex_lock ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:4240 (libtsan.so.0+0x53908)
+    #1 __gthread_mutex_lock /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #2 std::mutex::lock() /usr/include/c++/11/bits/std_mutex.h:100 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #3 std::lock_guard<std::mutex>::lock_guard(std::mutex&) /usr/include/c++/11/bits/std_mutex.h:229 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #4 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1689 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #5 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #6 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Mutex M347 (0x7b4c000000a0) created at:
+    #0 pthread_mutex_lock ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:4240 (libtsan.so.0+0x53908)
+    #1 __gthread_mutex_lock /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #2 std::mutex::lock() /usr/include/c++/11/bits/std_mutex.h:100 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #3 std::lock_guard<std::mutex>::lock_guard(std::mutex&) /usr/include/c++/11/bits/std_mutex.h:229 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #4 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1700 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #5 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #6 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1798 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Read of size 8 at 0x7fffe8f144d0 by thread T1 (mutexes: write M346, write M347):
+    #0 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1801 (test_move_nodes_fast_stage4b_tsan+0x1f1f3)
+    #1 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1f1f3)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f144d0 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1833 (test_move_nodes_fast_stage4b_tsan+0x13e68)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:125 (test_move_nodes_fast_stage4b_tsan+0x2a2d0)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d4d0)
+
+  Mutex M346 (0x7b4c00000078) created at:
+    #0 pthread_mutex_lock ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:4240 (libtsan.so.0+0x53908)
+    #1 __gthread_mutex_lock /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #2 std::mutex::lock() /usr/include/c++/11/bits/std_mutex.h:100 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #3 std::lock_guard<std::mutex>::lock_guard(std::mutex&) /usr/include/c++/11/bits/std_mutex.h:229 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #4 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1689 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #5 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #6 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Mutex M347 (0x7b4c000000a0) created at:
+    #0 pthread_mutex_lock ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:4240 (libtsan.so.0+0x53908)
+    #1 __gthread_mutex_lock /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #2 std::mutex::lock() /usr/include/c++/11/bits/std_mutex.h:100 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #3 std::lock_guard<std::mutex>::lock_guard(std::mutex&) /usr/include/c++/11/bits/std_mutex.h:229 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #4 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1700 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #5 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #6 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1801 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=2)
+  Atomic write of size 8 at 0x7fffe8f14368 by thread T1 (mutexes: write M346, write M347):
+    #0 __tsan_atomic64_fetch_add ../../../../src/libsanitizer/tsan/tsan_interface_atomic.cpp:620 (libtsan.so.0+0x82239)
+    #1 std::__atomic_base<unsigned long>::fetch_add(unsigned long, std::memory_order) /usr/include/c++/11/bits/atomic_base.h:618 (test_move_nodes_fast_stage4b_tsan+0x1f206)
+    #2 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1801 (test_move_nodes_fast_stage4b_tsan+0x1f206)
+    #3 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1f206)
+    #4 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7fffe8f14368 by main thread:
+    #0 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1596 (test_move_nodes_fast_stage4b_tsan+0x13d24)
+    #1 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #2 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:125 (test_move_nodes_fast_stage4b_tsan+0x2a2d0)
+    #3 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001d368)
+
+  Mutex M346 (0x7b4c00000078) created at:
+    #0 pthread_mutex_lock ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:4240 (libtsan.so.0+0x53908)
+    #1 __gthread_mutex_lock /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #2 std::mutex::lock() /usr/include/c++/11/bits/std_mutex.h:100 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #3 std::lock_guard<std::mutex>::lock_guard(std::mutex&) /usr/include/c++/11/bits/std_mutex.h:229 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #4 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1689 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #5 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1e2ae)
+    #6 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Mutex M347 (0x7b4c000000a0) created at:
+    #0 pthread_mutex_lock ../../../../src/libsanitizer/sanitizer_common/sanitizer_common_interceptors.inc:4240 (libtsan.so.0+0x53908)
+    #1 __gthread_mutex_lock /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:749 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #2 std::mutex::lock() /usr/include/c++/11/bits/std_mutex.h:100 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #3 std::lock_guard<std::mutex>::lock_guard(std::mutex&) /usr/include/c++/11/bits/std_mutex.h:229 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #4 operator() /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1700 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #5 MoveNodesFastParallelStage4B(SimpleGraph const&, LeidenGraphStats const&, LeidenPartition, QualityFunction const&, unsigned long, unsigned long, LeidenOptions const*) [clone ._omp_fn.0] /home/stomo/WorkSpace/MyLeiden/Leiden.cpp:1846 (test_move_nodes_fast_stage4b_tsan+0x1e4b5)
+    #6 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Thread T1 (tid=22, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 Run tests/test_move_nodes_fast_stage4b_tsan.cpp:85 (test_move_nodes_fast_stage4b_tsan+0x28c16)
+    #3 RunSuite tests/test_move_nodes_fast_stage4b_tsan.cpp:105 (test_move_nodes_fast_stage4b_tsan+0x296cb)
+    #4 main tests/test_move_nodes_fast_stage4b_tsan.cpp:156 (test_move_nodes_fast_stage4b_tsan+0x2b0de)
+
+SUMMARY: ThreadSanitizer: data race /usr/include/c++/11/bits/atomic_base.h:618 in std::__atomic_base<unsigned long>::fetch_add(unsigned long, std::memory_order)
+==================
+ThreadSanitizer: reported 19 warnings

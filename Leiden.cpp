@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -1520,7 +1521,12 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
         double queue_time = 0.0;
     };
 
-#ifdef _OPENMP
+#ifdef ENABLE_MOVENODESFAST_STAGE4B_STDTHREAD
+    int worker_count = 1;
+    if (const char* value = std::getenv("OMP_NUM_THREADS")) {
+        worker_count = std::max(1, std::atoi(value));
+    }
+#elif defined(_OPENMP)
     const int worker_count = omp_get_max_threads();
 #else
     const int worker_count = 1;
