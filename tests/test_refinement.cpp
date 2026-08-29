@@ -270,8 +270,12 @@ void CheckRefinementCommunityStatsEqual(
                   expected_entry.external_weight,
                   item.second.external_weight);
     }
+    std::vector<Community> expected_active = expected.active_communities;
+    std::vector<Community> actual_active = actual.active_communities;
+    std::sort(expected_active.begin(), expected_active.end());
+    std::sort(actual_active.begin(), actual_active.end());
     CheckTrue(test_name + " active_communities",
-              expected.active_communities == actual.active_communities);
+              expected_active == actual_active);
 }
 
 void CheckRefinementOfPartition(const std::string& test_name,

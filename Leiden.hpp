@@ -22,6 +22,8 @@ struct RefinementCommunityEntry {
     int member_count = 0;
     double mass = 0.0;
     double external_weight = 0.0;
+    std::size_t active_position = static_cast<std::size_t>(-1);
+    std::size_t nonpositive_mass_position = static_cast<std::size_t>(-1);
 };
 
 struct RefinementCommunityStats {

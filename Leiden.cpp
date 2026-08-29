@@ -88,6 +88,19 @@ struct RefineSubsetProfile {
     std::size_t nondecreasing_candidates = 0;
     std::size_t stochastic_selections = 0;
     std::size_t refinement_moves = 0;
+    // TEMPORARY REFRESH ACTIVE COMMUNITIES PROFILING
+    std::size_t initial_refresh_calls = 0;
+    std::size_t move_refresh_calls = 0;
+    std::size_t refresh_entries_scanned = 0;
+    std::size_t refresh_active_produced = 0;
+    std::size_t refresh_sort_elements = 0;
+    std::size_t active_update_calls = 0;
+    std::size_t active_activations = 0;
+    std::size_t active_deactivations = 0;
+    std::size_t active_no_changes = 0;
+    double active_update_time = 0.0;
+    double refresh_total_time = 0.0;
+    double refresh_max_time = 0.0;
     std::size_t stats_build_vertices = 0;
     std::size_t stats_build_adjacency_scans = 0;
     std::size_t stats_update_calls = 0;
@@ -111,6 +124,8 @@ struct RefineThreadProfile {
     double initialization_time = 0.0;
     double subset_work_time = 0.0;
 };
+
+thread_local RefineSubsetProfile* current_refine_subset_profile = nullptr;
 #endif
 
 struct MoveProposal {
@@ -283,12 +298,18 @@ RefinementCommunityEntry& EnsureRefinementCommunityEntry(
     return community_stats.entries[community];
 }
 
-void RefreshActiveCommunities(RefinementCommunityStats& community_stats)
+void RefreshActiveCommunities(RefinementCommunityStats& community_stats,
+                              bool initial_refresh = false)
 {
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    const Clock::time_point refresh_begin = Clock::now();
+#endif
     community_stats.active_communities.clear();
     community_stats.nonpositive_mass_active_communities.clear();
     community_stats.active_communities.reserve(community_stats.entries.size());
-    for (const auto& item : community_stats.entries) {
+    for (auto& item : community_stats.entries) {
+        item.second.active_position = static_cast<std::size_t>(-1);
+        item.second.nonpositive_mass_position = static_cast<std::size_t>(-1);
         if (item.second.member_count > 0) {
             community_stats.active_communities.push_back(item.first);
             if (item.second.mass <= 0.0) {
@@ -301,6 +322,133 @@ void RefreshActiveCommunities(RefinementCommunityStats& community_stats)
               community_stats.active_communities.end());
     std::sort(community_stats.nonpositive_mass_active_communities.begin(),
               community_stats.nonpositive_mass_active_communities.end());
+    for (std::size_t i = 0; i < community_stats.active_communities.size(); ++i) {
+        community_stats.entries[community_stats.active_communities[i]]
+            .active_position = i;
+    }
+    for (std::size_t i = 0;
+         i < community_stats.nonpositive_mass_active_communities.size(); ++i) {
+        community_stats.entries[
+            community_stats.nonpositive_mass_active_communities[i]]
+            .nonpositive_mass_position = i;
+    }
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    if (current_refine_subset_profile != nullptr) {
+        RefineSubsetProfile& profile = *current_refine_subset_profile;
+        if (initial_refresh) ++profile.initial_refresh_calls;
+        else ++profile.move_refresh_calls;
+        profile.refresh_entries_scanned += community_stats.entries.size();
+        profile.refresh_active_produced +=
+            community_stats.active_communities.size();
+        profile.refresh_sort_elements +=
+            community_stats.active_communities.size() +
+            community_stats.nonpositive_mass_active_communities.size();
+        const double elapsed = ElapsedSeconds(refresh_begin, Clock::now());
+        profile.refresh_total_time += elapsed;
+        profile.refresh_max_time = std::max(profile.refresh_max_time, elapsed);
+    }
+#else
+    (void)initial_refresh;
+#endif
+}
+
+void RemoveCommunityFromPositionedList(
+    std::vector<Community>& communities,
+    RefinementCommunityStats& stats,
+    Community community,
+    bool nonpositive_mass_list)
+{
+    RefinementCommunityEntry& entry = stats.entries[community];
+    std::size_t& position = nonpositive_mass_list
+        ? entry.nonpositive_mass_position : entry.active_position;
+    if (position == static_cast<std::size_t>(-1)) return;
+    const Community last = communities.back();
+    communities[position] = last;
+    std::size_t& last_position = nonpositive_mass_list
+        ? stats.entries[last].nonpositive_mass_position
+        : stats.entries[last].active_position;
+    last_position = position;
+    communities.pop_back();
+    position = static_cast<std::size_t>(-1);
+}
+
+void AddCommunityToPositionedList(
+    std::vector<Community>& communities,
+    RefinementCommunityStats& stats,
+    Community community,
+    bool nonpositive_mass_list)
+{
+    RefinementCommunityEntry& entry = stats.entries[community];
+    std::size_t& position = nonpositive_mass_list
+        ? entry.nonpositive_mass_position : entry.active_position;
+    if (position != static_cast<std::size_t>(-1)) return;
+    position = communities.size();
+    communities.push_back(community);
+}
+
+void UpdateActiveCommunitiesIncrementally(
+    RefinementCommunityStats& stats,
+    Community source,
+    Community target,
+    int old_source_count,
+    int old_target_count,
+    double old_source_mass,
+    double old_target_mass)
+{
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    const Clock::time_point begin = Clock::now();
+#endif
+    RefinementCommunityEntry& source_entry = stats.entries[source];
+    RefinementCommunityEntry& target_entry = stats.entries[target];
+    std::size_t changes = 0;
+#ifndef REFINE_ZERO_MASS_ACTIVE_ONLY
+    if (old_source_count == 1) {
+        RemoveCommunityFromPositionedList(stats.active_communities, stats,
+                                          source, false);
+        ++changes;
+    }
+    if (old_target_count == 0) {
+        AddCommunityToPositionedList(stats.active_communities, stats,
+                                     target, false);
+        ++changes;
+    }
+#endif
+    const bool old_source_zero = old_source_count > 0 && old_source_mass <= 0.0;
+    const bool new_source_zero = source_entry.member_count > 0 &&
+                                 source_entry.mass <= 0.0;
+    const bool old_target_zero = old_target_count > 0 && old_target_mass <= 0.0;
+    const bool new_target_zero = target_entry.member_count > 0 &&
+                                 target_entry.mass <= 0.0;
+    if (old_source_zero != new_source_zero) {
+        if (new_source_zero) {
+            AddCommunityToPositionedList(
+                stats.nonpositive_mass_active_communities, stats, source, true);
+        } else {
+            RemoveCommunityFromPositionedList(
+                stats.nonpositive_mass_active_communities, stats, source, true);
+        }
+        ++changes;
+    }
+    if (old_target_zero != new_target_zero) {
+        if (new_target_zero) {
+            AddCommunityToPositionedList(
+                stats.nonpositive_mass_active_communities, stats, target, true);
+        } else {
+            RemoveCommunityFromPositionedList(
+                stats.nonpositive_mass_active_communities, stats, target, true);
+        }
+        ++changes;
+    }
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    if (current_refine_subset_profile != nullptr) {
+        RefineSubsetProfile& p = *current_refine_subset_profile;
+        ++p.active_update_calls;
+        if (old_target_count == 0) ++p.active_activations;
+        if (old_source_count == 1) ++p.active_deactivations;
+        if (changes == 0) ++p.active_no_changes;
+        p.active_update_time += ElapsedSeconds(begin, Clock::now());
+    }
+#endif
 }
 
 std::vector<std::vector<Vertex>> BuildPartitionMembers(
@@ -485,7 +633,13 @@ std::vector<Community> BuildExactSparseRefinementTargets(
         quality_function.refinementNodeMass(stats, v) > 0.0 &&
         quality_function.refinementResolution(stats) > 0.0;
     if (!sparse_is_exact) {
-        return community_stats.active_communities;
+        std::vector<Community> active;
+        active.reserve(community_stats.entries.size());
+        for (const auto& item : community_stats.entries) {
+            if (item.second.member_count > 0) active.push_back(item.first);
+        }
+        std::sort(active.begin(), active.end());
+        return active;
     }
 
     std::vector<Community> targets;
@@ -600,7 +754,7 @@ RefinementCommunityStats BuildRefinementCommunityStats(
         }
     }
 
-    RefreshActiveCommunities(community_stats);
+    RefreshActiveCommunities(community_stats, true);
     return community_stats;
 }
 
@@ -653,6 +807,10 @@ void UpdateRefinementCommunityStatsForMove(
     EnsureRefinementCommunityEntry(community_stats, target);
     RefinementCommunityEntry& source_entry = community_stats.entries[source];
     RefinementCommunityEntry& target_entry = community_stats.entries[target];
+    const int old_source_count = source_entry.member_count;
+    const int old_target_count = target_entry.member_count;
+    const double old_source_mass = source_entry.mass;
+    const double old_target_mass = target_entry.mass;
 
     const double node_mass =
         quality_function.refinementNodeMass(stats, v);
@@ -687,7 +845,13 @@ void UpdateRefinementCommunityStatsForMove(
         }
     }
 
+#ifdef REFINE_FULL_REFRESH_ACTIVE_MAINTENANCE
     RefreshActiveCommunities(community_stats);
+#else
+    UpdateActiveCommunitiesIncrementally(community_stats, source, target,
+                                         old_source_count, old_target_count,
+                                         old_source_mass, old_target_mass);
+#endif
 }
 
 RefinementCommunityStats BuildRefinementCommunityStatsForParent(
@@ -734,7 +898,7 @@ RefinementCommunityStats BuildRefinementCommunityStatsForParent(
         }
     }
 
-    RefreshActiveCommunities(community_stats);
+    RefreshActiveCommunities(community_stats, true);
     return community_stats;
 }
 
@@ -759,6 +923,10 @@ void UpdateRefinementCommunityStatsForParentMove(
     EnsureRefinementCommunityEntry(community_stats, target);
     RefinementCommunityEntry& source_entry = community_stats.entries[source];
     RefinementCommunityEntry& target_entry = community_stats.entries[target];
+    const int old_source_count = source_entry.member_count;
+    const int old_target_count = target_entry.member_count;
+    const double old_source_mass = source_entry.mass;
+    const double old_target_mass = target_entry.mass;
 
     const double node_mass =
         quality_function.refinementNodeMass(stats, v);
@@ -787,7 +955,13 @@ void UpdateRefinementCommunityStatsForParentMove(
         }
     }
 
+#ifdef REFINE_FULL_REFRESH_ACTIVE_MAINTENANCE
     RefreshActiveCommunities(community_stats);
+#else
+    UpdateActiveCommunitiesIncrementally(community_stats, source, target,
+                                         old_source_count, old_target_count,
+                                         old_source_mass, old_target_mass);
+#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -1459,6 +1633,9 @@ LocalRefinementResult MergeNodesSubsetLocal(
     if (subset.empty()) {
         return result;
     }
+#ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
+    current_refine_subset_profile = detail;
+#endif
 
 #ifdef ENABLE_REFINEPARTITION_DETAILED_PROFILE
     Clock::time_point detail_begin = Clock::now();
@@ -1565,8 +1742,15 @@ LocalRefinementResult MergeNodesSubsetLocal(
                                               source,
                                               &exceptional_targets_added);
 #ifdef REFINE_FULL_ACTIVE_SCAN
-        const std::vector<Community>& target_communities =
-            community_stats.active_communities;
+        std::vector<Community> full_scan_targets;
+        full_scan_targets.reserve(community_stats.entries.size());
+        for (const auto& item : community_stats.entries) {
+            if (item.second.member_count > 0) {
+                full_scan_targets.push_back(item.first);
+            }
+        }
+        std::sort(full_scan_targets.begin(), full_scan_targets.end());
+        const std::vector<Community>& target_communities = full_scan_targets;
 #else
         const std::vector<Community>& target_communities = sparse_targets;
 #endif
@@ -1621,9 +1805,18 @@ LocalRefinementResult MergeNodesSubsetLocal(
 
 #ifdef ENABLE_REFINEMENT_SPARSE_VERIFY
         // TEMPORARY EXACT SPARSE REFINEMENT VERIFICATION
+        std::vector<Community> reference_active_communities;
+        reference_active_communities.reserve(community_stats.entries.size());
+        for (const auto& item : community_stats.entries) {
+            if (item.second.member_count > 0) {
+                reference_active_communities.push_back(item.first);
+            }
+        }
+        std::sort(reference_active_communities.begin(),
+                  reference_active_communities.end());
         std::vector<WeightedCandidate> full_valid_targets;
-        full_valid_targets.reserve(community_stats.active_communities.size());
-        for (Community community : community_stats.active_communities) {
+        full_valid_targets.reserve(reference_active_communities.size());
+        for (Community community : reference_active_communities) {
             if (!IsCommunityWellConnectedFromStats(stats,
                                                    quality_function,
                                                    community,
@@ -1727,6 +1920,7 @@ LocalRefinementResult MergeNodesSubsetLocal(
         ElapsedSeconds(detail_begin, Clock::now());
     detail->total_time =
         ElapsedSeconds(detail_total_begin, Clock::now());
+    current_refine_subset_profile = nullptr;
 #endif
     return result;
 }
@@ -1986,6 +2180,17 @@ LeidenPartition RefinePartition(const Graph& G,
         REFINE_SUM(nondecreasing_candidates);
         REFINE_SUM(stochastic_selections);
         REFINE_SUM(refinement_moves);
+        REFINE_SUM(initial_refresh_calls);
+        REFINE_SUM(move_refresh_calls);
+        REFINE_SUM(refresh_entries_scanned);
+        REFINE_SUM(refresh_active_produced);
+        REFINE_SUM(refresh_sort_elements);
+        REFINE_SUM(refresh_total_time);
+        REFINE_SUM(active_update_calls);
+        REFINE_SUM(active_activations);
+        REFINE_SUM(active_deactivations);
+        REFINE_SUM(active_no_changes);
+        REFINE_SUM(active_update_time);
         REFINE_SUM(stats_build_vertices);
         REFINE_SUM(stats_build_adjacency_scans);
         REFINE_SUM(stats_update_calls);
@@ -2009,6 +2214,8 @@ LeidenPartition RefinePartition(const Graph& G,
         aggregate_detail.max_active_communities = std::max(
             aggregate_detail.max_active_communities,
             p.max_active_communities);
+        aggregate_detail.refresh_max_time = std::max(
+            aggregate_detail.refresh_max_time, p.refresh_max_time);
     }
     std::sort(heavy_indices.begin(), heavy_indices.end(),
               [&subset_profiles](std::size_t lhs, std::size_t rhs) {
@@ -2102,6 +2309,29 @@ LeidenPartition RefinePartition(const Graph& G,
         << " stats_update_calls=" << aggregate_detail.stats_update_calls
         << " stats_update_adjacency_scans="
         << aggregate_detail.stats_update_adjacency_scans << "\n"
+        << "[RefineDetailed refresh] initial_calls="
+        << aggregate_detail.initial_refresh_calls
+        << " move_calls=" << aggregate_detail.move_refresh_calls
+        << " total_time=" << aggregate_detail.refresh_total_time
+        << " avg_time="
+        << ((aggregate_detail.initial_refresh_calls +
+             aggregate_detail.move_refresh_calls) == 0 ? 0.0 :
+            aggregate_detail.refresh_total_time /
+            static_cast<double>(aggregate_detail.initial_refresh_calls +
+                                aggregate_detail.move_refresh_calls))
+        << " max_time=" << aggregate_detail.refresh_max_time
+        << " entries_scanned=" << aggregate_detail.refresh_entries_scanned
+        << " active_produced=" << aggregate_detail.refresh_active_produced
+        << " sort_elements=" << aggregate_detail.refresh_sort_elements
+        << " refine_ratio="
+        << (refine_total_time == 0.0 ? 0.0 :
+            aggregate_detail.refresh_total_time / refine_total_time) << "\n"
+        << "[RefineDetailed active_update] calls="
+        << aggregate_detail.active_update_calls
+        << " activations=" << aggregate_detail.active_activations
+        << " deactivations=" << aggregate_detail.active_deactivations
+        << " no_change=" << aggregate_detail.active_no_changes
+        << " total_time=" << aggregate_detail.active_update_time << "\n"
         << "[RefineDetailed] cpu_times reset=" << aggregate_detail.reset_time
         << " mass=" << aggregate_detail.subset_mass_time
         << " candidate_scan=" << aggregate_detail.candidate_scan_time
@@ -2146,7 +2376,11 @@ LeidenPartition RefinePartition(const Graph& G,
                       static_cast<double>(p.sparse_target_iterations) /
                       static_cast<double>(p.neighbor_builds))
                   << " max_sparse_targets=" << p.max_sparse_targets
-                  << " delta_evaluations=" << p.delta_evaluations << "\n";
+                  << " delta_evaluations=" << p.delta_evaluations
+                  << " refinement_moves=" << p.refinement_moves
+                  << " refresh_calls="
+                  << p.initial_refresh_calls + p.move_refresh_calls
+                  << " refresh_time=" << p.refresh_total_time << "\n";
     }
 #endif
     return refined;
