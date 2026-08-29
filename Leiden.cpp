@@ -19,13 +19,45 @@
 
 namespace {
 
-struct WeightedEdge {
-    int u;
-    int v;
-    int input_u;
-    int input_v;
-    std::size_t input_index;
-    double weight;
+struct AggregateScratch {
+    std::vector<double> weights;
+    std::vector<std::size_t> marks;
+    std::vector<Community> touched;
+    std::size_t generation = 1;
+
+    explicit AggregateScratch(int n_coarse)
+        : weights(n_coarse, 0.0),
+          marks(n_coarse, 0)
+    {
+    }
+
+    void reset()
+    {
+        touched.clear();
+        if (generation == std::numeric_limits<std::size_t>::max()) {
+            std::fill(marks.begin(), marks.end(), 0);
+            generation = 1;
+        } else {
+            ++generation;
+        }
+    }
+
+    void add(Community community, double weight)
+    {
+        const std::size_t c = static_cast<std::size_t>(community);
+        if (marks[c] != generation) {
+            marks[c] = generation;
+            weights[c] = 0.0;
+            touched.push_back(community);
+        }
+        weights[c] += weight;
+    }
+};
+
+struct AggregateCommunityEdges {
+    bool has_self_loop = false;
+    double self_loop_weight = 0.0;
+    std::vector<Edge> upper_edges;
 };
 
 using Clock = std::chrono::steady_clock;
@@ -846,124 +878,123 @@ AggregateGraphResult AggregateGraph(const Graph& G,
 
     result.graph = MakeGraph(n_coarse);
     result.coarse_of.assign(num_vertices(G), -1);
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (Vertex v = 0; v < num_vertices(G); ++v) {
+        result.coarse_of[v] = community_to_coarse[refined.community_of[v]];
+    }
+
+    std::vector<std::size_t> coarse_counts(n_coarse, 0);
+    for (Vertex v = 0; v < num_vertices(G); ++v) {
+        ++coarse_counts[result.coarse_of[v]];
+    }
+
+    std::vector<std::size_t> coarse_offsets(n_coarse + 1, 0);
+    for (Community c = 0; c < n_coarse; ++c) {
+        coarse_offsets[static_cast<std::size_t>(c) + 1] =
+            coarse_offsets[c] + coarse_counts[c];
+    }
+
+    std::vector<Vertex> coarse_vertices(num_vertices(G));
+    std::vector<std::size_t> next_offset = coarse_offsets;
+    for (Vertex v = 0; v < num_vertices(G); ++v) {
+        const Community coarse = result.coarse_of[v];
+        coarse_vertices[next_offset[coarse]++] = v;
+    }
+
     std::vector<double> coarse_node_size(n_coarse, 0.0);
-
-    int num_threads = 1;
 #ifdef _OPENMP
-    num_threads = omp_get_max_threads();
+#pragma omp parallel for schedule(static)
 #endif
-    std::vector<std::vector<double>> local_node_size(
-        num_threads, std::vector<double>(n_coarse, 0.0));
+    for (Community c = 0; c < n_coarse; ++c) {
+        double size = 0.0;
+        for (std::size_t i = coarse_offsets[c]; i < coarse_offsets[c + 1];
+             ++i) {
+            size += stats.node_size[coarse_vertices[i]];
+        }
+        coarse_node_size[c] = size;
+    }
 
-    // Parallel coarse mapping: node-size accumulation is kept thread-local
-    // and reduced in a fixed order to avoid races and scheduling-dependent sums.
+    std::vector<AggregateCommunityEdges> community_edges(n_coarse);
+
+    // Community-parallel aggregation: each thread reuses private
+    // neighbor-community scratch and each community owns its output slot.
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
     {
-        int tid = 0;
-#ifdef _OPENMP
-        tid = omp_get_thread_num();
-#endif
-        std::vector<double>& local_size = local_node_size[tid];
+        AggregateScratch scratch(n_coarse);
 
 #ifdef _OPENMP
+#ifdef AGGREGATEGRAPH_STATIC_SCHEDULE
 #pragma omp for schedule(static)
+#else
+#pragma omp for schedule(dynamic, 1)
 #endif
-        for (Vertex v = 0; v < num_vertices(G); ++v) {
-            const Community coarse =
-                community_to_coarse[refined.community_of[v]];
-            result.coarse_of[v] = coarse;
-            local_size[coarse] += stats.node_size[v];
-        }
-    }
-
-    for (const std::vector<double>& local_size : local_node_size) {
-        for (Community coarse = 0; coarse < n_coarse; ++coarse) {
-            coarse_node_size[coarse] += local_size[coarse];
-        }
-    }
-
-    std::vector<std::vector<WeightedEdge>> local_edges(num_threads);
-    const std::size_t reserve_per_thread =
-        num_edges(G) / static_cast<std::size_t>(num_threads) + 1;
-    for (std::vector<WeightedEdge>& local : local_edges) {
-        local.reserve(reserve_per_thread);
-    }
-
-    // Parallel aggregation: each thread collects coarse edges into a private
-    // buffer, avoiding synchronization on a shared hash table.
-#ifdef _OPENMP
-#pragma omp parallel
 #endif
-    {
-        int tid = 0;
-#ifdef _OPENMP
-        tid = omp_get_thread_num();
-#endif
-        std::vector<WeightedEdge>& local = local_edges[tid];
+        for (Community c = 0; c < n_coarse; ++c) {
+            scratch.reset();
 
-#ifdef _OPENMP
-#pragma omp for schedule(static)
-#endif
-        for (Vertex u = 0; u < num_vertices(G); ++u) {
-            for (std::size_t edge_index = 0; edge_index < G.adj[u].size();
-                 ++edge_index) {
-                const Edge& e = G.adj[u][edge_index];
-                if (u > e.to) {
-                    continue;
+            bool has_internal_edge = false;
+            double internal_self_loop = 0.0;
+            double internal_nonself_sum = 0.0;
+
+            for (std::size_t i = coarse_offsets[c]; i < coarse_offsets[c + 1];
+                 ++i) {
+                const Vertex u = coarse_vertices[i];
+                for (const Edge& e : G.adj[u]) {
+                    const Community d = result.coarse_of[e.to];
+                    if (d == c) {
+                        has_internal_edge = true;
+                        if (e.to == u) {
+                            internal_self_loop += e.weight;
+                        } else {
+                            internal_nonself_sum += e.weight;
+                        }
+                    } else if (c < d) {
+                        scratch.add(d, e.weight);
+                    }
                 }
+            }
 
-                int cu = result.coarse_of[u];
-                int cv = result.coarse_of[e.to];
-                if (cu > cv) {
-                    std::swap(cu, cv);
-                }
-                local.push_back({cu, cv, u, e.to, edge_index, e.weight});
+            AggregateCommunityEdges& output = community_edges[c];
+            output.has_self_loop = has_internal_edge;
+            output.self_loop_weight =
+                internal_self_loop + 0.5 * internal_nonself_sum;
+
+            std::sort(scratch.touched.begin(), scratch.touched.end());
+            output.upper_edges.reserve(scratch.touched.size());
+            for (Community d : scratch.touched) {
+                output.upper_edges.push_back({d, scratch.weights[d]});
             }
         }
     }
 
-    std::vector<WeightedEdge> edges;
-    std::size_t total_edges = 0;
-    for (const std::vector<WeightedEdge>& local : local_edges) {
-        total_edges += local.size();
-    }
-    edges.reserve(total_edges);
-    for (const std::vector<WeightedEdge>& local : local_edges) {
-        edges.insert(edges.end(), local.begin(), local.end());
-    }
-
-    std::sort(edges.begin(), edges.end(), [](const WeightedEdge& a,
-                                             const WeightedEdge& b) {
-        if (a.u != b.u) {
-            return a.u < b.u;
+    std::vector<std::size_t> coarse_degrees(n_coarse, 0);
+    for (Community c = 0; c < n_coarse; ++c) {
+        if (community_edges[c].has_self_loop) {
+            ++coarse_degrees[c];
         }
-        if (a.v != b.v) {
-            return a.v < b.v;
-        }
-        if (a.input_u != b.input_u) {
-            return a.input_u < b.input_u;
-        }
-        if (a.input_v != b.input_v) {
-            return a.input_v < b.input_v;
-        }
-        return a.input_index < b.input_index;
-    });
-
-    std::vector<WeightedEdge> reduced_edges;
-    reduced_edges.reserve(edges.size());
-    for (const WeightedEdge& e : edges) {
-        if (reduced_edges.empty() || reduced_edges.back().u != e.u ||
-            reduced_edges.back().v != e.v) {
-            reduced_edges.push_back(e);
-        } else {
-            reduced_edges.back().weight += e.weight;
+        coarse_degrees[c] += community_edges[c].upper_edges.size();
+        for (const Edge& e : community_edges[c].upper_edges) {
+            ++coarse_degrees[e.to];
         }
     }
 
-    for (const WeightedEdge& e : reduced_edges) {
-        add_undirected_edge(result.graph, e.u, e.v, e.weight);
+    for (Community c = 0; c < n_coarse; ++c) {
+        result.graph.adj[c].reserve(coarse_degrees[c]);
+    }
+    for (Community c = 0; c < n_coarse; ++c) {
+        const AggregateCommunityEdges& edges = community_edges[c];
+        if (edges.has_self_loop) {
+            result.graph.adj[c].push_back({c, edges.self_loop_weight});
+        }
+        for (const Edge& e : edges.upper_edges) {
+            result.graph.adj[c].push_back(e);
+            result.graph.adj[e.to].push_back({c, e.weight});
+        }
     }
 
     result.stats = BuildLeidenGraphStats(result.graph, coarse_node_size);
