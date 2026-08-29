@@ -1,0 +1,4 @@
+ThreadSanitizer Stage-4B-only std::thread backend
+Compiler: GCC, -O1 -g -fsanitize=thread
+Runs: 1/2/4/8 threads; 20/20/100/20 suite iterations respectively
+Result: 0 ThreadSanitizer warnings. TSan emitted no raw log file.

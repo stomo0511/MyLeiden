@@ -1526,10 +1526,21 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
     const int worker_count = 1;
 #endif
     std::vector<ThreadProfile> profiles(static_cast<std::size_t>(worker_count));
+    // Per-vertex state machine:
+    //   0 IDLE
+    //   1 QUEUED or PROCESSING
+    //   2 QUEUED/PROCESSING with a requeue requested
+    // A request observed while state is 1 changes it to 2. The processing
+    // worker converts 2 back into a queued item before retiring its current
+    // unit of work, so an activation cannot be lost.
     std::unique_ptr<std::atomic<unsigned char>[]> work_state(
         new std::atomic<unsigned char>[static_cast<std::size_t>(n)]);
     std::deque<Vertex> work_queue;
     std::mutex queue_mutex;
+    // outstanding == vertices physically queued + vertices being processed.
+    // A successful enqueue increments before publishing into the mutex-
+    // protected queue. Consumers may temporarily see an empty queue while
+    // outstanding is nonzero, but cannot terminate; they retry instead.
     std::atomic<std::size_t> outstanding(0);
 
     auto lower_empty_hint = [&state](Community community) {
@@ -1578,14 +1589,11 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
                           std::memory_order_release);
         std::atomic<std::size_t> phase_moves(0);
 
-#pragma omp parallel
-        {
-#ifdef _OPENMP
-            ThreadProfile& profile = profiles[static_cast<std::size_t>(
-                omp_get_thread_num())];
-#else
-            ThreadProfile& profile = profiles[0];
-#endif
+        // Both launchers execute this identical worker body. The std::thread
+        // launcher exists solely to isolate libgomp from ThreadSanitizer.
+        auto worker_loop = [&](int worker_id) {
+            ThreadProfile& profile =
+                profiles[static_cast<std::size_t>(worker_id)];
             std::vector<double> weights(nc, 0.0);
             std::vector<std::size_t> marks(nc, 0);
             std::vector<Community> touched;
@@ -1810,7 +1818,45 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
                     work_state[static_cast<std::size_t>(v)].exchange(
                         0, std::memory_order_acq_rel);
                 if (prior == 2) enqueue(v);
-                outstanding.fetch_sub(1, std::memory_order_acq_rel);
+                const std::size_t before_decrement =
+                    outstanding.fetch_sub(1, std::memory_order_acq_rel);
+                if (before_decrement == 0) {
+                    throw std::logic_error("Stage4B outstanding underflow");
+                }
+            }
+        };
+
+#ifdef ENABLE_MOVENODESFAST_STAGE4B_STDTHREAD
+        std::vector<std::thread> workers;
+        workers.reserve(static_cast<std::size_t>(worker_count));
+        for (int worker = 0; worker < worker_count; ++worker) {
+            workers.emplace_back(worker_loop, worker);
+        }
+        for (std::thread& worker : workers) worker.join();
+#else
+#pragma omp parallel
+        {
+#ifdef _OPENMP
+            worker_loop(omp_get_thread_num());
+#else
+            worker_loop(0);
+#endif
+        }
+#endif
+
+        {
+            std::lock_guard<std::mutex> guard(queue_mutex);
+            if (!work_queue.empty()) {
+                throw std::logic_error("Stage4B terminated with queued work");
+            }
+        }
+        if (outstanding.load(std::memory_order_seq_cst) != 0) {
+            throw std::logic_error("Stage4B outstanding mismatch");
+        }
+        for (Vertex v = 0; v < n; ++v) {
+            if (work_state[static_cast<std::size_t>(v)].load(
+                    std::memory_order_seq_cst) != 0) {
+                throw std::logic_error("Stage4B non-idle state at termination");
             }
         }
 

@@ -27,6 +27,7 @@ TARGETS := $(TEST_TARGETS) LeidenCP LeidenMD eblock
 
 TEST_QUALITY_OBJS := QualityFunction.o tests/test_quality.o
 TEST_MOVE_NODES_FAST_OBJS := QualityFunction.o Leiden.o tests/test_move_nodes_fast.o
+TEST_STAGE4B_TSAN_OBJS := QualityFunction.o Leiden.o tests/test_move_nodes_fast_stage4b_tsan.o
 TEST_REFINEMENT_OBJS := QualityFunction.o Leiden.o tests/test_refinement.o
 TEST_AGGREGATE_OBJS := QualityFunction.o Leiden.o tests/test_aggregate.o
 TEST_COARSE_PARTITION_OBJS := QualityFunction.o Leiden.o tests/test_coarse_partition.o
@@ -35,7 +36,7 @@ TEST_BLOCK_EVAL_OBJS := common/BlockIO.o common/Coloring.o tests/test_block_eval
 LEIDEN_CP_OBJS := QualityFunction.o Leiden.o common/MM_IO.o common/BlockIO.o common/Coloring.o leiden_main_cp.o
 LEIDEN_MD_OBJS := QualityFunction.o Leiden.o common/MM_IO.o common/BlockIO.o common/Coloring.o leiden_main_md.o
 EBLOCK_OBJS := common/MM_IO.o common/BlockIO.o common/Coloring.o eblock.o
-DEPS := $(sort $(TEST_QUALITY_OBJS:.o=.d) $(TEST_MOVE_NODES_FAST_OBJS:.o=.d) $(TEST_REFINEMENT_OBJS:.o=.d) $(TEST_AGGREGATE_OBJS:.o=.d) $(TEST_COARSE_PARTITION_OBJS:.o=.d) $(TEST_LEIDEN_OBJS:.o=.d) $(TEST_BLOCK_EVAL_OBJS:.o=.d) $(LEIDEN_CP_OBJS:.o=.d) $(LEIDEN_MD_OBJS:.o=.d) $(EBLOCK_OBJS:.o=.d))
+DEPS := $(sort $(TEST_QUALITY_OBJS:.o=.d) $(TEST_MOVE_NODES_FAST_OBJS:.o=.d) $(TEST_STAGE4B_TSAN_OBJS:.o=.d) $(TEST_REFINEMENT_OBJS:.o=.d) $(TEST_AGGREGATE_OBJS:.o=.d) $(TEST_COARSE_PARTITION_OBJS:.o=.d) $(TEST_LEIDEN_OBJS:.o=.d) $(TEST_BLOCK_EVAL_OBJS:.o=.d) $(LEIDEN_CP_OBJS:.o=.d) $(LEIDEN_MD_OBJS:.o=.d) $(EBLOCK_OBJS:.o=.d))
 
 .PHONY: all test clean profile
 
@@ -50,6 +51,9 @@ tests/test_quality: $(TEST_QUALITY_OBJS)
 	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 tests/test_move_nodes_fast: $(TEST_MOVE_NODES_FAST_OBJS)
+	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
+
+tests/test_move_nodes_fast_stage4b_tsan: $(TEST_STAGE4B_TSAN_OBJS)
 	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 tests/test_refinement: $(TEST_REFINEMENT_OBJS)
@@ -95,6 +99,6 @@ test: $(TEST_TARGETS)
 	./tests/test_block_eval
 
 clean:
-	rm -f $(TARGETS) *.o *.d common/*.o common/*.d tests/*.o tests/*.d
+	rm -f $(TARGETS) tests/test_move_nodes_fast_stage4b_tsan *.o *.d common/*.o common/*.d tests/*.o tests/*.d
 
 -include $(DEPS)
