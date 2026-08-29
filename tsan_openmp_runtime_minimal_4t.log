@@ -1,0 +1,129 @@
+==================
+WARNING: ThreadSanitizer: data race (pid=14)
+  Write of size 8 at 0x7ffe0238c850 by main thread:
+    #0 main tests/test_openmp_tsan_runtime.cpp:31 (test_openmp_tsan_runtime+0x17e0)
+
+  Previous read of size 8 at 0x7ffe0238c850 by thread T3:
+    #0 operator() tests/test_openmp_tsan_runtime.cpp:28 (test_openmp_tsan_runtime+0x1599)
+    #1 main._omp_fn.0 tests/test_openmp_tsan_runtime.cpp:34 (test_openmp_tsan_runtime+0x1599)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001f850)
+
+  Thread T3 (tid=18, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58 (libc.so.6+0x29d8f)
+
+SUMMARY: ThreadSanitizer: data race tests/test_openmp_tsan_runtime.cpp:31 in main
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=14)
+  Read of size 8 at 0x7ffe0238c838 by thread T3:
+    #0 main._omp_fn.0 tests/test_openmp_tsan_runtime.cpp:34 (test_openmp_tsan_runtime+0x14ab)
+    #1 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7ffe0238c838 by main thread:
+    #0 main tests/test_openmp_tsan_runtime.cpp:33 (test_openmp_tsan_runtime+0x17f7)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001f838)
+
+  Thread T3 (tid=18, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58 (libc.so.6+0x29d8f)
+
+SUMMARY: ThreadSanitizer: data race tests/test_openmp_tsan_runtime.cpp:34 in main._omp_fn.0
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=14)
+  Read of size 8 at 0x7ffe0238c848 by thread T3:
+    #0 operator() tests/test_openmp_tsan_runtime.cpp:27 (test_openmp_tsan_runtime+0x155f)
+    #1 main._omp_fn.0 tests/test_openmp_tsan_runtime.cpp:34 (test_openmp_tsan_runtime+0x155f)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7ffe0238c848 by main thread:
+    #0 main tests/test_openmp_tsan_runtime.cpp:31 (test_openmp_tsan_runtime+0x17d0)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001f848)
+
+  Thread T3 (tid=18, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58 (libc.so.6+0x29d8f)
+
+SUMMARY: ThreadSanitizer: data race tests/test_openmp_tsan_runtime.cpp:27 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=14)
+  Atomic write of size 4 at 0x7ffe0238c834 by thread T3:
+    #0 __tsan_atomic32_fetch_add ../../../../src/libsanitizer/tsan/tsan_interface_atomic.cpp:615 (libtsan.so.0+0x81fe9)
+    #1 std::__atomic_base<int>::fetch_add(int, std::memory_order) /usr/include/c++/11/bits/atomic_base.h:618 (test_openmp_tsan_runtime+0x1572)
+    #2 operator() tests/test_openmp_tsan_runtime.cpp:27 (test_openmp_tsan_runtime+0x1572)
+    #3 main._omp_fn.0 tests/test_openmp_tsan_runtime.cpp:34 (test_openmp_tsan_runtime+0x1572)
+    #4 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 4 at 0x7ffe0238c834 by main thread:
+    #0 main tests/test_openmp_tsan_runtime.cpp:24 (test_openmp_tsan_runtime+0x179d)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001f834)
+
+  Thread T3 (tid=18, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58 (libc.so.6+0x29d8f)
+
+SUMMARY: ThreadSanitizer: data race /usr/include/c++/11/bits/atomic_base.h:618 in std::__atomic_base<int>::fetch_add(int, std::memory_order)
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=14)
+  Read of size 8 at 0x7ffe0238c840 by thread T2:
+    #0 operator() tests/test_openmp_tsan_runtime.cpp:26 (test_openmp_tsan_runtime+0x14b6)
+    #1 main._omp_fn.0 tests/test_openmp_tsan_runtime.cpp:34 (test_openmp_tsan_runtime+0x14b6)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 8 at 0x7ffe0238c840 by main thread:
+    #0 main tests/test_openmp_tsan_runtime.cpp:31 (test_openmp_tsan_runtime+0x17b6)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001f840)
+
+  Thread T2 (tid=17, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58 (libc.so.6+0x29d8f)
+
+SUMMARY: ThreadSanitizer: data race tests/test_openmp_tsan_runtime.cpp:26 in operator()
+==================
+==================
+WARNING: ThreadSanitizer: data race (pid=14)
+  Read of size 4 at 0x7ffe0238c830 by thread T1:
+    #0 operator() tests/test_openmp_tsan_runtime.cpp:26 (test_openmp_tsan_runtime+0x14c1)
+    #1 main._omp_fn.0 tests/test_openmp_tsan_runtime.cpp:34 (test_openmp_tsan_runtime+0x14c1)
+    #2 <null> <null> (libgomp.so.1+0x1dc0d)
+
+  Previous write of size 4 at 0x7ffe0238c830 by main thread:
+    #0 main tests/test_openmp_tsan_runtime.cpp:23 (test_openmp_tsan_runtime+0x184f)
+
+  Location is stack of main thread.
+
+  Location is global '<null>' at 0x000000000000 ([stack]+0x00000001f830)
+
+  Thread T1 (tid=16, running) created by main thread at:
+    #0 pthread_create ../../../../src/libsanitizer/tsan/tsan_interceptors_posix.cpp:969 (libtsan.so.0+0x605b8)
+    #1 <null> <null> (libgomp.so.1+0x1e25f)
+    #2 __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58 (libc.so.6+0x29d8f)
+
+SUMMARY: ThreadSanitizer: data race tests/test_openmp_tsan_runtime.cpp:26 in operator()
+==================
+OpenMP runtime probe passed
+ThreadSanitizer: reported 6 warnings

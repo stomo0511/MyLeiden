@@ -38,7 +38,8 @@ LEIDEN_MD_OBJS := QualityFunction.o Leiden.o common/MM_IO.o common/BlockIO.o com
 EBLOCK_OBJS := common/MM_IO.o common/BlockIO.o common/Coloring.o eblock.o
 DEPS := $(sort $(TEST_QUALITY_OBJS:.o=.d) $(TEST_MOVE_NODES_FAST_OBJS:.o=.d) $(TEST_STAGE4B_TSAN_OBJS:.o=.d) $(TEST_REFINEMENT_OBJS:.o=.d) $(TEST_AGGREGATE_OBJS:.o=.d) $(TEST_COARSE_PARTITION_OBJS:.o=.d) $(TEST_LEIDEN_OBJS:.o=.d) $(TEST_BLOCK_EVAL_OBJS:.o=.d) $(LEIDEN_CP_OBJS:.o=.d) $(LEIDEN_MD_OBJS:.o=.d) $(EBLOCK_OBJS:.o=.d))
 
-.PHONY: all test clean profile
+.PHONY: all test clean profile test_stage4b_tsan_openmp \
+	test_stage4b_tsan_stdthread test_stage4b_tsan_minimal_openmp
 
 all: $(TARGETS)
 
@@ -46,6 +47,21 @@ all: $(TARGETS)
 profile:
 	$(MAKE) clean
 	$(MAKE) CPPFLAGS="$(CPPFLAGS) -DENABLE_MOVENODESFAST_PROFILE" all
+
+# Linux/GCC Stage-4B race-isolation targets. These targets intentionally use
+# separate one-shot builds so sanitizer flags cannot leak into normal objects.
+test_stage4b_tsan_openmp:
+	$(MAKE) clean
+	$(MAKE) CPPFLAGS="-I. -Icommon -DENABLE_MOVENODESFAST_STAGE4B" CXXFLAGS="-O1 -g -std=c++17 -Wall -Wextra -Wpedantic -fopenmp -fsanitize=thread -fno-omit-frame-pointer" LDFLAGS="-fopenmp -fsanitize=thread" tests/test_move_nodes_fast_stage4b_tsan
+
+test_stage4b_tsan_stdthread:
+	$(MAKE) clean
+	$(MAKE) CPPFLAGS="-I. -Icommon -DENABLE_MOVENODESFAST_STAGE4B -DENABLE_MOVENODESFAST_STAGE4B_STDTHREAD" CXXFLAGS="-O1 -g -std=c++17 -Wall -Wextra -Wpedantic -fopenmp -fsanitize=thread -fno-omit-frame-pointer" LDFLAGS="-fopenmp -fsanitize=thread" tests/test_move_nodes_fast_stage4b_tsan
+
+test_stage4b_tsan_minimal_openmp:
+	$(CXX) -O1 -g -std=c++17 -Wall -Wextra -Wpedantic -fopenmp \
+		-fsanitize=thread -fno-omit-frame-pointer \
+		tests/test_openmp_tsan_runtime.cpp -o tests/test_openmp_tsan_runtime
 
 tests/test_quality: $(TEST_QUALITY_OBJS)
 	$(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
@@ -99,6 +115,7 @@ test: $(TEST_TARGETS)
 	./tests/test_block_eval
 
 clean:
-	rm -f $(TARGETS) tests/test_move_nodes_fast_stage4b_tsan *.o *.d common/*.o common/*.d tests/*.o tests/*.d
+	rm -f $(TARGETS) tests/test_move_nodes_fast_stage4b_tsan \
+		tests/test_openmp_tsan_runtime *.o *.d common/*.o common/*.d tests/*.o tests/*.d
 
 -include $(DEPS)
