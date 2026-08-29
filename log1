@@ -1,0 +1,41 @@
+        ++entry.member_count;
+        entry.mass += quality_function.refinementNodeMass(stats, v);
+    }
+
+    for (Vertex u : subset) {
+        ValidateVertex(u, G);
+        const Community cu = refined.community_of[u];
+        RefinementCommunityEntry& cu_entry =
+            EnsureRefinementCommunityEntry(community_stats, cu);
+
+        for (const Edge& e : G.adj[u]) {
+            if (e.to == u ||
+                subset_mark[e.to] != subset_generation ||
+                u > e.to) {
+                continue;
+            }
+
+            const Community cv = refined.community_of[e.to];
+            RefinementCommunityEntry& cv_entry =
+                EnsureRefinementCommunityEntry(community_stats, cv);
+            if (cu != cv) {
+                cu_entry.external_weight += e.weight;
+                cv_entry.external_weight += e.weight;
+            }
+        }
+    }
+
+    RefreshActiveCommunities(community_stats, true);
+    return community_stats;
+}
+
+bool IsCommunityWellConnectedFromStats(
+    const LeidenGraphStats& stats,
+    const QualityFunction& quality_function,
+    Community community,
+    double subset_mass,
+    const RefinementCommunityStats& community_stats)
+{
+    if (community < 0) {
+        return false;
+    }

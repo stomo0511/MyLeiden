@@ -1,0 +1,41 @@
+    //   C == B: A-B external becomes internal B edge, so A -= w and B -= w.
+    //   otherwise: A-C external becomes B-C external, so A -= w and B += w.
+    // The third community C is external both before and after, so its value is
+    // unchanged. Self-loops and subset-external edges are ignored.
+    for (const Edge& e : G.adj[v]) {
+        const Vertex u = e.to;
+        if (u == v || subset_mark[u] != subset_generation) {
+            continue;
+        }
+
+        const Community neighbor_community = refined_before_move.community_of[u];
+        if (neighbor_community == source) {
+            source_entry.external_weight += e.weight;
+            target_entry.external_weight += e.weight;
+        } else if (neighbor_community == target) {
+            source_entry.external_weight -= e.weight;
+            target_entry.external_weight -= e.weight;
+        } else {
+            source_entry.external_weight -= e.weight;
+            target_entry.external_weight += e.weight;
+        }
+    }
+
+#ifdef REFINE_FULL_REFRESH_ACTIVE_MAINTENANCE
+    RefreshActiveCommunities(community_stats);
+#else
+    UpdateActiveCommunitiesIncrementally(community_stats, source, target,
+                                         old_source_count, old_target_count,
+                                         old_source_mass, old_target_mass);
+#endif
+}
+
+RefinementCommunityStats BuildRefinementCommunityStatsForParent(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& parent_partition,
+    const LeidenPartition& local_refined,
+    const QualityFunction& quality_function,
+    const std::vector<Vertex>& subset,
+    Community parent)
+{

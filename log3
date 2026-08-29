@@ -1,0 +1,41 @@
+        const Community cu = local_refined.community_of[u];
+        RefinementCommunityEntry& cu_entry =
+            EnsureRefinementCommunityEntry(community_stats, cu);
+
+        for (const Edge& e : G.adj[u]) {
+            if (e.to == u ||
+                parent_partition.community_of[e.to] != parent ||
+                u > e.to) {
+                continue;
+            }
+
+            const Community cv = local_refined.community_of[e.to];
+            RefinementCommunityEntry& cv_entry =
+                EnsureRefinementCommunityEntry(community_stats, cv);
+            if (cu != cv) {
+                cu_entry.external_weight += e.weight;
+                cv_entry.external_weight += e.weight;
+            }
+        }
+    }
+
+    RefreshActiveCommunities(community_stats, true);
+    return community_stats;
+}
+
+void UpdateRefinementCommunityStatsForParentMove(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& parent_partition,
+    const LeidenPartition& local_refined_before_move,
+    const QualityFunction& quality_function,
+    Vertex v,
+    Community parent,
+    Community target,
+    RefinementCommunityStats& community_stats)
+{
+    ValidateVertex(v, G);
+    const Community source = local_refined_before_move.community_of[v];
+    if (source == target) {
+        return;
+    }

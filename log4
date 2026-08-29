@@ -1,0 +1,36 @@
+        if (u == v || parent_partition.community_of[u] != parent) {
+            continue;
+        }
+
+        const Community neighbor_community =
+            local_refined_before_move.community_of[u];
+        if (neighbor_community == source) {
+            source_entry.external_weight += e.weight;
+            target_entry.external_weight += e.weight;
+        } else if (neighbor_community == target) {
+            source_entry.external_weight -= e.weight;
+            target_entry.external_weight -= e.weight;
+        } else {
+            source_entry.external_weight -= e.weight;
+            target_entry.external_weight += e.weight;
+        }
+    }
+
+#ifdef REFINE_FULL_REFRESH_ACTIVE_MAINTENANCE
+    RefreshActiveCommunities(community_stats);
+#else
+    UpdateActiveCommunitiesIncrementally(community_stats, source, target,
+                                         old_source_count, old_target_count,
+                                         old_source_mass, old_target_mass);
+#endif
+}
+
+// -----------------------------------------------------------------------------
+// TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
+// These local macros keep profiling removable and compile to nothing when the
+// profile is disabled. Each measured region uses only one begin/end pair.
+// -----------------------------------------------------------------------------
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+#define MNF_PROFILE_BEGIN(name) \
+    const Clock::time_point name##_begin = Clock::now()
+#define MNF_PROFILE_END(name, field) \
