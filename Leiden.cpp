@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <deque>
 #include <functional>
 #include <iostream>
@@ -60,6 +61,12 @@ struct AggregateCommunityEdges {
     std::vector<Edge> upper_edges;
 };
 
+struct LocalRefinementResult {
+    std::vector<Vertex> vertices;
+    std::vector<Community> local_assignment;
+    Community local_community_count = 0;
+};
+
 using Clock = std::chrono::steady_clock;
 
 double ElapsedSeconds(Clock::time_point begin, Clock::time_point end)
@@ -106,6 +113,91 @@ double SubsetMass(const LeidenGraphStats& stats,
     return mass;
 }
 
+std::mt19937 MakeSubsetRng(std::uint64_t global_seed,
+                           std::uint64_t level,
+                           std::uint64_t parent)
+{
+    const std::uint64_t seed = MakeSubsetSeed(global_seed, level, parent);
+    std::seed_seq seq{
+        static_cast<std::uint32_t>(seed),
+        static_cast<std::uint32_t>(seed >> 32U),
+        static_cast<std::uint32_t>(parent),
+        static_cast<std::uint32_t>(parent >> 32U),
+        static_cast<std::uint32_t>(level),
+        static_cast<std::uint32_t>(level >> 32U)};
+    return std::mt19937(seq);
+}
+
+void ResetLocalSingletonsForSubset(const Graph& G,
+                                   const LeidenGraphStats& stats,
+                                   const std::vector<double>& singleton_internal_edge_weight,
+                                   LeidenPartition& local_partition,
+                                   const std::vector<Vertex>& subset)
+{
+    for (Vertex v : subset) {
+        ValidateVertex(v, G);
+        local_partition.community_of[v] = v;
+        local_partition.community_size[v] = stats.node_size[v];
+        local_partition.community_strength[v] = stats.node_strength[v];
+        local_partition.internal_edge_weight[v] =
+            singleton_internal_edge_weight[v];
+        local_partition.community_is_empty[v] = 0;
+    }
+    local_partition.smallest_empty_community =
+        static_cast<Community>(local_partition.community_size.size());
+}
+
+LeidenPartition MakeThreadLocalSingletonPartition(const Graph& G,
+                                                  const LeidenGraphStats& stats,
+                                                  const std::vector<double>& singleton_internal_edge_weight)
+{
+    const int n = num_vertices(G);
+    LeidenPartition partition;
+    partition.community_of.resize(n);
+    std::iota(partition.community_of.begin(), partition.community_of.end(), 0);
+    partition.community_size = stats.node_size;
+    partition.community_strength = stats.node_strength;
+    partition.internal_edge_weight = singleton_internal_edge_weight;
+    partition.community_is_empty.assign(n, 0);
+    partition.smallest_empty_community = n;
+    (void)G;
+    return partition;
+}
+
+double EdgeWeightFromNodeToParentSubset(const Graph& G,
+                                        const LeidenPartition& partition,
+                                        Vertex v,
+                                        Community parent)
+{
+    ValidateVertex(v, G);
+    double weight = 0.0;
+    for (const Edge& e : G.adj[v]) {
+        if (e.to != v && partition.community_of[e.to] == parent) {
+            weight += e.weight;
+        }
+    }
+    return weight;
+}
+
+bool IsNodeWellConnectedToParentSubset(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& partition,
+    const QualityFunction& quality_function,
+    Vertex v,
+    Community parent,
+    double subset_mass)
+{
+    const double node_mass = quality_function.refinementNodeMass(stats, v);
+    const double edge_weight =
+        EdgeWeightFromNodeToParentSubset(G, partition, v, parent);
+    const double threshold =
+        quality_function.refinementResolution(stats) *
+        node_mass *
+        (subset_mass - node_mass);
+    return edge_weight >= threshold;
+}
+
 RefinementCommunityEntry& EnsureRefinementCommunityEntry(
     RefinementCommunityStats& community_stats,
     Community community)
@@ -143,28 +235,6 @@ std::vector<std::vector<Vertex>> BuildPartitionMembers(
         }
     }
     return members;
-}
-
-void MarkSubset(const Graph& G,
-                const std::vector<Vertex>& subset,
-                std::vector<std::size_t>& subset_mark,
-                std::size_t& subset_generation)
-{
-    if (subset_mark.size() != static_cast<std::size_t>(num_vertices(G))) {
-        throw std::invalid_argument("subset mark size does not match graph");
-    }
-
-    if (subset_generation == std::numeric_limits<std::size_t>::max()) {
-        std::fill(subset_mark.begin(), subset_mark.end(), 0);
-        subset_generation = 1;
-    } else {
-        ++subset_generation;
-    }
-
-    for (Vertex v : subset) {
-        ValidateVertex(v, G);
-        subset_mark[v] = subset_generation;
-    }
 }
 
 std::vector<Community> BuildCandidateCommunities(
@@ -442,6 +512,106 @@ void UpdateRefinementCommunityStatsForMove(
         }
 
         const Community neighbor_community = refined_before_move.community_of[u];
+        if (neighbor_community == source) {
+            source_entry.external_weight += e.weight;
+            target_entry.external_weight += e.weight;
+        } else if (neighbor_community == target) {
+            source_entry.external_weight -= e.weight;
+            target_entry.external_weight -= e.weight;
+        } else {
+            source_entry.external_weight -= e.weight;
+            target_entry.external_weight += e.weight;
+        }
+    }
+
+    RefreshActiveCommunities(community_stats);
+}
+
+RefinementCommunityStats BuildRefinementCommunityStatsForParent(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& parent_partition,
+    const LeidenPartition& local_refined,
+    const QualityFunction& quality_function,
+    const std::vector<Vertex>& subset,
+    Community parent)
+{
+    RefinementCommunityStats community_stats;
+    community_stats.entries.reserve(subset.size());
+
+    for (Vertex v : subset) {
+        ValidateVertex(v, G);
+        const Community community = local_refined.community_of[v];
+        RefinementCommunityEntry& entry =
+            EnsureRefinementCommunityEntry(community_stats, community);
+        ++entry.member_count;
+        entry.mass += quality_function.refinementNodeMass(stats, v);
+    }
+
+    for (Vertex u : subset) {
+        ValidateVertex(u, G);
+        const Community cu = local_refined.community_of[u];
+        RefinementCommunityEntry& cu_entry =
+            EnsureRefinementCommunityEntry(community_stats, cu);
+
+        for (const Edge& e : G.adj[u]) {
+            if (e.to == u ||
+                parent_partition.community_of[e.to] != parent ||
+                u > e.to) {
+                continue;
+            }
+
+            const Community cv = local_refined.community_of[e.to];
+            RefinementCommunityEntry& cv_entry =
+                EnsureRefinementCommunityEntry(community_stats, cv);
+            if (cu != cv) {
+                cu_entry.external_weight += e.weight;
+                cv_entry.external_weight += e.weight;
+            }
+        }
+    }
+
+    RefreshActiveCommunities(community_stats);
+    return community_stats;
+}
+
+void UpdateRefinementCommunityStatsForParentMove(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& parent_partition,
+    const LeidenPartition& local_refined_before_move,
+    const QualityFunction& quality_function,
+    Vertex v,
+    Community parent,
+    Community target,
+    RefinementCommunityStats& community_stats)
+{
+    ValidateVertex(v, G);
+    const Community source = local_refined_before_move.community_of[v];
+    if (source == target) {
+        return;
+    }
+
+    EnsureRefinementCommunityEntry(community_stats, source);
+    EnsureRefinementCommunityEntry(community_stats, target);
+    RefinementCommunityEntry& source_entry = community_stats.entries[source];
+    RefinementCommunityEntry& target_entry = community_stats.entries[target];
+
+    const double node_mass =
+        quality_function.refinementNodeMass(stats, v);
+    --source_entry.member_count;
+    ++target_entry.member_count;
+    source_entry.mass -= node_mass;
+    target_entry.mass += node_mass;
+
+    for (const Edge& e : G.adj[v]) {
+        const Vertex u = e.to;
+        if (u == v || parent_partition.community_of[u] != parent) {
+            continue;
+        }
+
+        const Community neighbor_community =
+            local_refined_before_move.community_of[u];
         if (neighbor_community == source) {
             source_entry.external_weight += e.weight;
             target_entry.external_weight += e.weight;
@@ -785,6 +955,331 @@ void MergeNodesSubset(const Graph& G,
     // }
 }
 
+LocalRefinementResult MergeNodesSubsetLocal(
+    const Graph& G,
+    const LeidenGraphStats& stats,
+    const LeidenPartition& parent_partition,
+    const std::vector<double>& singleton_internal_edge_weight,
+    LeidenPartition& local_refined,
+    const std::vector<Vertex>& subset,
+    Community parent,
+    const QualityFunction& quality_function,
+    double theta,
+    std::mt19937& local_rng)
+{
+    if (theta <= 0.0) {
+        throw std::invalid_argument("theta must be positive");
+    }
+
+    LocalRefinementResult result;
+    result.vertices = subset;
+    result.local_assignment.assign(subset.size(), 0);
+    if (subset.empty()) {
+        return result;
+    }
+
+    ResetLocalSingletonsForSubset(G,
+                                  stats,
+                                  singleton_internal_edge_weight,
+                                  local_refined,
+                                  subset);
+
+    const double subset_mass = SubsetMass(stats, quality_function, subset);
+    std::vector<Vertex> candidates;
+    candidates.reserve(subset.size());
+    for (Vertex v : subset) {
+        if (IsNodeWellConnectedToParentSubset(G,
+                                              stats,
+                                              parent_partition,
+                                              quality_function,
+                                              v,
+                                              parent,
+                                              subset_mass)) {
+            candidates.push_back(v);
+        }
+    }
+    std::shuffle(candidates.begin(), candidates.end(), local_rng);
+
+    NeighborCommunityScratch neighbor_scratch;
+    neighbor_scratch.weights.assign(local_refined.community_size.size(), 0.0);
+    neighbor_scratch.marks.assign(local_refined.community_size.size(), 0);
+    neighbor_scratch.touched.reserve(32);
+
+    RefinementCommunityStats community_stats =
+        BuildRefinementCommunityStatsForParent(G,
+                                               stats,
+                                               parent_partition,
+                                               local_refined,
+                                               quality_function,
+                                               subset,
+                                               parent);
+
+    for (Vertex v : candidates) {
+        const Community source = local_refined.community_of[v];
+        const auto source_entry = community_stats.entries.find(source);
+        if (source < 0 ||
+            source_entry == community_stats.entries.end() ||
+            source_entry->second.member_count != 1) {
+            continue;
+        }
+
+        BuildNeighborCommunityWeights(G, local_refined, v, neighbor_scratch);
+        const double weight_to_source =
+            LookupNeighborCommunityWeight(neighbor_scratch, source);
+
+        struct WeightedCandidate {
+            Community community;
+            double delta;
+        };
+        std::vector<WeightedCandidate> nondecreasing_candidates;
+        nondecreasing_candidates.reserve(
+            community_stats.active_communities.size());
+
+        for (Community community : community_stats.active_communities) {
+            if (!IsCommunityWellConnectedFromStats(stats,
+                                                  quality_function,
+                                                  community,
+                                                  subset_mass,
+                                                  community_stats)) {
+                continue;
+            }
+
+            const double delta =
+                (community == source)
+                    ? 0.0
+                    : quality_function.deltaMoveFromWeights(
+                          stats,
+                          local_refined,
+                          v,
+                          community,
+                          weight_to_source,
+                          LookupNeighborCommunityWeight(neighbor_scratch,
+                                                        community));
+
+            if (delta >= 0.0) {
+                nondecreasing_candidates.push_back({community, delta});
+            }
+        }
+
+        if (nondecreasing_candidates.empty()) {
+            continue;
+        }
+
+        double max_delta = nondecreasing_candidates.front().delta;
+        for (const WeightedCandidate& candidate : nondecreasing_candidates) {
+            max_delta = std::max(max_delta, candidate.delta);
+        }
+
+        std::vector<double> weights;
+        weights.reserve(nondecreasing_candidates.size());
+        for (const WeightedCandidate& candidate : nondecreasing_candidates) {
+            weights.push_back(std::exp((candidate.delta - max_delta) / theta));
+        }
+
+        std::discrete_distribution<std::size_t> distribution(weights.begin(),
+                                                             weights.end());
+        const Community target =
+            nondecreasing_candidates[distribution(local_rng)].community;
+
+        if (target != source) {
+            UpdateRefinementCommunityStatsForParentMove(G,
+                                                        stats,
+                                                        parent_partition,
+                                                        local_refined,
+                                                        quality_function,
+                                                        v,
+                                                        parent,
+                                                        target,
+                                                        community_stats);
+            MoveNodeToCommunity(G, stats, local_refined, v, target);
+        }
+    }
+
+    std::vector<Community> local_communities;
+    local_communities.reserve(subset.size());
+    for (Vertex v : subset) {
+        local_communities.push_back(local_refined.community_of[v]);
+    }
+    std::vector<Community> compact_map = BuildCompactCommunityMap(local_communities);
+    result.local_community_count =
+        static_cast<Community>(compact_map.empty() ? 0 :
+            *std::max_element(compact_map.begin(), compact_map.end()) + 1);
+    for (std::size_t i = 0; i < subset.size(); ++i) {
+        result.local_assignment[i] =
+            compact_map[local_refined.community_of[subset[i]]];
+    }
+    return result;
+}
+
+LeidenPartition RefinePartition(const Graph& G,
+                                const LeidenGraphStats& stats,
+                                const LeidenPartition& partition,
+                                const QualityFunction& quality_function,
+                                double theta,
+                                std::uint64_t global_seed,
+                                std::uint64_t level,
+                                const LeidenOptions* options)
+{
+    if (theta <= 0.0) {
+        throw std::invalid_argument("theta must be positive");
+    }
+
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    // TEMPORARY REFINEPARTITION PERFORMANCE PROFILING
+    const Clock::time_point refine_total_begin = Clock::now();
+    double member_construction_time = 0.0;
+    double subset_processing_time = 0.0;
+    double global_id_prefix_time = 0.0;
+    double global_assignment_time = 0.0;
+    double make_partition_time = 0.0;
+    const Clock::time_point member_construction_begin = Clock::now();
+#endif
+    const std::vector<std::vector<Vertex>> members =
+        BuildPartitionMembers(partition);
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    member_construction_time =
+        ElapsedSeconds(member_construction_begin, Clock::now());
+#endif
+    const bool debug = DebugEnabled(options);
+    const std::size_t total_parent_communities =
+        static_cast<std::size_t>(
+            std::count_if(members.begin(),
+                          members.end(),
+                          [](const std::vector<Vertex>& subset) {
+                              return !subset.empty();
+                          }));
+
+    std::vector<LocalRefinementResult> local_results(members.size());
+    std::vector<double> singleton_internal_edge_weight(num_vertices(G), 0.0);
+    for (Vertex v = 0; v < num_vertices(G); ++v) {
+        singleton_internal_edge_weight[v] = SelfLoopWeight(G, v);
+    }
+
+    // Parent-community parallel refinement: each worker mutates only its
+    // thread-local partition scratch and stores one result per parent.
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    // TEMPORARY REFINEPARTITION PERFORMANCE PROFILING
+    const Clock::time_point subset_processing_begin = Clock::now();
+#endif
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+        LeidenPartition local_refined =
+            MakeThreadLocalSingletonPartition(G,
+                                              stats,
+                                              singleton_internal_edge_weight);
+
+#ifdef _OPENMP
+#ifdef REFINEMENT_DYNAMIC_SCHEDULE
+#pragma omp for schedule(dynamic, 1)
+#else
+#pragma omp for schedule(static)
+#endif
+#endif
+        for (Community parent = 0;
+             parent < static_cast<Community>(members.size());
+             ++parent) {
+            const std::vector<Vertex>& subset = members[parent];
+            if (subset.empty()) {
+                continue;
+            }
+
+            std::mt19937 local_rng =
+                MakeSubsetRng(global_seed,
+                              level,
+                              static_cast<std::uint64_t>(parent));
+            local_results[parent] =
+                MergeNodesSubsetLocal(G,
+                                      stats,
+                                      partition,
+                                      singleton_internal_edge_weight,
+                                      local_refined,
+                                      subset,
+                                      parent,
+                                      quality_function,
+                                      theta,
+                                      local_rng);
+        }
+    }
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    subset_processing_time =
+        ElapsedSeconds(subset_processing_begin, Clock::now());
+#endif
+
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    // TEMPORARY REFINEPARTITION PERFORMANCE PROFILING
+    const Clock::time_point global_id_prefix_begin = Clock::now();
+#endif
+    std::vector<Community> community_offsets(members.size() + 1, 0);
+    for (std::size_t parent = 0; parent < members.size(); ++parent) {
+        community_offsets[parent + 1] =
+            community_offsets[parent] +
+            local_results[parent].local_community_count;
+    }
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    global_id_prefix_time =
+        ElapsedSeconds(global_id_prefix_begin, Clock::now());
+#endif
+
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    // TEMPORARY REFINEPARTITION PERFORMANCE PROFILING
+    const Clock::time_point global_assignment_begin = Clock::now();
+#endif
+    std::vector<Community> global_assignment(num_vertices(G), -1);
+    std::size_t processed_vertices = 0;
+    for (std::size_t parent = 0; parent < members.size(); ++parent) {
+        const LocalRefinementResult& local = local_results[parent];
+        const Community offset = community_offsets[parent];
+        for (std::size_t i = 0; i < local.vertices.size(); ++i) {
+            global_assignment[local.vertices[i]] =
+                offset + local.local_assignment[i];
+        }
+        processed_vertices += local.vertices.size();
+    }
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    global_assignment_time =
+        ElapsedSeconds(global_assignment_begin, Clock::now());
+#endif
+
+    if (debug) {
+        std::cerr << "[RefinePartition] done processed_parent_communities="
+                  << total_parent_communities
+                  << " total_parent_communities=" << total_parent_communities
+                  << " processed_vertices=" << processed_vertices
+                  << "\n";
+    }
+
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    // TEMPORARY REFINEPARTITION PERFORMANCE PROFILING
+    const Clock::time_point make_partition_begin = Clock::now();
+#endif
+    LeidenPartition refined = MakePartition(G, stats, global_assignment);
+#ifdef ENABLE_REFINEPARTITION_PROFILE
+    make_partition_time = ElapsedSeconds(make_partition_begin, Clock::now());
+    const double refine_total_time =
+        ElapsedSeconds(refine_total_begin, Clock::now());
+    if (debug) {
+        std::cerr << "[RefinePartition profile] member construction: "
+                  << member_construction_time << " s\n"
+                  << "[RefinePartition profile] subset processing: "
+                  << subset_processing_time << " s\n"
+                  << "[RefinePartition profile] local result storage: "
+                  << subset_processing_time << " s (included in subset processing)\n"
+                  << "[RefinePartition profile] global ID prefix: "
+                  << global_id_prefix_time << " s\n"
+                  << "[RefinePartition profile] global assignment reconstruction: "
+                  << global_assignment_time << " s\n"
+                  << "[RefinePartition profile] MakePartition rebuild: "
+                  << make_partition_time << " s\n"
+                  << "[RefinePartition profile] total: "
+                  << refine_total_time << " s\n";
+    }
+    // END TEMPORARY REFINEPARTITION PERFORMANCE PROFILING
+#endif
+    return refined;
+}
+
 LeidenPartition RefinePartition(const Graph& G,
                                 const LeidenGraphStats& stats,
                                 const LeidenPartition& partition,
@@ -793,71 +1288,31 @@ LeidenPartition RefinePartition(const Graph& G,
                                 std::mt19937& rng,
                                 const LeidenOptions* options)
 {
-    if (theta <= 0.0) {
-        throw std::invalid_argument("theta must be positive");
-    }
+    return RefinePartition(G,
+                           stats,
+                           partition,
+                           quality_function,
+                           theta,
+                           static_cast<std::uint64_t>(rng()),
+                           0,
+                           options);
+}
 
-    LeidenPartition refined = MakeSingletonPartition(G, stats);
-    const std::vector<std::vector<Vertex>> members =
-        BuildPartitionMembers(partition);
-    const bool debug = DebugEnabled(options);
-    const std::size_t debug_interval = DebugInterval(options);
-    const std::size_t total_parent_communities =
-        static_cast<std::size_t>(
-            std::count_if(members.begin(),
-                          members.end(),
-                          [](const std::vector<Vertex>& subset) {
-                              return !subset.empty();
-                          }));
-    std::size_t processed_parent_communities = 0;
-    std::size_t processed_vertices = 0;
-    std::size_t next_parent_report = debug_interval;
-    std::size_t next_vertex_report = debug_interval;
-    std::vector<std::size_t> subset_mark(num_vertices(G), 0);
-    std::size_t subset_generation = 0;
+std::uint64_t MakeSubsetSeed(std::uint64_t global_seed,
+                             std::uint64_t level,
+                             std::uint64_t parent)
+{
+    auto mix = [](std::uint64_t x) {
+        x += 0x9e3779b97f4a7c15ULL;
+        x = (x ^ (x >> 30U)) * 0xbf58476d1ce4e5b9ULL;
+        x = (x ^ (x >> 27U)) * 0x94d049bb133111ebULL;
+        return x ^ (x >> 31U);
+    };
 
-    for (const std::vector<Vertex>& subset : members) {
-        if (!subset.empty()) {
-            MarkSubset(G, subset, subset_mark, subset_generation);
-            MergeNodesSubset(G,
-                             stats,
-                             refined,
-                             subset,
-                             quality_function,
-                             theta,
-                             rng,
-                             subset_mark,
-                             subset_generation,
-                             options);
-            ++processed_parent_communities;
-            processed_vertices += subset.size();
-            if (debug &&
-                (processed_parent_communities >= next_parent_report ||
-                 processed_vertices >= next_vertex_report)) {
-                std::cerr << "[RefinePartition] processed_parent_communities="
-                          << processed_parent_communities
-                          << " total_parent_communities="
-                          << total_parent_communities
-                          << " processed_vertices=" << processed_vertices
-                          << " current_subset_size=" << subset.size()
-                          << "\n";
-                while (processed_parent_communities >= next_parent_report) {
-                    next_parent_report += debug_interval;
-                }
-                while (processed_vertices >= next_vertex_report) {
-                    next_vertex_report += debug_interval;
-                }
-            }
-        }
-    }
-    if (debug) {
-        std::cerr << "[RefinePartition] done processed_parent_communities="
-                  << processed_parent_communities
-                  << " total_parent_communities=" << total_parent_communities
-                  << " processed_vertices=" << processed_vertices
-                  << "\n";
-    }
-    return refined;
+    std::uint64_t seed = mix(global_seed);
+    seed ^= mix(level + 0x632be59bd9b4e019ULL);
+    seed ^= mix(parent + 0x85157af5ULL);
+    return mix(seed);
 }
 
 AggregateGraphResult AggregateGraph(const Graph& G,
@@ -1237,7 +1692,8 @@ LeidenResult Leiden(const Graph& G,
                             current_partition,
                             quality_function,
                             options.theta,
-                            rng,
+                            static_cast<std::uint64_t>(options.seed),
+                            level,
                             &options);
         const Clock::time_point refine_end = Clock::now();
         result.timing.refine_partition +=

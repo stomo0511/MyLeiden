@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -279,6 +280,20 @@ void CheckRefinementRun(const std::string& test_name,
               quality_after + kTolerance >= quality_before);
 }
 
+void CheckSamePartition(const std::string& test_name,
+                        const LeidenPartition& expected,
+                        const LeidenPartition& actual)
+{
+    CheckTrue(test_name + " community_of",
+              expected.community_of == actual.community_of);
+    CheckTrue(test_name + " community_size",
+              expected.community_size == actual.community_size);
+    CheckTrue(test_name + " community_strength",
+              expected.community_strength == actual.community_strength);
+    CheckTrue(test_name + " internal_edge_weight",
+              expected.internal_edge_weight == actual.internal_edge_weight);
+}
+
 Graph MakeUnweightedGraph()
 {
     Graph G = MakeGraph(6);
@@ -415,6 +430,38 @@ void TestThetaReproducibility()
         RefinePartition(G, stats, partition, cpm, 0.05, rng2);
 
     CheckTrue("Test E theta reproducibility", a.community_of == b.community_of);
+}
+
+void TestSubsetSeedDeterminism()
+{
+    const std::uint64_t seed_a = MakeSubsetSeed(1234, 5, 9);
+    const std::uint64_t seed_b = MakeSubsetSeed(1234, 5, 9);
+    const std::uint64_t different_parent = MakeSubsetSeed(1234, 5, 10);
+    const std::uint64_t different_level = MakeSubsetSeed(1234, 6, 9);
+
+    CheckTrue("Test E seed deterministic", seed_a == seed_b);
+    CheckTrue("Test E seed parent differs", seed_a != different_parent);
+    CheckTrue("Test E seed level differs", seed_a != different_level);
+}
+
+void TestParallelRefinementDeterminismBaseline()
+{
+    const Graph G = MakeWeightedGraph();
+    const LeidenGraphStats stats = BuildLeidenGraphStats(G);
+    const LeidenPartition partition =
+        MakePartition(G, stats, {0, 0, 1, 1, 1});
+    const CPMQualityFunction cpm(0.35);
+
+    const LeidenPartition a =
+        RefinePartition(G, stats, partition, cpm, 0.05, 2026, 3);
+    const LeidenPartition b =
+        RefinePartition(G, stats, partition, cpm, 0.05, 2026, 3);
+
+    CheckSamePartition("Test E parallel deterministic baseline", a, b);
+    CheckValidPartition("Test E parallel deterministic baseline", G, a);
+    CheckRefinementOfPartition("Test E parallel deterministic baseline",
+                               partition,
+                               a);
 }
 
 void TestDifferentSeeds()
@@ -819,6 +866,8 @@ int main()
     TestWeighted();
     TestSelfLoop();
     TestThetaReproducibility();
+    TestSubsetSeedDeterminism();
+    TestParallelRefinementDeterminismBaseline();
     TestDifferentSeeds();
     TestAggregateNodeSizeCPM();
     TestModularityMass();

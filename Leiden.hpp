@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <random>
 #include <unordered_map>
 #include <vector>
@@ -125,6 +126,19 @@ void MergeNodesSubset(const Graph& G,
                       const std::vector<std::size_t>& subset_mark,
                       std::size_t subset_generation,
                       const LeidenOptions* options = nullptr);
+
+std::uint64_t MakeSubsetSeed(std::uint64_t global_seed,
+                             std::uint64_t level,
+                             std::uint64_t parent);
+
+LeidenPartition RefinePartition(const Graph& G,
+                                const LeidenGraphStats& stats,
+                                const LeidenPartition& partition,
+                                const QualityFunction& quality_function,
+                                double theta,
+                                std::uint64_t global_seed,
+                                std::uint64_t level,
+                                const LeidenOptions* options = nullptr);
 
 LeidenPartition RefinePartition(const Graph& G,
                                 const LeidenGraphStats& stats,
