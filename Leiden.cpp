@@ -1547,6 +1547,11 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
 #endif
     std::vector<ThreadProfile> profiles(static_cast<std::size_t>(worker_count));
     const bool debug = DebugEnabled(options);
+#ifdef ENABLE_MOVENODESFAST_PROFILE
+    const bool collect_stage4b_sweeps = true;
+#else
+    const bool collect_stage4b_sweeps = debug;
+#endif
     auto snapshot_profiles = [&profiles]() {
         Stage4BProfileSnapshot snapshot;
         for (const ThreadProfile& p : profiles) {
@@ -1633,7 +1638,10 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
     Stage4BProfileSnapshot final_verification_profile;
     while (true) {
         const std::size_t phase = verification_sweeps + 1;
-        const Stage4BProfileSnapshot phase_before = snapshot_profiles();
+        const Stage4BProfileSnapshot phase_before =
+            collect_stage4b_sweeps
+                ? snapshot_profiles()
+                : Stage4BProfileSnapshot();
         const Clock::time_point phase_begin = Clock::now();
         for (Vertex v = 0; v < n; ++v) {
             work_state[static_cast<std::size_t>(v)].store(
@@ -1662,6 +1670,24 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
             std::vector<Community> touched;
             touched.reserve(32);
             std::size_t generation = 1;
+#ifdef ENABLE_MOVENODESFAST_STAGE4B_BATCHED_ENQUEUE
+            std::vector<Vertex> pending_enqueues;
+            pending_enqueues.reserve(256);
+            auto flush_enqueues = [&]() {
+                if (pending_enqueues.empty()) {
+                    return;
+                }
+                const Clock::time_point begin = Clock::now();
+                {
+                    std::lock_guard<std::mutex> guard(queue_mutex);
+                    for (Vertex pending : pending_enqueues) {
+                        work_queue.push_back(pending);
+                    }
+                }
+                profile.queue_time += ElapsedSeconds(begin, Clock::now());
+                pending_enqueues.clear();
+            };
+#endif
 
             auto enqueue = [&](Vertex vertex) {
                 ++profile.enqueue_attempts;
@@ -1671,12 +1697,19 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
                 if (marker.compare_exchange_strong(
                         expected, 1, std::memory_order_acq_rel)) {
                     outstanding.fetch_add(1, std::memory_order_acq_rel);
+#ifdef ENABLE_MOVENODESFAST_STAGE4B_BATCHED_ENQUEUE
+                    pending_enqueues.push_back(vertex);
+                    if (pending_enqueues.size() >= 256) {
+                        flush_enqueues();
+                    }
+#else
                     const Clock::time_point begin = Clock::now();
                     {
                         std::lock_guard<std::mutex> guard(queue_mutex);
                         work_queue.push_back(vertex);
                     }
                     profile.queue_time += ElapsedSeconds(begin, Clock::now());
+#endif
                     ++profile.enqueues;
                 } else {
                     if (expected == 1) {
@@ -1688,6 +1721,9 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
             };
 
             while (true) {
+#ifdef ENABLE_MOVENODESFAST_STAGE4B_BATCHED_ENQUEUE
+                flush_enqueues();
+#endif
                 Vertex v = -1;
                 const Clock::time_point queue_begin = Clock::now();
                 {
@@ -1926,9 +1962,11 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
         ++verification_sweeps;
         const std::size_t moves_this_phase =
             phase_moves.load(std::memory_order_acquire);
-        const Stage4BProfileSnapshot phase_after = snapshot_profiles();
-        const Stage4BProfileSnapshot phase_delta =
-            snapshot_delta(phase_after, phase_before);
+        Stage4BProfileSnapshot phase_delta;
+        if (collect_stage4b_sweeps) {
+            const Stage4BProfileSnapshot phase_after = snapshot_profiles();
+            phase_delta = snapshot_delta(phase_after, phase_before);
+        }
         const double phase_wall_time =
             ElapsedSeconds(phase_begin, Clock::now());
         if (moves_this_phase != 0) {

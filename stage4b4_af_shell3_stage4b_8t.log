@@ -1,0 +1,446 @@
+[Driver] Matrix read start: ../0_florida/af_shell3.mtx
+[Driver] Matrix read done elapsed=4.37494 seconds vertices=504855 edges=8542010
+[Driver] Binary edge-weight conversion start
+[Driver] Binary edge-weight conversion done elapsed=0.0256731 seconds
+[Driver] BuildLeidenGraphStats start
+[Driver] BuildLeidenGraphStats done elapsed=0.034981 seconds
+[Leiden] graph copy start
+[Leiden] graph copy done elapsed=0.0460021 seconds
+[Leiden] stats copy start
+[Leiden] stats copy done elapsed=0.000559167 seconds
+[Leiden] singleton partition start
+[Leiden] singleton partition done elapsed=0.0291378 seconds
+[Leiden] original mapping initialization start
+[Leiden] original mapping initialization done elapsed=7.0792e-05 seconds
+[Leiden] level 1 start
+[Leiden] current number of vertices: 504855
+[Leiden] current number of edges: 8542010
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4B.4] sweep=1 processed=1589558 moves=536439 failed_validations=5 neighbor_scans=53813397 candidate_evaluations=13620191 enqueue_attempts=13801162 successful_enqueues=1084703 duplicate_suppressions=12716459 duplicate_rate=0.921405 queue_thread_time=8.94903 wall_time=1.49863
+[MoveNodesFast Stage4B.4] sweep=2 processed=504855 moves=0 failed_validations=0 neighbor_scans=17084020 candidate_evaluations=1410675 enqueue_attempts=0 successful_enqueues=0 duplicate_suppressions=0 duplicate_rate=0 queue_thread_time=1.72929 wall_time=0.299377
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 536439
+[Leiden] num_visits: 2094413
+[Leiden] elapsed time: 1.84172 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=15190 total_parent_communities=15190 processed_vertices=504855
+[RefinePartition profile] member construction: 0.0060515 s
+[RefinePartition profile] subset processing: 2.19857 s
+[RefinePartition profile] local result storage: 2.19857 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 0.000669708 s
+[RefinePartition profile] global assignment reconstruction: 0.00153896 s
+[RefinePartition profile] MakePartition rebuild: 0.0224378 s
+[RefinePartition profile] total: 2.28384 s
+[RefineDetailed] level=1 n=504855 m=8542010 community_slots=504851 active_parents=15190 empty_slots=489661 min_id=5 max_id=504850 member_vectors=504851
+[RefineDetailed] wall_times member_construction=0.0060515 subset_processing=2.19857 global_id_prefix=0.000669708 global_assignment=0.00153896 make_partition=0.0224378 total=2.28384
+[RefineDetailed] subsets=15190 vertices=504855 min_size=15 max_size=120 avg_size=33.236 adjacency_volume=17084020 max_adjacency_volume=3910 avg_adjacency_volume=1124.69
+[RefineDetailed] size_bins=0,0,15179,11,0
+[RefineDetailed] candidates=504855 processed=504855 singleton_skips=31097 neighbor_builds=473758 neighbor_adjacency_scans=16031427 touched=9220649 active_iterations=10130277 sparse_iterations=5812159 sparse_full_ratio=0.573741 exceptional_additions=0 max_sparse_targets=35 delta_evaluations=5338401 nondecreasing=5812159 selections=473758 moves=473758
+[RefineDetailed] stats_build_calls=15190 stats_build_vertices=504855 stats_build_adjacency_scans=17084020 stats_update_calls=473758 stats_update_adjacency_scans=16031427
+[RefineDetailed refresh] initial_calls=15190 move_calls=0 total_time=0.0209601 avg_time=1.37986e-06 max_time=0.000336667 entries_scanned=504855 active_produced=504855 sort_elements=504855 refine_ratio=0.00917754
+[RefineDetailed active_update] calls=473758 activations=0 deactivations=473758 no_change=0 total_time=0.0222711
+[RefineDetailed] cpu_times reset=0.0182468 mass=0.00324036 candidate_scan=0.0878423 shuffle=0.0127434 scratch_init=11.0317 stats_build=0.158418 candidate_processing=0.939499 compaction=3.55971 subset_total=15.8633
+[RefineDetailed] local_communities_total=31097 average=2.0472 max=8 local_result_vertices=504855 local_assignment_entries=504855
+[RefineDetailed] threads=8 init_total_cpu=0.0283632 init_max_wall_proxy=0.0104782 init_avg=0.0035454 scratch_bytes_per_thread=14640795 scratch_bytes_total=117126360
+[RefineDetailed] thread_work_min=1.64774 max=2.18266 avg=1.98911 max_avg=1.0973
+[RefineDetailed top] rank=1 parent=30640 size=30 adjacency_volume=1020 time=0.0138398 local_communities=1 max_active_communities=30 avg_sparse_targets=10.8276 max_sparse_targets=29 delta_evaluations=285 refinement_moves=29 refresh_calls=1 refresh_time=2.125e-06
+[RefineDetailed top] rank=2 parent=397910 size=55 adjacency_volume=1870 time=0.0135935 local_communities=3 max_active_communities=55 avg_sparse_targets=14.25 max_sparse_targets=35 delta_evaluations=689 refinement_moves=52 refresh_calls=1 refresh_time=1.209e-06
+[RefineDetailed top] rank=3 parent=200525 size=50 adjacency_volume=1700 time=0.013467 local_communities=3 max_active_communities=50 avg_sparse_targets=13.6596 max_sparse_targets=32 delta_evaluations=595 refinement_moves=47 refresh_calls=1 refresh_time=2.458e-06
+[RefineDetailed top] rank=4 parent=202635 size=30 adjacency_volume=1020 time=0.0131778 local_communities=1 max_active_communities=30 avg_sparse_targets=10.8276 max_sparse_targets=23 delta_evaluations=285 refinement_moves=29 refresh_calls=1 refresh_time=1.459e-06
+[RefineDetailed top] rank=5 parent=139890 size=45 adjacency_volume=1530 time=0.0128255 local_communities=4 max_active_communities=45 avg_sparse_targets=13.4146 max_sparse_targets=30 delta_evaluations=509 refinement_moves=41 refresh_calls=1 refresh_time=2.709e-06
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 31097
+[Leiden] elapsed time: 2.29834 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 31097
+[Leiden] aggregate edges: 143848
+[Leiden] elapsed time: 0.02196 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 0.00192763 seconds
+[Leiden] total level time: 4.20242 seconds
+[Leiden] level 2 start
+[Leiden] current number of vertices: 31097
+[Leiden] current number of edges: 143848
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4B.4] sweep=1 processed=98861 moves=22245 failed_validations=30 neighbor_scans=739732 candidate_evaluations=388251 enqueue_attempts=163762 successful_enqueues=67764 duplicate_suppressions=95998 duplicate_rate=0.586204 queue_thread_time=0.48838 wall_time=0.0727154
+[MoveNodesFast Stage4B.4] sweep=2 processed=31252 moves=39 failed_validations=0 neighbor_scans=226714 candidate_evaluations=93031 enqueue_attempts=207 successful_enqueues=155 duplicate_suppressions=52 duplicate_rate=0.251208 queue_thread_time=0.0976946 wall_time=0.0144498
+[MoveNodesFast Stage4B.4] sweep=3 processed=31097 moves=0 failed_validations=0 neighbor_scans=225502 candidate_evaluations=92472 enqueue_attempts=0 successful_enqueues=0 duplicate_suppressions=0 duplicate_rate=0 queue_thread_time=0.0863231 wall_time=0.0126244
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 22284
+[Leiden] num_visits: 161210
+[Leiden] elapsed time: 0.101706 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=4474 total_parent_communities=4474 processed_vertices=31097
+[RefinePartition profile] member construction: 0.000632166 s
+[RefinePartition profile] subset processing: 0.0307678 s
+[RefinePartition profile] local result storage: 0.0307678 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 1.7417e-05 s
+[RefinePartition profile] global assignment reconstruction: 9.9417e-05 s
+[RefinePartition profile] MakePartition rebuild: 0.000807209 s
+[RefinePartition profile] total: 0.0333067 s
+[RefineDetailed] level=2 n=31097 m=143848 community_slots=15188 active_parents=4474 empty_slots=10714 min_id=1 max_id=15187 member_vectors=15188
+[RefineDetailed] wall_times member_construction=0.000632166 subset_processing=0.0307678 global_id_prefix=1.7417e-05 global_assignment=9.9417e-05 make_partition=0.000807209 total=0.0333067
+[RefineDetailed] subsets=4474 vertices=31097 min_size=2 max_size=57 avg_size=6.9506 adjacency_volume=256599 max_adjacency_volume=476 avg_adjacency_volume=57.3534
+[RefineDetailed] size_bins=0,3756,718,0,0
+[RefineDetailed] candidates=31097 processed=31097 singleton_skips=9228 neighbor_builds=21869 neighbor_adjacency_scans=168667 touched=118451 active_iterations=149068 sparse_iterations=79494 sparse_full_ratio=0.533273 exceptional_additions=0 max_sparse_targets=12 delta_evaluations=57625 nondecreasing=79494 selections=21869 moves=21869
+[RefineDetailed] stats_build_calls=4474 stats_build_vertices=31097 stats_build_adjacency_scans=256599 stats_update_calls=21869 stats_update_adjacency_scans=168667
+[RefineDetailed refresh] initial_calls=4474 move_calls=0 total_time=0.00142814 avg_time=3.19209e-07 max_time=2.5625e-05 entries_scanned=31097 active_produced=31097 sort_elements=31097 refine_ratio=0.0428785
+[RefineDetailed active_update] calls=21869 activations=0 deactivations=21869 no_change=0 total_time=0.00106899
+[RefineDetailed] cpu_times reset=0.000406899 mass=0.000249227 candidate_scan=0.00227102 shuffle=0.000617938 scratch_init=0.0692109 stats_build=0.00577733 candidate_processing=0.0232348 compaction=0.0585409 subset_total=0.162743
+[RefineDetailed] local_communities_total=9228 average=2.06258 max=16 local_result_vertices=31097 local_assignment_entries=31097
+[RefineDetailed] threads=8 init_total_cpu=0.000919376 init_max_wall_proxy=0.000175792 init_avg=0.000114922 scratch_bytes_per_thread=901813 scratch_bytes_total=7214504
+[RefineDetailed] thread_work_min=0.0146474 max=0.0262015 avg=0.0218715 max_avg=1.19797
+[RefineDetailed top] rank=1 parent=9632 size=4 adjacency_volume=32 time=0.00147679 local_communities=1 max_active_communities=4 avg_sparse_targets=3 max_sparse_targets=4 delta_evaluations=6 refinement_moves=3 refresh_calls=1 refresh_time=2.08e-07
+[RefineDetailed top] rank=2 parent=9858 size=8 adjacency_volume=64 time=0.000967375 local_communities=4 max_active_communities=8 avg_sparse_targets=3.5 max_sparse_targets=4 delta_evaluations=10 refinement_moves=4 refresh_calls=1 refresh_time=2.5625e-05
+[RefineDetailed top] rank=3 parent=9685 size=10 adjacency_volume=82 time=0.000676416 local_communities=3 max_active_communities=10 avg_sparse_targets=4.28571 max_sparse_targets=6 delta_evaluations=23 refinement_moves=7 refresh_calls=1 refresh_time=4.17e-07
+[RefineDetailed top] rank=4 parent=1970 size=4 adjacency_volume=33 time=0.000302791 local_communities=1 max_active_communities=4 avg_sparse_targets=3 max_sparse_targets=4 delta_evaluations=6 refinement_moves=3 refresh_calls=1 refresh_time=6.25e-07
+[RefineDetailed top] rank=5 parent=8706 size=5 adjacency_volume=44 time=0.000295291 local_communities=2 max_active_communities=5 avg_sparse_targets=2.66667 max_sparse_targets=3 delta_evaluations=5 refinement_moves=3 refresh_calls=1 refresh_time=3.75e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 9228
+[Leiden] elapsed time: 0.0343556 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 9228
+[Leiden] aggregate edges: 36513
+[Leiden] elapsed time: 0.00196971 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 0.000385917 seconds
+[Leiden] total level time: 0.140399 seconds
+[Leiden] level 3 start
+[Leiden] current number of vertices: 9228
+[Leiden] current number of edges: 36513
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4B.4] sweep=1 processed=26747 moves=6265 failed_validations=7 neighbor_scans=162174 candidate_evaluations=96752 enqueue_attempts=36880 successful_enqueues=17519 duplicate_suppressions=19361 duplicate_rate=0.524973 queue_thread_time=0.130769 wall_time=0.0193804
+[MoveNodesFast Stage4B.4] sweep=2 processed=9298 moves=21 failed_validations=0 neighbor_scans=55016 candidate_evaluations=25369 enqueue_attempts=98 successful_enqueues=70 duplicate_suppressions=28 duplicate_rate=0.285714 queue_thread_time=0.0259466 wall_time=0.00381733
+[MoveNodesFast Stage4B.4] sweep=3 processed=9228 moves=0 failed_validations=0 neighbor_scans=54570 candidate_evaluations=25143 enqueue_attempts=0 successful_enqueues=0 duplicate_suppressions=0 duplicate_rate=0 queue_thread_time=0.0243927 wall_time=0.00356912
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 6286
+[Leiden] num_visits: 45273
+[Leiden] elapsed time: 0.0274771 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=1329 total_parent_communities=1329 processed_vertices=9228
+[RefinePartition profile] member construction: 0.000205 s
+[RefinePartition profile] subset processing: 0.00548346 s
+[RefinePartition profile] local result storage: 0.00548346 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 7.791e-06 s
+[RefinePartition profile] global assignment reconstruction: 3.0167e-05 s
+[RefinePartition profile] MakePartition rebuild: 0.000228416 s
+[RefinePartition profile] total: 0.00613038 s
+[RefineDetailed] level=3 n=9228 m=36513 community_slots=4474 active_parents=1329 empty_slots=3145 min_id=3 max_id=4473 member_vectors=4474
+[RefineDetailed] wall_times member_construction=0.000205 subset_processing=0.00548346 global_id_prefix=7.791e-06 global_assignment=3.0167e-05 make_partition=0.000228416 total=0.00613038
+[RefineDetailed] subsets=1329 vertices=9228 min_size=2 max_size=38 avg_size=6.94357 adjacency_volume=63798 max_adjacency_volume=257 avg_adjacency_volume=48.0045
+[RefineDetailed] size_bins=0,1114,215,0,0
+[RefineDetailed] candidates=9228 processed=9228 singleton_skips=3006 neighbor_builds=6222 neighbor_adjacency_scans=42507 touched=31267 active_iterations=43938 sparse_iterations=22532 sparse_full_ratio=0.512814 exceptional_additions=0 max_sparse_targets=10 delta_evaluations=16310 nondecreasing=22532 selections=6222 moves=6222
+[RefineDetailed] stats_build_calls=1329 stats_build_vertices=9228 stats_build_adjacency_scans=63798 stats_update_calls=6222 stats_update_adjacency_scans=42507
+[RefineDetailed refresh] initial_calls=1329 move_calls=0 total_time=0.000357658 avg_time=2.69118e-07 max_time=1.667e-06 entries_scanned=9228 active_produced=9228 sort_elements=9228 refine_ratio=0.0583419
+[RefineDetailed active_update] calls=6222 activations=0 deactivations=6222 no_change=0 total_time=0.000323315
+[RefineDetailed] cpu_times reset=9.3957e-05 mass=4.8513e-05 candidate_scan=0.000511697 shuffle=0.00018796 scratch_init=0.00672915 stats_build=0.00161042 candidate_processing=0.00610591 compaction=0.00699044 subset_total=0.0228395
+[RefineDetailed] local_communities_total=3006 average=2.26185 max=14 local_result_vertices=9228 local_assignment_entries=9228
+[RefineDetailed] threads=8 init_total_cpu=0.000160084 init_max_wall_proxy=2.925e-05 init_avg=2.00105e-05 scratch_bytes_per_thread=267612 scratch_bytes_total=2140896
+[RefineDetailed] thread_work_min=0.0023585 max=0.00417137 avg=0.00324704 max_avg=1.28467
+[RefineDetailed top] rank=1 parent=1772 size=3 adjacency_volume=22 time=0.00150196 local_communities=1 max_active_communities=3 avg_sparse_targets=2.5 max_sparse_targets=3 delta_evaluations=3 refinement_moves=2 refresh_calls=1 refresh_time=8.3e-08
+[RefineDetailed top] rank=2 parent=323 size=11 adjacency_volume=78 time=0.000654625 local_communities=4 max_active_communities=11 avg_sparse_targets=4.14286 max_sparse_targets=5 delta_evaluations=22 refinement_moves=7 refresh_calls=1 refresh_time=3.33e-07
+[RefineDetailed top] rank=3 parent=1547 size=19 adjacency_volume=124 time=9.7167e-05 local_communities=4 max_active_communities=19 avg_sparse_targets=4.2 max_sparse_targets=6 delta_evaluations=48 refinement_moves=15 refresh_calls=1 refresh_time=8.75e-07
+[RefineDetailed top] rank=4 parent=856 size=15 adjacency_volume=105 time=9.3458e-05 local_communities=3 max_active_communities=15 avg_sparse_targets=4 max_sparse_targets=7 delta_evaluations=36 refinement_moves=12 refresh_calls=1 refresh_time=6.25e-07
+[RefineDetailed top] rank=5 parent=853 size=9 adjacency_volume=57 time=8.9875e-05 local_communities=2 max_active_communities=9 avg_sparse_targets=3.57143 max_sparse_targets=5 delta_evaluations=18 refinement_moves=7 refresh_calls=1 refresh_time=4.58e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 3006
+[Leiden] elapsed time: 0.00646612 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 3006
+[Leiden] aggregate edges: 11728
+[Leiden] elapsed time: 0.000767666 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 0.00016 seconds
+[Leiden] total level time: 0.0355917 seconds
+[Leiden] level 4 start
+[Leiden] current number of vertices: 3006
+[Leiden] current number of edges: 11728
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4B.4] sweep=1 processed=8154 moves=1851 failed_validations=6 neighbor_scans=48640 candidate_evaluations=28587 enqueue_attempts=10513 successful_enqueues=5148 duplicate_suppressions=5365 duplicate_rate=0.510321 queue_thread_time=0.0410301 wall_time=0.00607488
+[MoveNodesFast Stage4B.4] sweep=2 processed=3016 moves=3 failed_validations=0 neighbor_scans=17509 candidate_evaluations=8078 enqueue_attempts=17 successful_enqueues=10 duplicate_suppressions=7 duplicate_rate=0.411765 queue_thread_time=0.00750268 wall_time=0.00113783
+[MoveNodesFast Stage4B.4] sweep=3 processed=3006 moves=0 failed_validations=0 neighbor_scans=17444 candidate_evaluations=8045 enqueue_attempts=0 successful_enqueues=0 duplicate_suppressions=0 duplicate_rate=0 queue_thread_time=0.00781775 wall_time=0.00118221
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 1854
+[Leiden] num_visits: 14176
+[Leiden] elapsed time: 0.00873533 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=429 total_parent_communities=429 processed_vertices=3006
+[RefinePartition profile] member construction: 6.2167e-05 s
+[RefinePartition profile] subset processing: 0.00128158 s
+[RefinePartition profile] local result storage: 0.00128158 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 2e-06 s
+[RefinePartition profile] global assignment reconstruction: 1.3458e-05 s
+[RefinePartition profile] MakePartition rebuild: 7.7208e-05 s
+[RefinePartition profile] total: 0.00150029 s
+[RefineDetailed] level=4 n=3006 m=11728 community_slots=1325 active_parents=429 empty_slots=896 min_id=5 max_id=1324 member_vectors=1325
+[RefineDetailed] wall_times member_construction=6.2167e-05 subset_processing=0.00128158 global_id_prefix=2e-06 global_assignment=1.3458e-05 make_partition=7.7208e-05 total=0.00150029
+[RefineDetailed] subsets=429 vertices=3006 min_size=2 max_size=28 avg_size=7.00699 adjacency_volume=20450 max_adjacency_volume=187 avg_adjacency_volume=47.669
+[RefineDetailed] size_bins=0,356,73,0,0
+[RefineDetailed] candidates=3006 processed=3006 singleton_skips=965 neighbor_builds=2041 neighbor_adjacency_scans=13690 touched=10072 active_iterations=13831 sparse_iterations=7301 sparse_full_ratio=0.527872 exceptional_additions=0 max_sparse_targets=11 delta_evaluations=5260 nondecreasing=7301 selections=2041 moves=2041
+[RefineDetailed] stats_build_calls=429 stats_build_vertices=3006 stats_build_adjacency_scans=20450 stats_update_calls=2041 stats_update_adjacency_scans=13690
+[RefineDetailed refresh] initial_calls=429 move_calls=0 total_time=0.000107465 avg_time=2.50501e-07 max_time=9.59e-07 entries_scanned=3006 active_produced=3006 sort_elements=3006 refine_ratio=0.0716294
+[RefineDetailed active_update] calls=2041 activations=0 deactivations=2041 no_change=0 total_time=9.0268e-05
+[RefineDetailed] cpu_times reset=2.417e-05 mass=1.9338e-05 candidate_scan=0.00014176 shuffle=5.9957e-05 scratch_init=0.000907405 stats_build=0.000501128 candidate_processing=0.00187612 compaction=0.000659093 subset_total=0.00436321
+[RefineDetailed] local_communities_total=965 average=2.24942 max=9 local_result_vertices=3006 local_assignment_entries=3006
+[RefineDetailed] threads=8 init_total_cpu=0.000159168 init_max_wall_proxy=3.7125e-05 init_avg=1.9896e-05 scratch_bytes_per_thread=87174 scratch_bytes_total=697392
+[RefineDetailed] thread_work_min=0.000404962 max=0.000757709 avg=0.000577949 max_avg=1.31103
+[RefineDetailed top] rank=1 parent=1052 size=6 adjacency_volume=40 time=9.1583e-05 local_communities=1 max_active_communities=6 avg_sparse_targets=3.2 max_sparse_targets=5 delta_evaluations=11 refinement_moves=5 refresh_calls=1 refresh_time=3.34e-07
+[RefineDetailed top] rank=2 parent=211 size=21 adjacency_volume=146 time=3.6708e-05 local_communities=6 max_active_communities=21 avg_sparse_targets=4.13333 max_sparse_targets=7 delta_evaluations=47 refinement_moves=15 refresh_calls=1 refresh_time=9.59e-07
+[RefineDetailed top] rank=3 parent=1007 size=16 adjacency_volume=112 time=2.9667e-05 local_communities=4 max_active_communities=16 avg_sparse_targets=4.41667 max_sparse_targets=6 delta_evaluations=41 refinement_moves=12 refresh_calls=1 refresh_time=8.75e-07
+[RefineDetailed top] rank=4 parent=864 size=17 adjacency_volume=116 time=2.9209e-05 local_communities=6 max_active_communities=17 avg_sparse_targets=4.18182 max_sparse_targets=6 delta_evaluations=35 refinement_moves=11 refresh_calls=1 refresh_time=8.34e-07
+[RefineDetailed top] rank=5 parent=1008 size=15 adjacency_volume=97 time=2.85e-05 local_communities=6 max_active_communities=15 avg_sparse_targets=4.33333 max_sparse_targets=6 delta_evaluations=30 refinement_moves=9 refresh_calls=1 refresh_time=7.92e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 965
+[Leiden] elapsed time: 0.00165237 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 965
+[Leiden] aggregate edges: 3691
+[Leiden] elapsed time: 0.000332166 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 4.0542e-05 seconds
+[Leiden] total level time: 0.011212 seconds
+[Leiden] level 5 start
+[Leiden] current number of vertices: 965
+[Leiden] current number of edges: 3691
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4B.4] sweep=1 processed=2362 moves=482 failed_validations=1 neighbor_scans=13918 candidate_evaluations=8465 enqueue_attempts=2746 successful_enqueues=1397 duplicate_suppressions=1349 duplicate_rate=0.49126 queue_thread_time=0.0103498 wall_time=0.00158383
+[MoveNodesFast Stage4B.4] sweep=2 processed=979 moves=4 failed_validations=0 neighbor_scans=5541 candidate_evaluations=2780 enqueue_attempts=19 successful_enqueues=14 duplicate_suppressions=5 duplicate_rate=0.263158 queue_thread_time=0.00262623 wall_time=0.000426
+[MoveNodesFast Stage4B.4] sweep=3 processed=965 moves=0 failed_validations=0 neighbor_scans=5452 candidate_evaluations=2733 enqueue_attempts=0 successful_enqueues=0 duplicate_suppressions=0 duplicate_rate=0 queue_thread_time=0.00240886 wall_time=0.000376708
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 486
+[Leiden] num_visits: 4306
+[Leiden] elapsed time: 0.00259254 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=178 total_parent_communities=178 processed_vertices=965
+[RefinePartition profile] member construction: 2.2208e-05 s
+[RefinePartition profile] subset processing: 0.000469916 s
+[RefinePartition profile] local result storage: 0.000469916 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 8.34e-07 s
+[RefinePartition profile] global assignment reconstruction: 6.125e-06 s
+[RefinePartition profile] MakePartition rebuild: 2.6333e-05 s
+[RefinePartition profile] total: 0.000554458 s
+[RefineDetailed] level=5 n=965 m=3691 community_slots=429 active_parents=178 empty_slots=251 min_id=0 max_id=428 member_vectors=429
+[RefineDetailed] wall_times member_construction=2.2208e-05 subset_processing=0.000469916 global_id_prefix=8.34e-07 global_assignment=6.125e-06 make_partition=2.6333e-05 total=0.000554458
+[RefineDetailed] subsets=178 vertices=965 min_size=2 max_size=14 avg_size=5.42135 adjacency_volume=6417 max_adjacency_volume=99 avg_adjacency_volume=36.0506
+[RefineDetailed] size_bins=0,166,12,0,0
+[RefineDetailed] candidates=965 processed=965 singleton_skips=318 neighbor_builds=647 neighbor_adjacency_scans=4256 touched=3158 active_iterations=3295 sparse_iterations=2161 sparse_full_ratio=0.655842 exceptional_additions=0 max_sparse_targets=9 delta_evaluations=1514 nondecreasing=2159 selections=647 moves=647
+[RefineDetailed] stats_build_calls=178 stats_build_vertices=965 stats_build_adjacency_scans=6417 stats_update_calls=647 stats_update_adjacency_scans=4256
+[RefineDetailed refresh] initial_calls=178 move_calls=0 total_time=4.8545e-05 avg_time=2.72725e-07 max_time=9.25e-06 entries_scanned=965 active_produced=965 sort_elements=965 refine_ratio=0.087554
+[RefineDetailed active_update] calls=647 activations=0 deactivations=647 no_change=0 total_time=2.9844e-05
+[RefineDetailed] cpu_times reset=6.286e-06 mass=5.004e-06 candidate_scan=4.9e-05 shuffle=1.8347e-05 scratch_init=0.000184463 stats_build=0.000171706 candidate_processing=0.000563416 compaction=0.000120086 subset_total=0.00119288
+[RefineDetailed] local_communities_total=318 average=1.78652 max=5 local_result_vertices=965 local_assignment_entries=965
+[RefineDetailed] threads=8 init_total_cpu=4.1791e-05 init_max_wall_proxy=7.5e-06 init_avg=5.22388e-06 scratch_bytes_per_thread=27985 scratch_bytes_total=223880
+[RefineDetailed] thread_work_min=0.000129419 max=0.000193624 avg=0.000161244 max_avg=1.20081
+[RefineDetailed top] rank=1 parent=323 size=11 adjacency_volume=72 time=2.1708e-05 local_communities=4 max_active_communities=11 avg_sparse_targets=3.71429 max_sparse_targets=5 delta_evaluations=19 refinement_moves=7 refresh_calls=1 refresh_time=8.34e-07
+[RefineDetailed top] rank=2 parent=281 size=9 adjacency_volume=64 time=1.8708e-05 local_communities=2 max_active_communities=9 avg_sparse_targets=4.14286 max_sparse_targets=6 delta_evaluations=22 refinement_moves=7 refresh_calls=1 refresh_time=6.25e-07
+[RefineDetailed top] rank=3 parent=350 size=9 adjacency_volume=56 time=1.8333e-05 local_communities=2 max_active_communities=9 avg_sparse_targets=3.42857 max_sparse_targets=5 delta_evaluations=17 refinement_moves=7 refresh_calls=1 refresh_time=9.25e-06
+[RefineDetailed top] rank=4 parent=75 size=11 adjacency_volume=63 time=1.7792e-05 local_communities=5 max_active_communities=11 avg_sparse_targets=4.66667 max_sparse_targets=8 delta_evaluations=22 refinement_moves=6 refresh_calls=1 refresh_time=7.5e-07
+[RefineDetailed top] rank=5 parent=89 size=8 adjacency_volume=50 time=1.5959e-05 local_communities=2 max_active_communities=8 avg_sparse_targets=4 max_sparse_targets=6 delta_evaluations=18 refinement_moves=6 refresh_calls=1 refresh_time=4.59e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 318
+[Leiden] elapsed time: 0.000653417 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 318
+[Leiden] aggregate edges: 1176
+[Leiden] elapsed time: 0.000190583 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 1.7583e-05 seconds
+[Leiden] total level time: 0.00382633 seconds
+[Leiden] level 6 start
+[Leiden] current number of vertices: 318
+[Leiden] current number of edges: 1176
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4B.4] sweep=1 processed=703 moves=130 failed_validations=1 neighbor_scans=3910 candidate_evaluations=2757 enqueue_attempts=726 successful_enqueues=385 duplicate_suppressions=341 duplicate_rate=0.469697 queue_thread_time=0.00301553 wall_time=0.000474916
+[MoveNodesFast Stage4B.4] sweep=2 processed=322 moves=1 failed_validations=0 neighbor_scans=1737 candidate_evaluations=1075 enqueue_attempts=5 successful_enqueues=4 duplicate_suppressions=1 duplicate_rate=0.2 queue_thread_time=0.000653872 wall_time=0.000132167
+[MoveNodesFast Stage4B.4] sweep=3 processed=318 moves=0 failed_validations=0 neighbor_scans=1716 candidate_evaluations=1064 enqueue_attempts=0 successful_enqueues=0 duplicate_suppressions=0 duplicate_rate=0 queue_thread_time=0.000511659 wall_time=0.000123791
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 131
+[Leiden] num_visits: 1343
+[Leiden] elapsed time: 0.000895792 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=93 total_parent_communities=93 processed_vertices=318
+[RefinePartition profile] member construction: 8.208e-06 s
+[RefinePartition profile] subset processing: 0.0002565 s
+[RefinePartition profile] local result storage: 0.0002565 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 5.42e-07 s
+[RefinePartition profile] global assignment reconstruction: 1.833e-06 s
+[RefinePartition profile] MakePartition rebuild: 1.0625e-05 s
+[RefinePartition profile] total: 0.000301333 s
+[RefineDetailed] level=6 n=318 m=1176 community_slots=178 active_parents=93 empty_slots=85 min_id=1 max_id=177 member_vectors=178
+[RefineDetailed] wall_times member_construction=8.208e-06 subset_processing=0.0002565 global_id_prefix=5.42e-07 global_assignment=1.833e-06 make_partition=1.0625e-05 total=0.000301333
+[RefineDetailed] subsets=93 vertices=318 min_size=2 max_size=7 avg_size=3.41935 adjacency_volume=2034 max_adjacency_volume=42 avg_adjacency_volume=21.871
+[RefineDetailed] size_bins=0,93,0,0,0
+[RefineDetailed] candidates=318 processed=318 singleton_skips=120 neighbor_builds=198 neighbor_adjacency_scans=1260 touched=951 active_iterations=628 sparse_iterations=541 sparse_full_ratio=0.861465 exceptional_additions=0 max_sparse_targets=5 delta_evaluations=342 nondecreasing=534 selections=198 moves=198
+[RefineDetailed] stats_build_calls=93 stats_build_vertices=318 stats_build_adjacency_scans=2034 stats_update_calls=198 stats_update_adjacency_scans=1260
+[RefineDetailed refresh] initial_calls=93 move_calls=0 total_time=1.3127e-05 avg_time=1.41151e-07 max_time=2.92e-07 entries_scanned=318 active_produced=318 sort_elements=318 refine_ratio=0.0435631
+[RefineDetailed active_update] calls=198 activations=0 deactivations=198 no_change=0 total_time=9.168e-06
+[RefineDetailed] cpu_times reset=3.332e-06 mass=2.382e-06 candidate_scan=1.5958e-05 shuffle=5.748e-06 scratch_init=7.3168e-05 stats_build=5.9839e-05 candidate_processing=0.000165662 compaction=4.2458e-05 subset_total=0.000402084
+[RefineDetailed] local_communities_total=120 average=1.29032 max=3 local_result_vertices=318 local_assignment_entries=318
+[RefineDetailed] threads=8 init_total_cpu=2.0626e-05 init_max_wall_proxy=6.292e-06 init_avg=2.57825e-06 scratch_bytes_per_thread=9222 scratch_bytes_total=73776
+[RefineDetailed] thread_work_min=3.5375e-05 max=7.6999e-05 avg=5.54225e-05 max_avg=1.38931
+[RefineDetailed top] rank=1 parent=171 size=5 adjacency_volume=25 time=1.6917e-05 local_communities=2 max_active_communities=5 avg_sparse_targets=3.33333 max_sparse_targets=4 delta_evaluations=7 refinement_moves=3 refresh_calls=1 refresh_time=2.91e-07
+[RefineDetailed top] rank=2 parent=160 size=5 adjacency_volume=31 time=1.0542e-05 local_communities=1 max_active_communities=5 avg_sparse_targets=3.25 max_sparse_targets=5 delta_evaluations=9 refinement_moves=4 refresh_calls=1 refresh_time=2.92e-07
+[RefineDetailed top] rank=3 parent=23 size=4 adjacency_volume=28 time=1.05e-05 local_communities=1 max_active_communities=4 avg_sparse_targets=2.66667 max_sparse_targets=4 delta_evaluations=5 refinement_moves=3 refresh_calls=1 refresh_time=2.91e-07
+[RefineDetailed top] rank=4 parent=24 size=5 adjacency_volume=26 time=1.0375e-05 local_communities=2 max_active_communities=5 avg_sparse_targets=3.33333 max_sparse_targets=5 delta_evaluations=7 refinement_moves=3 refresh_calls=1 refresh_time=2.91e-07
+[RefineDetailed top] rank=5 parent=134 size=5 adjacency_volume=32 time=1.0333e-05 local_communities=1 max_active_communities=5 avg_sparse_targets=3 max_sparse_targets=4 delta_evaluations=8 refinement_moves=4 refresh_calls=1 refresh_time=2.5e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 120
+[Leiden] elapsed time: 0.000381708 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 120
+[Leiden] aggregate edges: 422
+[Leiden] elapsed time: 0.000125125 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 5.667e-06 seconds
+[Leiden] total level time: 0.00175388 seconds
+[Leiden] level 7 start
+[Leiden] current number of vertices: 120
+[Leiden] current number of edges: 422
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4B.4] sweep=1 processed=248 moves=42 failed_validations=0 neighbor_scans=1288 candidate_evaluations=1148 enqueue_attempts=274 successful_enqueues=128 duplicate_suppressions=146 duplicate_rate=0.532847 queue_thread_time=0.000970914 wall_time=0.000175708
+[MoveNodesFast Stage4B.4] sweep=2 processed=120 moves=0 failed_validations=0 neighbor_scans=604 candidate_evaluations=515 enqueue_attempts=0 successful_enqueues=0 duplicate_suppressions=0 duplicate_rate=0 queue_thread_time=0.000127427 wall_time=6.0917e-05
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 42
+[Leiden] num_visits: 368
+[Leiden] elapsed time: 0.0003485 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=66 total_parent_communities=66 processed_vertices=120
+[RefinePartition profile] member construction: 3.208e-06 s
+[RefinePartition profile] subset processing: 0.000187708 s
+[RefinePartition profile] local result storage: 0.000187708 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 6.25e-07 s
+[RefinePartition profile] global assignment reconstruction: 9.17e-07 s
+[RefinePartition profile] MakePartition rebuild: 4e-06 s
+[RefinePartition profile] total: 0.000219167 s
+[RefineDetailed] level=7 n=120 m=422 community_slots=94 active_parents=66 empty_slots=28 min_id=1 max_id=93 member_vectors=94
+[RefineDetailed] wall_times member_construction=3.208e-06 subset_processing=0.000187708 global_id_prefix=6.25e-07 global_assignment=9.17e-07 make_partition=4e-06 total=0.000219167
+[RefineDetailed] subsets=66 vertices=120 min_size=1 max_size=4 avg_size=1.81818 adjacency_volume=724 max_adjacency_volume=25 avg_adjacency_volume=10.9697
+[RefineDetailed] size_bins=22,44,0,0,0
+[RefineDetailed] candidates=120 processed=120 singleton_skips=45 neighbor_builds=75 neighbor_adjacency_scans=460 touched=363 active_iterations=139 sparse_iterations=139 sparse_full_ratio=1 exceptional_additions=0 max_sparse_targets=4 delta_evaluations=64 nondecreasing=135 selections=75 moves=53
+[RefineDetailed] stats_build_calls=66 stats_build_vertices=120 stats_build_adjacency_scans=724 stats_update_calls=53 stats_update_adjacency_scans=303
+[RefineDetailed refresh] initial_calls=66 move_calls=0 total_time=7.54e-06 avg_time=1.14242e-07 max_time=2.92e-07 entries_scanned=120 active_produced=120 sort_elements=120 refine_ratio=0.034403
+[RefineDetailed active_update] calls=53 activations=0 deactivations=53 no_change=0 total_time=2.248e-06
+[RefineDetailed] cpu_times reset=1.75e-06 mass=1.376e-06 candidate_scan=6.834e-06 shuffle=1.914e-06 scratch_init=3.3251e-05 stats_build=2.6421e-05 candidate_processing=5.35e-05 compaction=2.2165e-05 subset_total=0.000172291
+[RefineDetailed] local_communities_total=67 average=1.01515 max=2 local_result_vertices=120 local_assignment_entries=120
+[RefineDetailed] threads=8 init_total_cpu=1.9541e-05 init_max_wall_proxy=7.375e-06 init_avg=2.44263e-06 scratch_bytes_per_thread=3480 scratch_bytes_total=27840
+[RefineDetailed] thread_work_min=1.2208e-05 max=3.8334e-05 avg=2.4875e-05 max_avg=1.54107
+[RefineDetailed top] rank=1 parent=86 size=3 adjacency_volume=18 time=7.959e-06 local_communities=1 max_active_communities=3 avg_sparse_targets=2.5 max_sparse_targets=3 delta_evaluations=3 refinement_moves=2 refresh_calls=1 refresh_time=2.91e-07
+[RefineDetailed top] rank=2 parent=12 size=2 adjacency_volume=14 time=6.625e-06 local_communities=1 max_active_communities=2 avg_sparse_targets=2 max_sparse_targets=2 delta_evaluations=1 refinement_moves=1 refresh_calls=1 refresh_time=2.92e-07
+[RefineDetailed top] rank=3 parent=2 size=2 adjacency_volume=9 time=6.166e-06 local_communities=1 max_active_communities=2 avg_sparse_targets=2 max_sparse_targets=2 delta_evaluations=1 refinement_moves=1 refresh_calls=1 refresh_time=8.4e-08
+[RefineDetailed top] rank=4 parent=83 size=2 adjacency_volume=9 time=5.5e-06 local_communities=1 max_active_communities=2 avg_sparse_targets=2 max_sparse_targets=2 delta_evaluations=1 refinement_moves=1 refresh_calls=1 refresh_time=2.5e-07
+[RefineDetailed top] rank=5 parent=84 size=2 adjacency_volume=12 time=4.833e-06 local_communities=1 max_active_communities=2 avg_sparse_targets=2 max_sparse_targets=2 delta_evaluations=1 refinement_moves=1 refresh_calls=1 refresh_time=2.08e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 67
+[Leiden] elapsed time: 0.000291375 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 67
+[Leiden] aggregate edges: 227
+[Leiden] elapsed time: 0.000317875 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 4.084e-06 seconds
+[Leiden] total level time: 0.00132025 seconds
+[Leiden] level 8 start
+[Leiden] current number of vertices: 67
+[Leiden] current number of edges: 227
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4B.4] sweep=1 processed=67 moves=0 failed_validations=0 neighbor_scans=320 candidate_evaluations=383 enqueue_attempts=0 successful_enqueues=0 duplicate_suppressions=0 duplicate_rate=0 queue_thread_time=9.998e-06 wall_time=4.7459e-05
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 0
+[Leiden] num_visits: 67
+[Leiden] elapsed time: 0.000101625 seconds
+[Leiden] total level time: 0.000132416 seconds
+[Leiden] converged because num_moves == 0
+Method              : LeidenMD
+Matrix              : ../0_florida/af_shell3.mtx
+Resolution          : 1.0
+Theta               : 0.01
+Seed                : 0
+Number of vertices  : 504855
+Number of edges     : 8542010
+Number of blocks    : 66
+Number of colors    : 5
+Leiden levels       : 8
+Leiden moves        : 567522
+MoveNodesFast time  : 1.98358 s
+  Neighbor weights time : 0 s
+  Candidate build time  : 0 s
+  Delta evaluation time : 0 s
+  Move node time        : 0 s
+    Self-loop scan time     : 0 s
+    Validation time         : 0 s
+    EnsureCommunity time    : 0 s
+    Statistics update time  : 0 s
+    Empty-community time    : 0 s
+    Move-node residual time : 0 s
+  Neighbor requeue time : 0 s
+  Residual time         : 1.98358 s
+  MoveNodesFast visits  : 2321156
+  MoveNodesFast moves   : 567522
+  Total candidates      : 0
+  Stage4A rounds        : 0
+  Stage4A active scan   : 0 s
+  Stage4A neighbor scan : 0 s
+  Stage4A candidate eval: 0 s
+  Stage4A proposal total: 0 s
+  Stage4A commit total  : 0 s
+  Stage4A revalidation  : 0 s
+  Stage4A affected next : 0 s
+  Stage4A buffer clear  : 0 s
+  Stage4A total         : 0 s
+  Stage4A active vertices: 0
+  Stage4A positive proposals: 0
+  Stage4A committed moves: 0
+  Stage4A rejected proposals: 0
+  Stage4A average active/round: 0
+  Stage4A maximum active/round: 0
+  Stage4A reactivation neighbor scans: 0
+  Stage4A target-community exclusions: 0
+  Stage4A newly activated neighbors: 0
+  Stage4A duplicate activation attempts: 0
+  Stage4A commit/proposal ratio: 0
+  Stage4B processed vertices: 2321156
+  Stage4B successful moves: 567522
+  Stage4B failed validations: 50
+  Stage4B neighbor scans: 72479204
+  Stage4B candidate evaluations: 15817514
+  Stage4B enqueue attempts/success/duplicate: 14016409/1177297/12839112
+  Stage4B empty attempts/failures: 2321155/0
+  Stage4B commit attempts/retries: 567572/50
+  Stage4B lock attempts/contentions: 1135144/186
+  Stage4B verification sweeps: 20
+  Stage4B productive sweeps: 12
+  Stage4B final verification wall: 0.317362 s
+  Stage4B final verification processed: 549656
+  Stage4B final verification neighbor scans: 17389628
+  Stage4B final verification candidate evals: 1541030
+  Stage4B final verification enqueue dup rate: 0
+  Stage4B neighbor time: 1.71345 s
+  Stage4B candidate time: 1.00187 s
+  Stage4B lock wait: 0.0211487 s
+  Stage4B commit/revalidation: 0.165955 s
+  Stage4B affected update: 0.311968 s
+  Stage4B queue management: 11.6089 s
+  Stage4B final rebuild: 0.0263233 s
+  Stage4B total: 1.97961 s
+RefinePartition time: 2.34214 s
+AggregateGraph time : 0.0256631 s
+BuildCoarse time    : 0.00254142 s
+Leiden total time   : 4.53604 s
+Execution time      : 4.64846 s
+Quality value (internal objective): 1.63043e+07
+Block file          : af_shell3_LeidenMD_gamma1.0.blk
+Color file          : af_shell3_LeidenMD_gamma1.0.bcol

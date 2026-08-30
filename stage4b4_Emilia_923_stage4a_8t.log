@@ -1,0 +1,1053 @@
+[Driver] Matrix read start: ../0_florida/Emilia_923.mtx
+[Driver] Matrix read done elapsed=10.3295 seconds vertices=923136 edges=20041035
+[Driver] Binary edge-weight conversion start
+[Driver] Binary edge-weight conversion done elapsed=0.0439534 seconds
+[Driver] BuildLeidenGraphStats start
+[Driver] BuildLeidenGraphStats done elapsed=0.0773897 seconds
+[Leiden] graph copy start
+[Leiden] graph copy done elapsed=0.140564 seconds
+[Leiden] stats copy start
+[Leiden] stats copy done elapsed=0.00214067 seconds
+[Leiden] singleton partition start
+[Leiden] singleton partition done elapsed=0.0783622 seconds
+[Leiden] original mapping initialization start
+[Leiden] original mapping initialization done elapsed=8.8666e-05 seconds
+[Leiden] level 1 start
+[Leiden] current number of vertices: 923136
+[Leiden] current number of edges: 20041035
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4A.1] round=1 active=923136 positive=923136 committed=763340 rejected=159796 next_active=923021
+[MoveNodesFast Stage4A.1] round=2 active=923021 positive=524043 committed=426894 rejected=97149 next_active=911648
+[MoveNodesFast Stage4A.1] round=3 active=911648 positive=262324 committed=229685 rejected=32639 next_active=854901
+[MoveNodesFast Stage4A.1] round=4 active=854901 positive=130538 committed=118501 rejected=12037 next_active=670026
+[MoveNodesFast Stage4A.1] round=5 active=670026 positive=78740 committed=73406 rejected=5334 next_active=489740
+[MoveNodesFast Stage4A.1] round=6 active=489740 positive=54503 committed=51812 rejected=2691 next_active=371245
+[MoveNodesFast Stage4A.1] round=7 active=371245 positive=42119 committed=40311 rejected=1808 next_active=296093
+[MoveNodesFast Stage4A.1] round=8 active=296093 positive=32528 committed=31320 rejected=1208 next_active=237462
+[MoveNodesFast Stage4A.1] round=9 active=237462 positive=25543 committed=24660 rejected=883 next_active=190388
+[MoveNodesFast Stage4A.1] round=10 active=190388 positive=20721 committed=20128 rejected=593 next_active=157328
+[MoveNodesFast Stage4A.1] round=11 active=157328 positive=17105 committed=16612 rejected=493 next_active=130904
+[MoveNodesFast Stage4A.1] round=12 active=130904 positive=14497 committed=14117 rejected=380 next_active=110830
+[MoveNodesFast Stage4A.1] round=13 active=110830 positive=12700 committed=12357 rejected=343 next_active=96924
+[MoveNodesFast Stage4A.1] round=14 active=96924 positive=10506 committed=10213 rejected=293 next_active=80064
+[MoveNodesFast Stage4A.1] round=15 active=80064 positive=8809 committed=8558 rejected=251 next_active=67618
+[MoveNodesFast Stage4A.1] round=16 active=67618 positive=7470 committed=7275 rejected=195 next_active=57953
+[MoveNodesFast Stage4A.1] round=17 active=57953 positive=6643 committed=6479 rejected=164 next_active=51013
+[MoveNodesFast Stage4A.1] round=18 active=51013 positive=6243 committed=6104 rejected=139 next_active=47946
+[MoveNodesFast Stage4A.1] round=19 active=47946 positive=5682 committed=5551 rejected=131 next_active=43184
+[MoveNodesFast Stage4A.1] round=20 active=43184 positive=5184 committed=5082 rejected=102 next_active=39615
+[MoveNodesFast Stage4A.1] round=21 active=39615 positive=4591 committed=4456 rejected=135 next_active=34872
+[MoveNodesFast Stage4A.1] round=22 active=34872 positive=4160 committed=4065 rejected=95 next_active=31938
+[MoveNodesFast Stage4A.1] round=23 active=31938 positive=3860 committed=3768 rejected=92 next_active=29083
+[MoveNodesFast Stage4A.1] round=24 active=29083 positive=3540 committed=3452 rejected=88 next_active=26141
+[MoveNodesFast Stage4A.1] round=25 active=26141 positive=3134 committed=3087 rejected=47 next_active=23648
+[MoveNodesFast Stage4A.1] round=26 active=23648 positive=3154 committed=3080 rejected=74 next_active=23176
+[MoveNodesFast Stage4A.1] round=27 active=23176 positive=2698 committed=2603 rejected=95 next_active=19851
+[MoveNodesFast Stage4A.1] round=28 active=19851 positive=2511 committed=2447 rejected=64 next_active=18247
+[MoveNodesFast Stage4A.1] round=29 active=18247 positive=2281 committed=2231 rejected=50 next_active=16959
+[MoveNodesFast Stage4A.1] round=30 active=16959 positive=2217 committed=2175 rejected=42 next_active=16169
+[MoveNodesFast Stage4A.1] round=31 active=16169 positive=2102 committed=2066 rejected=36 next_active=15604
+[MoveNodesFast Stage4A.1] round=32 active=15604 positive=2093 committed=2040 rejected=53 next_active=15209
+[MoveNodesFast Stage4A.1] round=33 active=15209 positive=2043 committed=2006 rejected=37 next_active=14712
+[MoveNodesFast Stage4A.1] round=34 active=14712 positive=1968 committed=1921 rejected=47 next_active=14224
+[MoveNodesFast Stage4A.1] round=35 active=14224 positive=1937 committed=1875 rejected=62 next_active=13866
+[MoveNodesFast Stage4A.1] round=36 active=13866 positive=1945 committed=1897 rejected=48 next_active=14018
+[MoveNodesFast Stage4A.1] round=37 active=14018 positive=1981 committed=1934 rejected=47 next_active=13864
+[MoveNodesFast Stage4A.1] round=38 active=13864 positive=1978 committed=1909 rejected=69 next_active=14015
+[MoveNodesFast Stage4A.1] round=39 active=14015 positive=1878 committed=1853 rejected=25 next_active=13225
+[MoveNodesFast Stage4A.1] round=40 active=13225 positive=1825 committed=1795 rejected=30 next_active=12725
+[MoveNodesFast Stage4A.1] round=41 active=12725 positive=1813 committed=1762 rejected=51 next_active=12333
+[MoveNodesFast Stage4A.1] round=42 active=12333 positive=1717 committed=1690 rejected=27 next_active=12208
+[MoveNodesFast Stage4A.1] round=43 active=12208 positive=1764 committed=1726 rejected=38 next_active=12245
+[MoveNodesFast Stage4A.1] round=44 active=12245 positive=1774 committed=1739 rejected=35 next_active=12339
+[MoveNodesFast Stage4A.1] round=45 active=12339 positive=1802 committed=1772 rejected=30 next_active=12414
+[MoveNodesFast Stage4A.1] round=46 active=12414 positive=1893 committed=1861 rejected=32 next_active=12958
+[MoveNodesFast Stage4A.1] round=47 active=12958 positive=1995 committed=1961 rejected=34 next_active=13592
+[MoveNodesFast Stage4A.1] round=48 active=13592 positive=2163 committed=2101 rejected=62 next_active=14666
+[MoveNodesFast Stage4A.1] round=49 active=14666 positive=2166 committed=2111 rejected=55 next_active=14851
+[MoveNodesFast Stage4A.1] round=50 active=14851 positive=2152 committed=2112 rejected=40 next_active=14412
+[MoveNodesFast Stage4A.1] round=51 active=14412 positive=2159 committed=2105 rejected=54 next_active=14741
+[MoveNodesFast Stage4A.1] round=52 active=14741 positive=2110 committed=2048 rejected=62 next_active=14387
+[MoveNodesFast Stage4A.1] round=53 active=14387 positive=2044 committed=1979 rejected=65 next_active=13929
+[MoveNodesFast Stage4A.1] round=54 active=13929 positive=2096 committed=2060 rejected=36 next_active=14193
+[MoveNodesFast Stage4A.1] round=55 active=14193 positive=2174 committed=2121 rejected=53 next_active=14572
+[MoveNodesFast Stage4A.1] round=56 active=14572 positive=2087 committed=2043 rejected=44 next_active=13994
+[MoveNodesFast Stage4A.1] round=57 active=13994 positive=2070 committed=2014 rejected=56 next_active=13927
+[MoveNodesFast Stage4A.1] round=58 active=13927 positive=2105 committed=2055 rejected=50 next_active=14397
+[MoveNodesFast Stage4A.1] round=59 active=14397 positive=2243 committed=2182 rejected=61 next_active=14588
+[MoveNodesFast Stage4A.1] round=60 active=14588 positive=2296 committed=2236 rejected=60 next_active=15320
+[MoveNodesFast Stage4A.1] round=61 active=15320 positive=2341 committed=2281 rejected=60 next_active=15347
+[MoveNodesFast Stage4A.1] round=62 active=15347 positive=2409 committed=2337 rejected=72 next_active=15540
+[MoveNodesFast Stage4A.1] round=63 active=15540 positive=2514 committed=2444 rejected=70 next_active=16337
+[MoveNodesFast Stage4A.1] round=64 active=16337 positive=2608 committed=2547 rejected=61 next_active=16918
+[MoveNodesFast Stage4A.1] round=65 active=16918 positive=2672 committed=2639 rejected=33 next_active=17747
+[MoveNodesFast Stage4A.1] round=66 active=17747 positive=2757 committed=2705 rejected=52 next_active=17878
+[MoveNodesFast Stage4A.1] round=67 active=17878 positive=2811 committed=2750 rejected=61 next_active=18350
+[MoveNodesFast Stage4A.1] round=68 active=18350 positive=2697 committed=2621 rejected=76 next_active=17927
+[MoveNodesFast Stage4A.1] round=69 active=17927 positive=2717 committed=2647 rejected=70 next_active=17716
+[MoveNodesFast Stage4A.1] round=70 active=17716 positive=2793 committed=2720 rejected=73 next_active=18037
+[MoveNodesFast Stage4A.1] round=71 active=18037 positive=2732 committed=2706 rejected=26 next_active=18277
+[MoveNodesFast Stage4A.1] round=72 active=18277 positive=2840 committed=2771 rejected=69 next_active=18246
+[MoveNodesFast Stage4A.1] round=73 active=18246 positive=2955 committed=2895 rejected=60 next_active=18985
+[MoveNodesFast Stage4A.1] round=74 active=18985 positive=2979 committed=2917 rejected=62 next_active=19252
+[MoveNodesFast Stage4A.1] round=75 active=19252 positive=3098 committed=3034 rejected=64 next_active=19830
+[MoveNodesFast Stage4A.1] round=76 active=19830 positive=3064 committed=3021 rejected=43 next_active=19724
+[MoveNodesFast Stage4A.1] round=77 active=19724 positive=3140 committed=3095 rejected=45 next_active=20311
+[MoveNodesFast Stage4A.1] round=78 active=20311 positive=3185 committed=3102 rejected=83 next_active=20232
+[MoveNodesFast Stage4A.1] round=79 active=20232 positive=3350 committed=3291 rejected=59 next_active=21164
+[MoveNodesFast Stage4A.1] round=80 active=21164 positive=3444 committed=3372 rejected=72 next_active=22226
+[MoveNodesFast Stage4A.1] round=81 active=22226 positive=3632 committed=3552 rejected=80 next_active=22628
+[MoveNodesFast Stage4A.1] round=82 active=22628 positive=3668 committed=3586 rejected=82 next_active=22802
+[MoveNodesFast Stage4A.1] round=83 active=22802 positive=3823 committed=3756 rejected=67 next_active=24027
+[MoveNodesFast Stage4A.1] round=84 active=24027 positive=3884 committed=3816 rejected=68 next_active=24339
+[MoveNodesFast Stage4A.1] round=85 active=24339 positive=4080 committed=4021 rejected=59 next_active=25303
+[MoveNodesFast Stage4A.1] round=86 active=25303 positive=4527 committed=4435 rejected=92 next_active=27594
+[MoveNodesFast Stage4A.1] round=87 active=27594 positive=4537 committed=4423 rejected=114 next_active=27429
+[MoveNodesFast Stage4A.1] round=88 active=27429 positive=4595 committed=4504 rejected=91 next_active=28035
+[MoveNodesFast Stage4A.1] round=89 active=28035 positive=4566 committed=4473 rejected=93 next_active=28306
+[MoveNodesFast Stage4A.1] round=90 active=28306 positive=4744 committed=4604 rejected=140 next_active=28993
+[MoveNodesFast Stage4A.1] round=91 active=28993 positive=4691 committed=4541 rejected=150 next_active=28707
+[MoveNodesFast Stage4A.1] round=92 active=28707 positive=4795 committed=4687 rejected=108 next_active=29040
+[MoveNodesFast Stage4A.1] round=93 active=29040 positive=4861 committed=4729 rejected=132 next_active=29659
+[MoveNodesFast Stage4A.1] round=94 active=29659 positive=4803 committed=4696 rejected=107 next_active=29984
+[MoveNodesFast Stage4A.1] round=95 active=29984 positive=4850 committed=4747 rejected=103 next_active=29957
+[MoveNodesFast Stage4A.1] round=96 active=29957 positive=5037 committed=4939 rejected=98 next_active=31235
+[MoveNodesFast Stage4A.1] round=97 active=31235 positive=5088 committed=4983 rejected=105 next_active=31509
+[MoveNodesFast Stage4A.1] round=98 active=31509 positive=5225 committed=5103 rejected=122 next_active=31868
+[MoveNodesFast Stage4A.1] round=99 active=31868 positive=5415 committed=5302 rejected=113 next_active=33258
+[MoveNodesFast Stage4A.1] round=100 active=33258 positive=5176 committed=5062 rejected=114 next_active=32092
+[MoveNodesFast Stage4A.1] round=101 active=32092 positive=5294 committed=5186 rejected=108 next_active=32944
+[MoveNodesFast Stage4A.1] round=102 active=32944 positive=5458 committed=5280 rejected=178 next_active=33435
+[MoveNodesFast Stage4A.1] round=103 active=33435 positive=5248 committed=5051 rejected=197 next_active=32475
+[MoveNodesFast Stage4A.1] round=104 active=32475 positive=4901 committed=4809 rejected=92 next_active=31309
+[MoveNodesFast Stage4A.1] round=105 active=31309 positive=4737 committed=4649 rejected=88 next_active=30195
+[MoveNodesFast Stage4A.1] round=106 active=30195 positive=4570 committed=4482 rejected=88 next_active=28972
+[MoveNodesFast Stage4A.1] round=107 active=28972 positive=4550 committed=4474 rejected=76 next_active=29020
+[MoveNodesFast Stage4A.1] round=108 active=29020 positive=4500 committed=4413 rejected=87 next_active=28424
+[MoveNodesFast Stage4A.1] round=109 active=28424 positive=4514 committed=4439 rejected=75 next_active=28848
+[MoveNodesFast Stage4A.1] round=110 active=28848 positive=4187 committed=4112 rejected=75 next_active=27087
+[MoveNodesFast Stage4A.1] round=111 active=27087 positive=4133 committed=4057 rejected=76 next_active=26655
+[MoveNodesFast Stage4A.1] round=112 active=26655 positive=4410 committed=4314 rejected=96 next_active=27379
+[MoveNodesFast Stage4A.1] round=113 active=27379 positive=4489 committed=4390 rejected=99 next_active=27556
+[MoveNodesFast Stage4A.1] round=114 active=27556 positive=4552 committed=4437 rejected=115 next_active=28193
+[MoveNodesFast Stage4A.1] round=115 active=28193 positive=4326 committed=4231 rejected=95 next_active=27118
+[MoveNodesFast Stage4A.1] round=116 active=27118 positive=4244 committed=4163 rejected=81 next_active=26578
+[MoveNodesFast Stage4A.1] round=117 active=26578 positive=4334 committed=4267 rejected=67 next_active=27339
+[MoveNodesFast Stage4A.1] round=118 active=27339 positive=4375 committed=4278 rejected=97 next_active=27146
+[MoveNodesFast Stage4A.1] round=119 active=27146 positive=4489 committed=4413 rejected=76 next_active=27938
+[MoveNodesFast Stage4A.1] round=120 active=27938 positive=4586 committed=4446 rejected=140 next_active=27567
+[MoveNodesFast Stage4A.1] round=121 active=27567 positive=4416 committed=4338 rejected=78 next_active=27606
+[MoveNodesFast Stage4A.1] round=122 active=27606 positive=4439 committed=4343 rejected=96 next_active=27399
+[MoveNodesFast Stage4A.1] round=123 active=27399 positive=4414 committed=4337 rejected=77 next_active=27549
+[MoveNodesFast Stage4A.1] round=124 active=27549 positive=4304 committed=4202 rejected=102 next_active=27154
+[MoveNodesFast Stage4A.1] round=125 active=27154 positive=4257 committed=4146 rejected=111 next_active=26512
+[MoveNodesFast Stage4A.1] round=126 active=26512 positive=4384 committed=4292 rejected=92 next_active=26822
+[MoveNodesFast Stage4A.1] round=127 active=26822 positive=4502 committed=4385 rejected=117 next_active=27757
+[MoveNodesFast Stage4A.1] round=128 active=27757 positive=4399 committed=4313 rejected=86 next_active=27440
+[MoveNodesFast Stage4A.1] round=129 active=27440 positive=4184 committed=4101 rejected=83 next_active=26533
+[MoveNodesFast Stage4A.1] round=130 active=26533 positive=4259 committed=4170 rejected=89 next_active=26250
+[MoveNodesFast Stage4A.1] round=131 active=26250 positive=4303 committed=4207 rejected=96 next_active=26578
+[MoveNodesFast Stage4A.1] round=132 active=26578 positive=4170 committed=4082 rejected=88 next_active=26253
+[MoveNodesFast Stage4A.1] round=133 active=26253 positive=4189 committed=4107 rejected=82 next_active=25869
+[MoveNodesFast Stage4A.1] round=134 active=25869 positive=4079 committed=3996 rejected=83 next_active=25496
+[MoveNodesFast Stage4A.1] round=135 active=25496 positive=4107 committed=4020 rejected=87 next_active=25674
+[MoveNodesFast Stage4A.1] round=136 active=25674 positive=4075 committed=3978 rejected=97 next_active=25517
+[MoveNodesFast Stage4A.1] round=137 active=25517 positive=4111 committed=4015 rejected=96 next_active=25624
+[MoveNodesFast Stage4A.1] round=138 active=25624 positive=4220 committed=4111 rejected=109 next_active=25754
+[MoveNodesFast Stage4A.1] round=139 active=25754 positive=4137 committed=4038 rejected=99 next_active=25676
+[MoveNodesFast Stage4A.1] round=140 active=25676 positive=4108 committed=4021 rejected=87 next_active=25335
+[MoveNodesFast Stage4A.1] round=141 active=25335 positive=3921 committed=3851 rejected=70 next_active=24627
+[MoveNodesFast Stage4A.1] round=142 active=24627 positive=3912 committed=3828 rejected=84 next_active=24006
+[MoveNodesFast Stage4A.1] round=143 active=24006 positive=3683 committed=3617 rejected=66 next_active=22739
+[MoveNodesFast Stage4A.1] round=144 active=22739 positive=3655 committed=3579 rejected=76 next_active=22581
+[MoveNodesFast Stage4A.1] round=145 active=22581 positive=3577 committed=3508 rejected=69 next_active=22030
+[MoveNodesFast Stage4A.1] round=146 active=22030 positive=3518 committed=3460 rejected=58 next_active=21669
+[MoveNodesFast Stage4A.1] round=147 active=21669 positive=3520 committed=3463 rejected=57 next_active=21741
+[MoveNodesFast Stage4A.1] round=148 active=21741 positive=3327 committed=3269 rejected=58 next_active=20885
+[MoveNodesFast Stage4A.1] round=149 active=20885 positive=3409 committed=3359 rejected=50 next_active=20952
+[MoveNodesFast Stage4A.1] round=150 active=20952 positive=3312 committed=3249 rejected=63 next_active=20749
+[MoveNodesFast Stage4A.1] round=151 active=20749 positive=3384 committed=3314 rejected=70 next_active=20752
+[MoveNodesFast Stage4A.1] round=152 active=20752 positive=3430 committed=3376 rejected=54 next_active=21226
+[MoveNodesFast Stage4A.1] round=153 active=21226 positive=3486 committed=3419 rejected=67 next_active=21205
+[MoveNodesFast Stage4A.1] round=154 active=21205 positive=3375 committed=3305 rejected=70 next_active=20818
+[MoveNodesFast Stage4A.1] round=155 active=20818 positive=3467 committed=3408 rejected=59 next_active=21597
+[MoveNodesFast Stage4A.1] round=156 active=21597 positive=3606 committed=3544 rejected=62 next_active=22122
+[MoveNodesFast Stage4A.1] round=157 active=22122 positive=3281 committed=3221 rejected=60 next_active=20210
+[MoveNodesFast Stage4A.1] round=158 active=20210 positive=3305 committed=3259 rejected=46 next_active=20411
+[MoveNodesFast Stage4A.1] round=159 active=20411 positive=3273 committed=3228 rejected=45 next_active=20519
+[MoveNodesFast Stage4A.1] round=160 active=20519 positive=3346 committed=3252 rejected=94 next_active=20723
+[MoveNodesFast Stage4A.1] round=161 active=20723 positive=3204 committed=3143 rejected=61 next_active=20088
+[MoveNodesFast Stage4A.1] round=162 active=20088 positive=3003 committed=2967 rejected=36 next_active=18642
+[MoveNodesFast Stage4A.1] round=163 active=18642 positive=2863 committed=2823 rejected=40 next_active=17799
+[MoveNodesFast Stage4A.1] round=164 active=17799 positive=2858 committed=2807 rejected=51 next_active=17843
+[MoveNodesFast Stage4A.1] round=165 active=17843 positive=2887 committed=2826 rejected=61 next_active=17608
+[MoveNodesFast Stage4A.1] round=166 active=17608 positive=2869 committed=2817 rejected=52 next_active=17507
+[MoveNodesFast Stage4A.1] round=167 active=17507 positive=2781 committed=2724 rejected=57 next_active=16894
+[MoveNodesFast Stage4A.1] round=168 active=16894 positive=2797 committed=2725 rejected=72 next_active=16561
+[MoveNodesFast Stage4A.1] round=169 active=16561 positive=2582 committed=2536 rejected=46 next_active=16101
+[MoveNodesFast Stage4A.1] round=170 active=16101 positive=2375 committed=2335 rejected=40 next_active=15041
+[MoveNodesFast Stage4A.1] round=171 active=15041 positive=2371 committed=2327 rejected=44 next_active=14895
+[MoveNodesFast Stage4A.1] round=172 active=14895 positive=2242 committed=2180 rejected=62 next_active=14034
+[MoveNodesFast Stage4A.1] round=173 active=14034 positive=2187 committed=2156 rejected=31 next_active=13901
+[MoveNodesFast Stage4A.1] round=174 active=13901 positive=2091 committed=2051 rejected=40 next_active=13052
+[MoveNodesFast Stage4A.1] round=175 active=13052 positive=2037 committed=2012 rejected=25 next_active=12729
+[MoveNodesFast Stage4A.1] round=176 active=12729 positive=2009 committed=1959 rejected=50 next_active=12672
+[MoveNodesFast Stage4A.1] round=177 active=12672 positive=1963 committed=1931 rejected=32 next_active=12493
+[MoveNodesFast Stage4A.1] round=178 active=12493 positive=1924 committed=1905 rejected=19 next_active=12212
+[MoveNodesFast Stage4A.1] round=179 active=12212 positive=1980 committed=1936 rejected=44 next_active=12392
+[MoveNodesFast Stage4A.1] round=180 active=12392 positive=1897 committed=1858 rejected=39 next_active=11633
+[MoveNodesFast Stage4A.1] round=181 active=11633 positive=1808 committed=1782 rejected=26 next_active=11335
+[MoveNodesFast Stage4A.1] round=182 active=11335 positive=1787 committed=1759 rejected=28 next_active=11168
+[MoveNodesFast Stage4A.1] round=183 active=11168 positive=1684 committed=1645 rejected=39 next_active=10645
+[MoveNodesFast Stage4A.1] round=184 active=10645 positive=1650 committed=1619 rejected=31 next_active=10282
+[MoveNodesFast Stage4A.1] round=185 active=10282 positive=1579 committed=1561 rejected=18 next_active=10054
+[MoveNodesFast Stage4A.1] round=186 active=10054 positive=1425 committed=1408 rejected=17 next_active=9105
+[MoveNodesFast Stage4A.1] round=187 active=9105 positive=1342 committed=1321 rejected=21 next_active=8682
+[MoveNodesFast Stage4A.1] round=188 active=8682 positive=1323 committed=1302 rejected=21 next_active=8561
+[MoveNodesFast Stage4A.1] round=189 active=8561 positive=1362 committed=1325 rejected=37 next_active=8418
+[MoveNodesFast Stage4A.1] round=190 active=8418 positive=1348 committed=1322 rejected=26 next_active=8592
+[MoveNodesFast Stage4A.1] round=191 active=8592 positive=1423 committed=1396 rejected=27 next_active=8835
+[MoveNodesFast Stage4A.1] round=192 active=8835 positive=1314 committed=1286 rejected=28 next_active=8103
+[MoveNodesFast Stage4A.1] round=193 active=8103 positive=1183 committed=1173 rejected=10 next_active=7541
+[MoveNodesFast Stage4A.1] round=194 active=7541 positive=1087 committed=1062 rejected=25 next_active=7079
+[MoveNodesFast Stage4A.1] round=195 active=7079 positive=1045 committed=1039 rejected=6 next_active=6785
+[MoveNodesFast Stage4A.1] round=196 active=6785 positive=1113 committed=1088 rejected=25 next_active=7108
+[MoveNodesFast Stage4A.1] round=197 active=7108 positive=1147 committed=1123 rejected=24 next_active=7176
+[MoveNodesFast Stage4A.1] round=198 active=7176 positive=1151 committed=1116 rejected=35 next_active=7153
+[MoveNodesFast Stage4A.1] round=199 active=7153 positive=1155 committed=1123 rejected=32 next_active=7135
+[MoveNodesFast Stage4A.1] round=200 active=7135 positive=1078 committed=1064 rejected=14 next_active=7158
+[MoveNodesFast Stage4A.1] round=201 active=7158 positive=1085 committed=1067 rejected=18 next_active=7156
+[MoveNodesFast Stage4A.1] round=202 active=7156 positive=1138 committed=1118 rejected=20 next_active=7232
+[MoveNodesFast Stage4A.1] round=203 active=7232 positive=1111 committed=1087 rejected=24 next_active=7234
+[MoveNodesFast Stage4A.1] round=204 active=7234 positive=1092 committed=1078 rejected=14 next_active=7272
+[MoveNodesFast Stage4A.1] round=205 active=7272 positive=1066 committed=1053 rejected=13 next_active=7169
+[MoveNodesFast Stage4A.1] round=206 active=7169 positive=1056 committed=1046 rejected=10 next_active=7132
+[MoveNodesFast Stage4A.1] round=207 active=7132 positive=1102 committed=1063 rejected=39 next_active=7183
+[MoveNodesFast Stage4A.1] round=208 active=7183 positive=1089 committed=1059 rejected=30 next_active=7062
+[MoveNodesFast Stage4A.1] round=209 active=7062 positive=1101 committed=1079 rejected=22 next_active=7211
+[MoveNodesFast Stage4A.1] round=210 active=7211 positive=1071 committed=1057 rejected=14 next_active=7126
+[MoveNodesFast Stage4A.1] round=211 active=7126 positive=1040 committed=1002 rejected=38 next_active=6746
+[MoveNodesFast Stage4A.1] round=212 active=6746 positive=998 committed=974 rejected=24 next_active=6766
+[MoveNodesFast Stage4A.1] round=213 active=6766 positive=1008 committed=982 rejected=26 next_active=6493
+[MoveNodesFast Stage4A.1] round=214 active=6493 positive=1051 committed=1029 rejected=22 next_active=6682
+[MoveNodesFast Stage4A.1] round=215 active=6682 positive=1020 committed=995 rejected=25 next_active=6608
+[MoveNodesFast Stage4A.1] round=216 active=6608 positive=981 committed=968 rejected=13 next_active=6412
+[MoveNodesFast Stage4A.1] round=217 active=6412 positive=951 committed=928 rejected=23 next_active=6234
+[MoveNodesFast Stage4A.1] round=218 active=6234 positive=951 committed=940 rejected=11 next_active=6363
+[MoveNodesFast Stage4A.1] round=219 active=6363 positive=1017 committed=1003 rejected=14 next_active=6493
+[MoveNodesFast Stage4A.1] round=220 active=6493 positive=988 committed=976 rejected=12 next_active=6516
+[MoveNodesFast Stage4A.1] round=221 active=6516 positive=990 committed=956 rejected=34 next_active=6455
+[MoveNodesFast Stage4A.1] round=222 active=6455 positive=904 committed=895 rejected=9 next_active=5811
+[MoveNodesFast Stage4A.1] round=223 active=5811 positive=858 committed=857 rejected=1 next_active=5587
+[MoveNodesFast Stage4A.1] round=224 active=5587 positive=790 committed=764 rejected=26 next_active=5246
+[MoveNodesFast Stage4A.1] round=225 active=5246 positive=685 committed=670 rejected=15 next_active=4682
+[MoveNodesFast Stage4A.1] round=226 active=4682 positive=723 committed=709 rejected=14 next_active=4918
+[MoveNodesFast Stage4A.1] round=227 active=4918 positive=850 committed=820 rejected=30 next_active=5409
+[MoveNodesFast Stage4A.1] round=228 active=5409 positive=870 committed=861 rejected=9 next_active=5600
+[MoveNodesFast Stage4A.1] round=229 active=5600 positive=851 committed=821 rejected=30 next_active=5523
+[MoveNodesFast Stage4A.1] round=230 active=5523 positive=840 committed=819 rejected=21 next_active=5488
+[MoveNodesFast Stage4A.1] round=231 active=5488 positive=810 committed=795 rejected=15 next_active=5380
+[MoveNodesFast Stage4A.1] round=232 active=5380 positive=750 committed=741 rejected=9 next_active=5097
+[MoveNodesFast Stage4A.1] round=233 active=5097 positive=744 committed=736 rejected=8 next_active=4838
+[MoveNodesFast Stage4A.1] round=234 active=4838 positive=719 committed=700 rejected=19 next_active=5044
+[MoveNodesFast Stage4A.1] round=235 active=5044 positive=799 committed=779 rejected=20 next_active=5289
+[MoveNodesFast Stage4A.1] round=236 active=5289 positive=724 committed=709 rejected=15 next_active=4819
+[MoveNodesFast Stage4A.1] round=237 active=4819 positive=735 committed=723 rejected=12 next_active=4747
+[MoveNodesFast Stage4A.1] round=238 active=4747 positive=693 committed=681 rejected=12 next_active=4611
+[MoveNodesFast Stage4A.1] round=239 active=4611 positive=705 committed=696 rejected=9 next_active=4731
+[MoveNodesFast Stage4A.1] round=240 active=4731 positive=719 committed=708 rejected=11 next_active=4836
+[MoveNodesFast Stage4A.1] round=241 active=4836 positive=772 committed=758 rejected=14 next_active=5008
+[MoveNodesFast Stage4A.1] round=242 active=5008 positive=754 committed=743 rejected=11 next_active=5046
+[MoveNodesFast Stage4A.1] round=243 active=5046 positive=794 committed=774 rejected=20 next_active=4927
+[MoveNodesFast Stage4A.1] round=244 active=4927 positive=757 committed=744 rejected=13 next_active=4798
+[MoveNodesFast Stage4A.1] round=245 active=4798 positive=847 committed=820 rejected=27 next_active=5074
+[MoveNodesFast Stage4A.1] round=246 active=5074 positive=813 committed=802 rejected=11 next_active=5063
+[MoveNodesFast Stage4A.1] round=247 active=5063 positive=800 committed=782 rejected=18 next_active=4892
+[MoveNodesFast Stage4A.1] round=248 active=4892 positive=687 committed=676 rejected=11 next_active=4449
+[MoveNodesFast Stage4A.1] round=249 active=4449 positive=721 committed=710 rejected=11 next_active=4361
+[MoveNodesFast Stage4A.1] round=250 active=4361 positive=757 committed=745 rejected=12 next_active=4652
+[MoveNodesFast Stage4A.1] round=251 active=4652 positive=792 committed=771 rejected=21 next_active=4868
+[MoveNodesFast Stage4A.1] round=252 active=4868 positive=826 committed=811 rejected=15 next_active=5019
+[MoveNodesFast Stage4A.1] round=253 active=5019 positive=812 committed=788 rejected=24 next_active=5088
+[MoveNodesFast Stage4A.1] round=254 active=5088 positive=819 committed=804 rejected=15 next_active=4934
+[MoveNodesFast Stage4A.1] round=255 active=4934 positive=858 committed=835 rejected=23 next_active=5208
+[MoveNodesFast Stage4A.1] round=256 active=5208 positive=884 committed=863 rejected=21 next_active=5518
+[MoveNodesFast Stage4A.1] round=257 active=5518 positive=858 committed=845 rejected=13 next_active=5409
+[MoveNodesFast Stage4A.1] round=258 active=5409 positive=880 committed=870 rejected=10 next_active=5492
+[MoveNodesFast Stage4A.1] round=259 active=5492 positive=967 committed=941 rejected=26 next_active=5988
+[MoveNodesFast Stage4A.1] round=260 active=5988 positive=978 committed=958 rejected=20 next_active=5955
+[MoveNodesFast Stage4A.1] round=261 active=5955 positive=1055 committed=1040 rejected=15 next_active=6173
+[MoveNodesFast Stage4A.1] round=262 active=6173 positive=1158 committed=1128 rejected=30 next_active=6607
+[MoveNodesFast Stage4A.1] round=263 active=6607 positive=1095 committed=1068 rejected=27 next_active=6493
+[MoveNodesFast Stage4A.1] round=264 active=6493 positive=1100 committed=1078 rejected=22 next_active=6567
+[MoveNodesFast Stage4A.1] round=265 active=6567 positive=917 committed=901 rejected=16 next_active=5967
+[MoveNodesFast Stage4A.1] round=266 active=5967 positive=873 committed=858 rejected=15 next_active=5560
+[MoveNodesFast Stage4A.1] round=267 active=5560 positive=792 committed=785 rejected=7 next_active=5070
+[MoveNodesFast Stage4A.1] round=268 active=5070 positive=693 committed=675 rejected=18 next_active=4483
+[MoveNodesFast Stage4A.1] round=269 active=4483 positive=591 committed=586 rejected=5 next_active=3978
+[MoveNodesFast Stage4A.1] round=270 active=3978 positive=537 committed=528 rejected=9 next_active=3647
+[MoveNodesFast Stage4A.1] round=271 active=3647 positive=567 committed=558 rejected=9 next_active=3832
+[MoveNodesFast Stage4A.1] round=272 active=3832 positive=540 committed=534 rejected=6 next_active=3569
+[MoveNodesFast Stage4A.1] round=273 active=3569 positive=552 committed=548 rejected=4 next_active=3593
+[MoveNodesFast Stage4A.1] round=274 active=3593 positive=577 committed=568 rejected=9 next_active=3829
+[MoveNodesFast Stage4A.1] round=275 active=3829 positive=552 committed=543 rejected=9 next_active=3809
+[MoveNodesFast Stage4A.1] round=276 active=3809 positive=540 committed=532 rejected=8 next_active=3576
+[MoveNodesFast Stage4A.1] round=277 active=3576 positive=549 committed=548 rejected=1 next_active=3580
+[MoveNodesFast Stage4A.1] round=278 active=3580 positive=525 committed=513 rejected=12 next_active=3428
+[MoveNodesFast Stage4A.1] round=279 active=3428 positive=516 committed=507 rejected=9 next_active=3316
+[MoveNodesFast Stage4A.1] round=280 active=3316 positive=522 committed=513 rejected=9 next_active=3422
+[MoveNodesFast Stage4A.1] round=281 active=3422 positive=467 committed=459 rejected=8 next_active=3192
+[MoveNodesFast Stage4A.1] round=282 active=3192 positive=467 committed=458 rejected=9 next_active=3098
+[MoveNodesFast Stage4A.1] round=283 active=3098 positive=414 committed=408 rejected=6 next_active=2818
+[MoveNodesFast Stage4A.1] round=284 active=2818 positive=417 committed=414 rejected=3 next_active=2804
+[MoveNodesFast Stage4A.1] round=285 active=2804 positive=393 committed=389 rejected=4 next_active=2626
+[MoveNodesFast Stage4A.1] round=286 active=2626 positive=466 committed=457 rejected=9 next_active=2975
+[MoveNodesFast Stage4A.1] round=287 active=2975 positive=423 committed=420 rejected=3 next_active=2738
+[MoveNodesFast Stage4A.1] round=288 active=2738 positive=402 committed=401 rejected=1 next_active=2812
+[MoveNodesFast Stage4A.1] round=289 active=2812 positive=406 committed=406 rejected=0 next_active=2833
+[MoveNodesFast Stage4A.1] round=290 active=2833 positive=444 committed=434 rejected=10 next_active=2932
+[MoveNodesFast Stage4A.1] round=291 active=2932 positive=454 committed=444 rejected=10 next_active=2975
+[MoveNodesFast Stage4A.1] round=292 active=2975 positive=490 committed=481 rejected=9 next_active=3152
+[MoveNodesFast Stage4A.1] round=293 active=3152 positive=441 committed=436 rejected=5 next_active=2944
+[MoveNodesFast Stage4A.1] round=294 active=2944 positive=459 committed=443 rejected=16 next_active=2891
+[MoveNodesFast Stage4A.1] round=295 active=2891 positive=414 committed=411 rejected=3 next_active=2612
+[MoveNodesFast Stage4A.1] round=296 active=2612 positive=456 committed=455 rejected=1 next_active=2782
+[MoveNodesFast Stage4A.1] round=297 active=2782 positive=390 committed=378 rejected=12 next_active=2346
+[MoveNodesFast Stage4A.1] round=298 active=2346 positive=377 committed=368 rejected=9 next_active=2292
+[MoveNodesFast Stage4A.1] round=299 active=2292 positive=375 committed=365 rejected=10 next_active=2439
+[MoveNodesFast Stage4A.1] round=300 active=2439 positive=361 committed=358 rejected=3 next_active=2413
+[MoveNodesFast Stage4A.1] round=301 active=2413 positive=429 committed=424 rejected=5 next_active=2664
+[MoveNodesFast Stage4A.1] round=302 active=2664 positive=437 committed=429 rejected=8 next_active=2822
+[MoveNodesFast Stage4A.1] round=303 active=2822 positive=473 committed=464 rejected=9 next_active=2998
+[MoveNodesFast Stage4A.1] round=304 active=2998 positive=462 committed=461 rejected=1 next_active=3045
+[MoveNodesFast Stage4A.1] round=305 active=3045 positive=534 committed=519 rejected=15 next_active=3339
+[MoveNodesFast Stage4A.1] round=306 active=3339 positive=518 committed=509 rejected=9 next_active=3277
+[MoveNodesFast Stage4A.1] round=307 active=3277 positive=501 committed=490 rejected=11 next_active=3126
+[MoveNodesFast Stage4A.1] round=308 active=3126 positive=472 committed=466 rejected=6 next_active=2879
+[MoveNodesFast Stage4A.1] round=309 active=2879 positive=489 committed=477 rejected=12 next_active=2992
+[MoveNodesFast Stage4A.1] round=310 active=2992 positive=498 committed=480 rejected=18 next_active=3016
+[MoveNodesFast Stage4A.1] round=311 active=3016 positive=504 committed=495 rejected=9 next_active=3261
+[MoveNodesFast Stage4A.1] round=312 active=3261 positive=552 committed=534 rejected=18 next_active=3447
+[MoveNodesFast Stage4A.1] round=313 active=3447 positive=570 committed=556 rejected=14 next_active=3595
+[MoveNodesFast Stage4A.1] round=314 active=3595 positive=502 committed=487 rejected=15 next_active=3241
+[MoveNodesFast Stage4A.1] round=315 active=3241 positive=558 committed=547 rejected=11 next_active=3417
+[MoveNodesFast Stage4A.1] round=316 active=3417 positive=621 committed=598 rejected=23 next_active=3639
+[MoveNodesFast Stage4A.1] round=317 active=3639 positive=595 committed=565 rejected=30 next_active=3592
+[MoveNodesFast Stage4A.1] round=318 active=3592 positive=552 committed=531 rejected=21 next_active=3417
+[MoveNodesFast Stage4A.1] round=319 active=3417 positive=543 committed=535 rejected=8 next_active=3286
+[MoveNodesFast Stage4A.1] round=320 active=3286 positive=566 committed=543 rejected=23 next_active=3482
+[MoveNodesFast Stage4A.1] round=321 active=3482 positive=547 committed=534 rejected=13 next_active=3559
+[MoveNodesFast Stage4A.1] round=322 active=3559 positive=513 committed=505 rejected=8 next_active=3297
+[MoveNodesFast Stage4A.1] round=323 active=3297 positive=554 committed=547 rejected=7 next_active=3513
+[MoveNodesFast Stage4A.1] round=324 active=3513 positive=600 committed=580 rejected=20 next_active=3775
+[MoveNodesFast Stage4A.1] round=325 active=3775 positive=576 committed=557 rejected=19 next_active=3637
+[MoveNodesFast Stage4A.1] round=326 active=3637 positive=570 committed=561 rejected=9 next_active=3702
+[MoveNodesFast Stage4A.1] round=327 active=3702 positive=486 committed=471 rejected=15 next_active=3234
+[MoveNodesFast Stage4A.1] round=328 active=3234 positive=486 committed=477 rejected=9 next_active=3154
+[MoveNodesFast Stage4A.1] round=329 active=3154 positive=535 committed=522 rejected=13 next_active=3508
+[MoveNodesFast Stage4A.1] round=330 active=3508 positive=493 committed=480 rejected=13 next_active=3212
+[MoveNodesFast Stage4A.1] round=331 active=3212 positive=510 committed=501 rejected=9 next_active=3285
+[MoveNodesFast Stage4A.1] round=332 active=3285 positive=510 committed=507 rejected=3 next_active=3258
+[MoveNodesFast Stage4A.1] round=333 active=3258 positive=522 committed=516 rejected=6 next_active=3076
+[MoveNodesFast Stage4A.1] round=334 active=3076 positive=468 committed=458 rejected=10 next_active=3022
+[MoveNodesFast Stage4A.1] round=335 active=3022 positive=469 committed=452 rejected=17 next_active=3109
+[MoveNodesFast Stage4A.1] round=336 active=3109 positive=482 committed=473 rejected=9 next_active=3174
+[MoveNodesFast Stage4A.1] round=337 active=3174 positive=468 committed=459 rejected=9 next_active=2900
+[MoveNodesFast Stage4A.1] round=338 active=2900 positive=459 committed=450 rejected=9 next_active=2939
+[MoveNodesFast Stage4A.1] round=339 active=2939 positive=405 committed=405 rejected=0 next_active=2703
+[MoveNodesFast Stage4A.1] round=340 active=2703 positive=402 committed=392 rejected=10 next_active=2628
+[MoveNodesFast Stage4A.1] round=341 active=2628 positive=418 committed=412 rejected=6 next_active=2753
+[MoveNodesFast Stage4A.1] round=342 active=2753 positive=477 committed=474 rejected=3 next_active=3031
+[MoveNodesFast Stage4A.1] round=343 active=3031 positive=471 committed=454 rejected=17 next_active=2904
+[MoveNodesFast Stage4A.1] round=344 active=2904 positive=518 committed=515 rejected=3 next_active=3202
+[MoveNodesFast Stage4A.1] round=345 active=3202 positive=495 committed=489 rejected=6 next_active=3146
+[MoveNodesFast Stage4A.1] round=346 active=3146 positive=537 committed=526 rejected=11 next_active=3225
+[MoveNodesFast Stage4A.1] round=347 active=3225 positive=553 committed=544 rejected=9 next_active=3567
+[MoveNodesFast Stage4A.1] round=348 active=3567 positive=569 committed=563 rejected=6 next_active=3505
+[MoveNodesFast Stage4A.1] round=349 active=3505 positive=546 committed=534 rejected=12 next_active=3339
+[MoveNodesFast Stage4A.1] round=350 active=3339 positive=495 committed=470 rejected=25 next_active=3085
+[MoveNodesFast Stage4A.1] round=351 active=3085 positive=498 committed=486 rejected=12 next_active=3118
+[MoveNodesFast Stage4A.1] round=352 active=3118 positive=339 committed=330 rejected=9 next_active=2242
+[MoveNodesFast Stage4A.1] round=353 active=2242 positive=291 committed=288 rejected=3 next_active=1977
+[MoveNodesFast Stage4A.1] round=354 active=1977 positive=288 committed=285 rejected=3 next_active=1827
+[MoveNodesFast Stage4A.1] round=355 active=1827 positive=228 committed=225 rejected=3 next_active=1503
+[MoveNodesFast Stage4A.1] round=356 active=1503 positive=189 committed=189 rejected=0 next_active=1243
+[MoveNodesFast Stage4A.1] round=357 active=1243 positive=171 committed=165 rejected=6 next_active=1044
+[MoveNodesFast Stage4A.1] round=358 active=1044 positive=117 committed=117 rejected=0 next_active=845
+[MoveNodesFast Stage4A.1] round=359 active=845 positive=78 committed=75 rejected=3 next_active=578
+[MoveNodesFast Stage4A.1] round=360 active=578 positive=66 committed=63 rejected=3 next_active=417
+[MoveNodesFast Stage4A.1] round=361 active=417 positive=54 committed=54 rejected=0 next_active=385
+[MoveNodesFast Stage4A.1] round=362 active=385 positive=78 committed=78 rejected=0 next_active=512
+[MoveNodesFast Stage4A.1] round=363 active=512 positive=84 committed=81 rejected=3 next_active=528
+[MoveNodesFast Stage4A.1] round=364 active=528 positive=72 committed=72 rejected=0 next_active=465
+[MoveNodesFast Stage4A.1] round=365 active=465 positive=42 committed=42 rejected=0 next_active=318
+[MoveNodesFast Stage4A.1] round=366 active=318 positive=48 committed=48 rejected=0 next_active=350
+[MoveNodesFast Stage4A.1] round=367 active=350 positive=30 committed=30 rejected=0 next_active=247
+[MoveNodesFast Stage4A.1] round=368 active=247 positive=24 committed=24 rejected=0 next_active=170
+[MoveNodesFast Stage4A.1] round=369 active=170 positive=15 committed=15 rejected=0 next_active=139
+[MoveNodesFast Stage4A.1] round=370 active=139 positive=12 committed=12 rejected=0 next_active=96
+[MoveNodesFast Stage4A.1] round=371 active=96 positive=9 committed=9 rejected=0 next_active=67
+[MoveNodesFast Stage4A.1] round=372 active=67 positive=12 committed=12 rejected=0 next_active=100
+[MoveNodesFast Stage4A.1] round=373 active=100 positive=6 committed=6 rejected=0 next_active=61
+[MoveNodesFast Stage4A.1] round=374 active=61 positive=15 committed=13 rejected=2 next_active=119
+[MoveNodesFast Stage4A.1] round=375 active=119 positive=14 committed=14 rejected=0 next_active=106
+[MoveNodesFast Stage4A.1] round=376 active=106 positive=12 committed=12 rejected=0 next_active=107
+[MoveNodesFast Stage4A.1] round=377 active=107 positive=24 committed=24 rejected=0 next_active=173
+[MoveNodesFast Stage4A.1] round=378 active=173 positive=30 committed=30 rejected=0 next_active=206
+[MoveNodesFast Stage4A.1] round=379 active=206 positive=12 committed=12 rejected=0 next_active=107
+[MoveNodesFast Stage4A.1] round=380 active=107 positive=15 committed=12 rejected=3 next_active=101
+[MoveNodesFast Stage4A.1] round=381 active=101 positive=18 committed=18 rejected=0 next_active=93
+[MoveNodesFast Stage4A.1] round=382 active=93 positive=12 committed=12 rejected=0 next_active=93
+[MoveNodesFast Stage4A.1] round=383 active=93 positive=12 committed=12 rejected=0 next_active=100
+[MoveNodesFast Stage4A.1] round=384 active=100 positive=15 committed=15 rejected=0 next_active=104
+[MoveNodesFast Stage4A.1] round=385 active=104 positive=18 committed=18 rejected=0 next_active=132
+[MoveNodesFast Stage4A.1] round=386 active=132 positive=15 committed=15 rejected=0 next_active=95
+[MoveNodesFast Stage4A.1] round=387 active=95 positive=21 committed=21 rejected=0 next_active=128
+[MoveNodesFast Stage4A.1] round=388 active=128 positive=18 committed=18 rejected=0 next_active=156
+[MoveNodesFast Stage4A.1] round=389 active=156 positive=27 committed=27 rejected=0 next_active=201
+[MoveNodesFast Stage4A.1] round=390 active=201 positive=39 committed=32 rejected=7 next_active=251
+[MoveNodesFast Stage4A.1] round=391 active=251 positive=33 committed=33 rejected=0 next_active=202
+[MoveNodesFast Stage4A.1] round=392 active=202 positive=45 committed=45 rejected=0 next_active=310
+[MoveNodesFast Stage4A.1] round=393 active=310 positive=69 committed=69 rejected=0 next_active=437
+[MoveNodesFast Stage4A.1] round=394 active=437 positive=78 committed=76 rejected=2 next_active=501
+[MoveNodesFast Stage4A.1] round=395 active=501 positive=71 committed=71 rejected=0 next_active=471
+[MoveNodesFast Stage4A.1] round=396 active=471 positive=75 committed=75 rejected=0 next_active=511
+[MoveNodesFast Stage4A.1] round=397 active=511 positive=84 committed=81 rejected=3 next_active=569
+[MoveNodesFast Stage4A.1] round=398 active=569 positive=81 committed=78 rejected=3 next_active=595
+[MoveNodesFast Stage4A.1] round=399 active=595 positive=81 committed=81 rejected=0 next_active=571
+[MoveNodesFast Stage4A.1] round=400 active=571 positive=96 committed=96 rejected=0 next_active=607
+[MoveNodesFast Stage4A.1] round=401 active=607 positive=75 committed=72 rejected=3 next_active=554
+[MoveNodesFast Stage4A.1] round=402 active=554 positive=84 committed=84 rejected=0 next_active=533
+[MoveNodesFast Stage4A.1] round=403 active=533 positive=84 committed=84 rejected=0 next_active=549
+[MoveNodesFast Stage4A.1] round=404 active=549 positive=54 committed=51 rejected=3 next_active=378
+[MoveNodesFast Stage4A.1] round=405 active=378 positive=48 committed=48 rejected=0 next_active=392
+[MoveNodesFast Stage4A.1] round=406 active=392 positive=36 committed=36 rejected=0 next_active=286
+[MoveNodesFast Stage4A.1] round=407 active=286 positive=24 committed=24 rejected=0 next_active=195
+[MoveNodesFast Stage4A.1] round=408 active=195 positive=30 committed=30 rejected=0 next_active=256
+[MoveNodesFast Stage4A.1] round=409 active=256 positive=33 committed=30 rejected=3 next_active=212
+[MoveNodesFast Stage4A.1] round=410 active=212 positive=27 committed=27 rejected=0 next_active=201
+[MoveNodesFast Stage4A.1] round=411 active=201 positive=36 committed=36 rejected=0 next_active=255
+[MoveNodesFast Stage4A.1] round=412 active=255 positive=36 committed=36 rejected=0 next_active=283
+[MoveNodesFast Stage4A.1] round=413 active=283 positive=39 committed=37 rejected=2 next_active=269
+[MoveNodesFast Stage4A.1] round=414 active=269 positive=50 committed=47 rejected=3 next_active=301
+[MoveNodesFast Stage4A.1] round=415 active=301 positive=51 committed=48 rejected=3 next_active=360
+[MoveNodesFast Stage4A.1] round=416 active=360 positive=48 committed=47 rejected=1 next_active=340
+[MoveNodesFast Stage4A.1] round=417 active=340 positive=42 committed=42 rejected=0 next_active=334
+[MoveNodesFast Stage4A.1] round=418 active=334 positive=48 committed=48 rejected=0 next_active=370
+[MoveNodesFast Stage4A.1] round=419 active=370 positive=69 committed=69 rejected=0 next_active=456
+[MoveNodesFast Stage4A.1] round=420 active=456 positive=69 committed=69 rejected=0 next_active=511
+[MoveNodesFast Stage4A.1] round=421 active=511 positive=78 committed=75 rejected=3 next_active=508
+[MoveNodesFast Stage4A.1] round=422 active=508 positive=51 committed=48 rejected=3 next_active=366
+[MoveNodesFast Stage4A.1] round=423 active=366 positive=45 committed=39 rejected=6 next_active=321
+[MoveNodesFast Stage4A.1] round=424 active=321 positive=57 committed=48 rejected=9 next_active=330
+[MoveNodesFast Stage4A.1] round=425 active=330 positive=54 committed=48 rejected=6 next_active=355
+[MoveNodesFast Stage4A.1] round=426 active=355 positive=42 committed=39 rejected=3 next_active=287
+[MoveNodesFast Stage4A.1] round=427 active=287 positive=33 committed=27 rejected=6 next_active=202
+[MoveNodesFast Stage4A.1] round=428 active=202 positive=24 committed=24 rejected=0 next_active=187
+[MoveNodesFast Stage4A.1] round=429 active=187 positive=21 committed=21 rejected=0 next_active=163
+[MoveNodesFast Stage4A.1] round=430 active=163 positive=30 committed=30 rejected=0 next_active=214
+[MoveNodesFast Stage4A.1] round=431 active=214 positive=30 committed=30 rejected=0 next_active=197
+[MoveNodesFast Stage4A.1] round=432 active=197 positive=27 committed=24 rejected=3 next_active=177
+[MoveNodesFast Stage4A.1] round=433 active=177 positive=21 committed=21 rejected=0 next_active=142
+[MoveNodesFast Stage4A.1] round=434 active=142 positive=33 committed=33 rejected=0 next_active=233
+[MoveNodesFast Stage4A.1] round=435 active=233 positive=48 committed=48 rejected=0 next_active=290
+[MoveNodesFast Stage4A.1] round=436 active=290 positive=42 committed=42 rejected=0 next_active=254
+[MoveNodesFast Stage4A.1] round=437 active=254 positive=36 committed=35 rejected=1 next_active=273
+[MoveNodesFast Stage4A.1] round=438 active=273 positive=22 committed=22 rejected=0 next_active=203
+[MoveNodesFast Stage4A.1] round=439 active=203 positive=27 committed=27 rejected=0 next_active=204
+[MoveNodesFast Stage4A.1] round=440 active=204 positive=36 committed=33 rejected=3 next_active=212
+[MoveNodesFast Stage4A.1] round=441 active=212 positive=33 committed=33 rejected=0 next_active=233
+[MoveNodesFast Stage4A.1] round=442 active=233 positive=33 committed=33 rejected=0 next_active=253
+[MoveNodesFast Stage4A.1] round=443 active=253 positive=33 committed=30 rejected=3 next_active=194
+[MoveNodesFast Stage4A.1] round=444 active=194 positive=33 committed=33 rejected=0 next_active=203
+[MoveNodesFast Stage4A.1] round=445 active=203 positive=42 committed=42 rejected=0 next_active=296
+[MoveNodesFast Stage4A.1] round=446 active=296 positive=42 committed=40 rejected=2 next_active=293
+[MoveNodesFast Stage4A.1] round=447 active=293 positive=63 committed=63 rejected=0 next_active=449
+[MoveNodesFast Stage4A.1] round=448 active=449 positive=72 committed=72 rejected=0 next_active=493
+[MoveNodesFast Stage4A.1] round=449 active=493 positive=96 committed=93 rejected=3 next_active=600
+[MoveNodesFast Stage4A.1] round=450 active=600 positive=78 committed=78 rejected=0 next_active=511
+[MoveNodesFast Stage4A.1] round=451 active=511 positive=72 committed=72 rejected=0 next_active=438
+[MoveNodesFast Stage4A.1] round=452 active=438 positive=54 committed=54 rejected=0 next_active=448
+[MoveNodesFast Stage4A.1] round=453 active=448 positive=60 committed=60 rejected=0 next_active=409
+[MoveNodesFast Stage4A.1] round=454 active=409 positive=54 committed=54 rejected=0 next_active=396
+[MoveNodesFast Stage4A.1] round=455 active=396 positive=57 committed=57 rejected=0 next_active=440
+[MoveNodesFast Stage4A.1] round=456 active=440 positive=93 committed=90 rejected=3 next_active=582
+[MoveNodesFast Stage4A.1] round=457 active=582 positive=81 committed=81 rejected=0 next_active=580
+[MoveNodesFast Stage4A.1] round=458 active=580 positive=72 committed=69 rejected=3 next_active=508
+[MoveNodesFast Stage4A.1] round=459 active=508 positive=42 committed=42 rejected=0 next_active=335
+[MoveNodesFast Stage4A.1] round=460 active=335 positive=39 committed=39 rejected=0 next_active=252
+[MoveNodesFast Stage4A.1] round=461 active=252 positive=42 committed=42 rejected=0 next_active=232
+[MoveNodesFast Stage4A.1] round=462 active=232 positive=33 committed=33 rejected=0 next_active=202
+[MoveNodesFast Stage4A.1] round=463 active=202 positive=39 committed=39 rejected=0 next_active=256
+[MoveNodesFast Stage4A.1] round=464 active=256 positive=42 committed=42 rejected=0 next_active=287
+[MoveNodesFast Stage4A.1] round=465 active=287 positive=39 committed=39 rejected=0 next_active=263
+[MoveNodesFast Stage4A.1] round=466 active=263 positive=45 committed=45 rejected=0 next_active=286
+[MoveNodesFast Stage4A.1] round=467 active=286 positive=24 committed=24 rejected=0 next_active=198
+[MoveNodesFast Stage4A.1] round=468 active=198 positive=36 committed=36 rejected=0 next_active=250
+[MoveNodesFast Stage4A.1] round=469 active=250 positive=48 committed=48 rejected=0 next_active=305
+[MoveNodesFast Stage4A.1] round=470 active=305 positive=30 committed=30 rejected=0 next_active=226
+[MoveNodesFast Stage4A.1] round=471 active=226 positive=21 committed=21 rejected=0 next_active=172
+[MoveNodesFast Stage4A.1] round=472 active=172 positive=30 committed=30 rejected=0 next_active=200
+[MoveNodesFast Stage4A.1] round=473 active=200 positive=45 committed=45 rejected=0 next_active=293
+[MoveNodesFast Stage4A.1] round=474 active=293 positive=51 committed=51 rejected=0 next_active=337
+[MoveNodesFast Stage4A.1] round=475 active=337 positive=75 committed=75 rejected=0 next_active=469
+[MoveNodesFast Stage4A.1] round=476 active=469 positive=48 committed=45 rejected=3 next_active=304
+[MoveNodesFast Stage4A.1] round=477 active=304 positive=45 committed=45 rejected=0 next_active=321
+[MoveNodesFast Stage4A.1] round=478 active=321 positive=33 committed=33 rejected=0 next_active=210
+[MoveNodesFast Stage4A.1] round=479 active=210 positive=18 committed=15 rejected=3 next_active=136
+[MoveNodesFast Stage4A.1] round=480 active=136 positive=15 committed=15 rejected=0 next_active=109
+[MoveNodesFast Stage4A.1] round=481 active=109 positive=15 committed=15 rejected=0 next_active=98
+[MoveNodesFast Stage4A.1] round=482 active=98 positive=12 committed=12 rejected=0 next_active=113
+[MoveNodesFast Stage4A.1] round=483 active=113 positive=12 committed=12 rejected=0 next_active=98
+[MoveNodesFast Stage4A.1] round=484 active=98 positive=6 committed=6 rejected=0 next_active=61
+[MoveNodesFast Stage4A.1] round=485 active=61 positive=0 committed=0 rejected=0 next_active=923136
+[MoveNodesFast Stage4A.1] round=486 active=923136 positive=0 committed=0 rejected=0 next_active=0
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 2531377
+[Leiden] num_visits: 11981016
+[Leiden] elapsed time: 4.93863 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=7542 total_parent_communities=7542 processed_vertices=923136
+[RefinePartition profile] member construction: 0.00449937 s
+[RefinePartition profile] subset processing: 2.13906 s
+[RefinePartition profile] local result storage: 2.13906 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 0.00239721 s
+[RefinePartition profile] global assignment reconstruction: 0.00438829 s
+[RefinePartition profile] MakePartition rebuild: 0.0661173 s
+[RefinePartition profile] total: 2.31061 s
+[RefineDetailed] level=1 n=923136 m=20041035 community_slots=923136 active_parents=7542 empty_slots=915594 min_id=0 max_id=923133 member_vectors=923136
+[RefineDetailed] wall_times member_construction=0.00449937 subset_processing=2.13906 global_id_prefix=0.00239721 global_assignment=0.00438829 make_partition=0.0661173 total=2.31061
+[RefineDetailed] subsets=7542 vertices=923136 min_size=12 max_size=26547 avg_size=122.399 adjacency_volume=40082070 max_adjacency_volume=1170930 avg_adjacency_volume=5314.51
+[RefineDetailed] size_bins=0,0,6426,1078,38
+[RefineDetailed] candidates=923136 processed=923136 singleton_skips=51247 neighbor_builds=871889 neighbor_adjacency_scans=37854205 touched=23864732 active_iterations=4272700799 sparse_iterations=17368228 sparse_full_ratio=0.00406493 exceptional_additions=0 max_sparse_targets=57 delta_evaluations=16496339 nondecreasing=17368228 selections=871889 moves=871889
+[RefineDetailed] stats_build_calls=7542 stats_build_vertices=923136 stats_build_adjacency_scans=40082070 stats_update_calls=871889 stats_update_adjacency_scans=37854205
+[RefineDetailed refresh] initial_calls=7542 move_calls=0 total_time=0.0384613 avg_time=5.09961e-06 max_time=0.00212804 entries_scanned=923136 active_produced=923136 sort_elements=923136 refine_ratio=0.0166455
+[RefineDetailed active_update] calls=871889 activations=0 deactivations=871889 no_change=0 total_time=0.0604111
+[RefineDetailed] cpu_times reset=0.0428292 mass=0.00478325 candidate_scan=0.217857 shuffle=0.0231011 scratch_init=8.85342 stats_build=0.397909 candidate_processing=3.17898 compaction=2.94519 subset_total=15.7036
+[RefineDetailed] local_communities_total=51247 average=6.79488 max=1237 local_result_vertices=923136 local_assignment_entries=923136
+[RefineDetailed] threads=8 init_total_cpu=0.0672205 init_max_wall_proxy=0.010139 init_avg=0.00840256 scratch_bytes_per_thread=26770944 scratch_bytes_total=214167552
+[RefineDetailed] thread_work_min=1.67956 max=2.12273 avg=1.96917 max_avg=1.07798
+[RefineDetailed top] rank=1 parent=526323 size=25101 adjacency_volume=1105092 time=0.174046 local_communities=1175 max_active_communities=25101 avg_sparse_targets=25.6727 max_sparse_targets=57 delta_evaluations=590320 refinement_moves=23926 refresh_calls=1 refresh_time=0.000814417
+[RefineDetailed top] rank=2 parent=423642 size=26547 adjacency_volume=1170930 time=0.165714 local_communities=1237 max_active_communities=26547 avg_sparse_targets=25.3611 max_sparse_targets=57 delta_evaluations=616579 refinement_moves=25310 refresh_calls=1 refresh_time=0.00212804
+[RefineDetailed top] rank=3 parent=506754 size=25740 adjacency_volume=1133154 time=0.16032 local_communities=1184 max_active_communities=25740 avg_sparse_targets=25.6341 max_sparse_targets=51 delta_evaluations=604915 refinement_moves=24556 refresh_calls=1 refresh_time=0.00077475
+[RefineDetailed top] rank=4 parent=711183 size=21963 adjacency_volume=967677 time=0.153664 local_communities=1044 max_active_communities=21963 avg_sparse_targets=25.3452 max_sparse_targets=57 delta_evaluations=509277 refinement_moves=20919 refresh_calls=1 refresh_time=0.000613125
+[RefineDetailed top] rank=5 parent=511599 size=21507 adjacency_volume=933924 time=0.149895 local_communities=977 max_active_communities=21507 avg_sparse_targets=25.2989 max_sparse_targets=57 delta_evaluations=498856 refinement_moves=20530 refresh_calls=1 refresh_time=0.0007275
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 51247
+[Leiden] elapsed time: 2.35481 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 51247
+[Leiden] aggregate edges: 493577
+[Leiden] elapsed time: 0.0846452 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 0.00455029 seconds
+[Leiden] total level time: 7.47339 seconds
+[Leiden] level 2 start
+[Leiden] current number of vertices: 51247
+[Leiden] current number of edges: 493577
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4A.1] round=1 active=51247 positive=4670 committed=4076 rejected=594 next_active=27791
+[MoveNodesFast Stage4A.1] round=2 active=27791 positive=6694 committed=6021 rejected=673 next_active=25237
+[MoveNodesFast Stage4A.1] round=3 active=25237 positive=3516 committed=3158 rejected=358 next_active=18785
+[MoveNodesFast Stage4A.1] round=4 active=18785 positive=2536 committed=2372 rejected=164 next_active=15279
+[MoveNodesFast Stage4A.1] round=5 active=15279 positive=1946 committed=1834 rejected=112 next_active=12530
+[MoveNodesFast Stage4A.1] round=6 active=12530 positive=1550 committed=1486 rejected=64 next_active=10435
+[MoveNodesFast Stage4A.1] round=7 active=10435 positive=1327 committed=1280 rejected=47 next_active=8826
+[MoveNodesFast Stage4A.1] round=8 active=8826 positive=1026 committed=991 rejected=35 next_active=7067
+[MoveNodesFast Stage4A.1] round=9 active=7067 positive=848 committed=823 rejected=25 next_active=5997
+[MoveNodesFast Stage4A.1] round=10 active=5997 positive=719 committed=696 rejected=23 next_active=5145
+[MoveNodesFast Stage4A.1] round=11 active=5145 positive=624 committed=603 rejected=21 next_active=4475
+[MoveNodesFast Stage4A.1] round=12 active=4475 positive=550 committed=535 rejected=15 next_active=4083
+[MoveNodesFast Stage4A.1] round=13 active=4083 positive=459 committed=443 rejected=16 next_active=3361
+[MoveNodesFast Stage4A.1] round=14 active=3361 positive=369 committed=361 rejected=8 next_active=2857
+[MoveNodesFast Stage4A.1] round=15 active=2857 positive=326 committed=315 rejected=11 next_active=2459
+[MoveNodesFast Stage4A.1] round=16 active=2459 positive=273 committed=265 rejected=8 next_active=2135
+[MoveNodesFast Stage4A.1] round=17 active=2135 positive=242 committed=236 rejected=6 next_active=1848
+[MoveNodesFast Stage4A.1] round=18 active=1848 positive=219 committed=211 rejected=8 next_active=1663
+[MoveNodesFast Stage4A.1] round=19 active=1663 positive=220 committed=215 rejected=5 next_active=1575
+[MoveNodesFast Stage4A.1] round=20 active=1575 positive=187 committed=178 rejected=9 next_active=1413
+[MoveNodesFast Stage4A.1] round=21 active=1413 positive=146 committed=145 rejected=1 next_active=1175
+[MoveNodesFast Stage4A.1] round=22 active=1175 positive=148 committed=145 rejected=3 next_active=1138
+[MoveNodesFast Stage4A.1] round=23 active=1138 positive=123 committed=120 rejected=3 next_active=936
+[MoveNodesFast Stage4A.1] round=24 active=936 positive=100 committed=97 rejected=3 next_active=762
+[MoveNodesFast Stage4A.1] round=25 active=762 positive=92 committed=90 rejected=2 next_active=704
+[MoveNodesFast Stage4A.1] round=26 active=704 positive=81 committed=81 rejected=0 next_active=608
+[MoveNodesFast Stage4A.1] round=27 active=608 positive=59 committed=59 rejected=0 next_active=512
+[MoveNodesFast Stage4A.1] round=28 active=512 positive=58 committed=57 rejected=1 next_active=468
+[MoveNodesFast Stage4A.1] round=29 active=468 positive=52 committed=52 rejected=0 next_active=372
+[MoveNodesFast Stage4A.1] round=30 active=372 positive=48 committed=47 rejected=1 next_active=400
+[MoveNodesFast Stage4A.1] round=31 active=400 positive=49 committed=47 rejected=2 next_active=345
+[MoveNodesFast Stage4A.1] round=32 active=345 positive=32 committed=32 rejected=0 next_active=233
+[MoveNodesFast Stage4A.1] round=33 active=233 positive=28 committed=28 rejected=0 next_active=200
+[MoveNodesFast Stage4A.1] round=34 active=200 positive=33 committed=33 rejected=0 next_active=246
+[MoveNodesFast Stage4A.1] round=35 active=246 positive=34 committed=33 rejected=1 next_active=235
+[MoveNodesFast Stage4A.1] round=36 active=235 positive=27 committed=26 rejected=1 next_active=219
+[MoveNodesFast Stage4A.1] round=37 active=219 positive=27 committed=26 rejected=1 next_active=163
+[MoveNodesFast Stage4A.1] round=38 active=163 positive=18 committed=18 rejected=0 next_active=139
+[MoveNodesFast Stage4A.1] round=39 active=139 positive=21 committed=20 rejected=1 next_active=165
+[MoveNodesFast Stage4A.1] round=40 active=165 positive=18 committed=18 rejected=0 next_active=134
+[MoveNodesFast Stage4A.1] round=41 active=134 positive=23 committed=23 rejected=0 next_active=166
+[MoveNodesFast Stage4A.1] round=42 active=166 positive=20 committed=20 rejected=0 next_active=150
+[MoveNodesFast Stage4A.1] round=43 active=150 positive=21 committed=21 rejected=0 next_active=162
+[MoveNodesFast Stage4A.1] round=44 active=162 positive=20 committed=19 rejected=1 next_active=130
+[MoveNodesFast Stage4A.1] round=45 active=130 positive=10 committed=10 rejected=0 next_active=102
+[MoveNodesFast Stage4A.1] round=46 active=102 positive=12 committed=12 rejected=0 next_active=105
+[MoveNodesFast Stage4A.1] round=47 active=105 positive=11 committed=11 rejected=0 next_active=110
+[MoveNodesFast Stage4A.1] round=48 active=110 positive=8 committed=8 rejected=0 next_active=72
+[MoveNodesFast Stage4A.1] round=49 active=72 positive=6 committed=6 rejected=0 next_active=65
+[MoveNodesFast Stage4A.1] round=50 active=65 positive=13 committed=13 rejected=0 next_active=94
+[MoveNodesFast Stage4A.1] round=51 active=94 positive=11 committed=11 rejected=0 next_active=82
+[MoveNodesFast Stage4A.1] round=52 active=82 positive=11 committed=11 rejected=0 next_active=84
+[MoveNodesFast Stage4A.1] round=53 active=84 positive=12 committed=11 rejected=1 next_active=94
+[MoveNodesFast Stage4A.1] round=54 active=94 positive=16 committed=16 rejected=0 next_active=127
+[MoveNodesFast Stage4A.1] round=55 active=127 positive=18 committed=17 rejected=1 next_active=135
+[MoveNodesFast Stage4A.1] round=56 active=135 positive=16 committed=16 rejected=0 next_active=141
+[MoveNodesFast Stage4A.1] round=57 active=141 positive=12 committed=12 rejected=0 next_active=115
+[MoveNodesFast Stage4A.1] round=58 active=115 positive=14 committed=14 rejected=0 next_active=89
+[MoveNodesFast Stage4A.1] round=59 active=89 positive=18 committed=15 rejected=3 next_active=134
+[MoveNodesFast Stage4A.1] round=60 active=134 positive=19 committed=19 rejected=0 next_active=93
+[MoveNodesFast Stage4A.1] round=61 active=93 positive=4 committed=4 rejected=0 next_active=26
+[MoveNodesFast Stage4A.1] round=62 active=26 positive=3 committed=3 rejected=0 next_active=37
+[MoveNodesFast Stage4A.1] round=63 active=37 positive=6 committed=6 rejected=0 next_active=43
+[MoveNodesFast Stage4A.1] round=64 active=43 positive=6 committed=6 rejected=0 next_active=45
+[MoveNodesFast Stage4A.1] round=65 active=45 positive=9 committed=9 rejected=0 next_active=59
+[MoveNodesFast Stage4A.1] round=66 active=59 positive=8 committed=7 rejected=1 next_active=37
+[MoveNodesFast Stage4A.1] round=67 active=37 positive=3 committed=3 rejected=0 next_active=21
+[MoveNodesFast Stage4A.1] round=68 active=21 positive=0 committed=0 rejected=0 next_active=51247
+[MoveNodesFast Stage4A.1] round=69 active=51247 positive=8 committed=8 rejected=0 next_active=85
+[MoveNodesFast Stage4A.1] round=70 active=85 positive=3 committed=3 rejected=0 next_active=13
+[MoveNodesFast Stage4A.1] round=71 active=13 positive=0 committed=0 rejected=0 next_active=51247
+[MoveNodesFast Stage4A.1] round=72 active=51247 positive=0 committed=0 rejected=0 next_active=0
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 27607
+[Leiden] num_visits: 328472
+[Leiden] elapsed time: 0.0508575 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=1407 total_parent_communities=1407 processed_vertices=51247
+[RefinePartition profile] member construction: 0.000388375 s
+[RefinePartition profile] subset processing: 0.0320604 s
+[RefinePartition profile] local result storage: 0.0320604 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 1.2208e-05 s
+[RefinePartition profile] global assignment reconstruction: 8.0292e-05 s
+[RefinePartition profile] MakePartition rebuild: 0.00194758 s
+[RefinePartition profile] total: 0.0356415 s
+[RefineDetailed] level=2 n=51247 m=493577 community_slots=7542 active_parents=1407 empty_slots=6135 min_id=3 max_id=7534 member_vectors=7542
+[RefineDetailed] wall_times member_construction=0.000388375 subset_processing=0.0320604 global_id_prefix=1.2208e-05 global_assignment=8.0292e-05 make_partition=0.00194758 total=0.0356415
+[RefineDetailed] subsets=1407 vertices=51247 min_size=2 max_size=1836 avg_size=36.4229 adjacency_volume=935907 max_adjacency_volume=33695 avg_adjacency_volume=665.179
+[RefineDetailed] size_bins=0,732,622,39,14
+[RefineDetailed] candidates=51247 processed=51247 singleton_skips=10905 neighbor_builds=40342 neighbor_adjacency_scans=637660 touched=471059 active_iterations=16721345 sparse_iterations=332091 sparse_full_ratio=0.0198603 exceptional_additions=0 max_sparse_targets=61 delta_evaluations=291749 nondecreasing=332091 selections=40342 moves=40342
+[RefineDetailed] stats_build_calls=1407 stats_build_vertices=51247 stats_build_adjacency_scans=935907 stats_update_calls=40342 stats_update_adjacency_scans=637660
+[RefineDetailed refresh] initial_calls=1407 move_calls=0 total_time=0.00272709 avg_time=1.93823e-06 max_time=0.000964667 entries_scanned=51247 active_produced=51247 sort_elements=51247 refine_ratio=0.0765143
+[RefineDetailed active_update] calls=40342 activations=0 deactivations=40342 no_change=0 total_time=0.00248535
+[RefineDetailed] cpu_times reset=0.000721273 mass=0.000147808 candidate_scan=0.00546025 shuffle=0.00115383 scratch_init=0.0424831 stats_build=0.0107702 candidate_processing=0.0615045 compaction=0.03064 subset_total=0.154006
+[RefineDetailed] local_communities_total=10905 average=7.75053 max=379 local_result_vertices=51247 local_assignment_entries=51247
+[RefineDetailed] threads=8 init_total_cpu=0.00219604 init_max_wall_proxy=0.000359625 init_avg=0.000274505 scratch_bytes_per_thread=1486163 scratch_bytes_total=11889304
+[RefineDetailed] thread_work_min=0.0157385 max=0.0304571 avg=0.0199532 max_avg=1.52643
+[RefineDetailed top] rank=1 parent=2175 size=1274 adjacency_volume=23350 time=0.00363263 local_communities=247 max_active_communities=1274 avg_sparse_targets=9.91237 max_sparse_targets=40 delta_evaluations=9153 refinement_moves=1027 refresh_calls=1 refresh_time=3e-05
+[RefineDetailed top] rank=2 parent=270 size=1435 adjacency_volume=26309 time=0.00311375 local_communities=289 max_active_communities=1435 avg_sparse_targets=10.0925 max_sparse_targets=34 delta_evaluations=10420 refinement_moves=1146 refresh_calls=1 refresh_time=3.5584e-05
+[RefineDetailed top] rank=3 parent=5991 size=1380 adjacency_volume=24876 time=0.00306667 local_communities=258 max_active_communities=1380 avg_sparse_targets=10.1711 max_sparse_targets=38 delta_evaluations=10290 refinement_moves=1122 refresh_calls=1 refresh_time=5.4208e-05
+[RefineDetailed top] rank=4 parent=5975 size=1510 adjacency_volume=27872 time=0.00299346 local_communities=312 max_active_communities=1510 avg_sparse_targets=10.1235 max_sparse_targets=61 delta_evaluations=10930 refinement_moves=1198 refresh_calls=1 refresh_time=3.4667e-05
+[RefineDetailed top] rank=5 parent=5694 size=1130 adjacency_volume=20364 time=0.00275896 local_communities=218 max_active_communities=1130 avg_sparse_targets=9.70504 max_sparse_targets=36 delta_evaluations=7939 refinement_moves=912 refresh_calls=1 refresh_time=4.7958e-05
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 10905
+[Leiden] elapsed time: 0.0369413 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 10905
+[Leiden] aggregate edges: 93660
+[Leiden] elapsed time: 0.00518563 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 0.000601792 seconds
+[Leiden] total level time: 0.0980669 seconds
+[Leiden] level 3 start
+[Leiden] current number of vertices: 10905
+[Leiden] current number of edges: 93660
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4A.1] round=1 active=10905 positive=1278 committed=1141 rejected=137 next_active=5767
+[MoveNodesFast Stage4A.1] round=2 active=5767 positive=1087 committed=972 rejected=115 next_active=4653
+[MoveNodesFast Stage4A.1] round=3 active=4653 positive=664 committed=593 rejected=71 next_active=3357
+[MoveNodesFast Stage4A.1] round=4 active=3357 positive=414 committed=384 rejected=30 next_active=2386
+[MoveNodesFast Stage4A.1] round=5 active=2386 positive=308 committed=293 rejected=15 next_active=1896
+[MoveNodesFast Stage4A.1] round=6 active=1896 positive=219 committed=209 rejected=10 next_active=1359
+[MoveNodesFast Stage4A.1] round=7 active=1359 positive=150 committed=142 rejected=8 next_active=1035
+[MoveNodesFast Stage4A.1] round=8 active=1035 positive=126 committed=122 rejected=4 next_active=816
+[MoveNodesFast Stage4A.1] round=9 active=816 positive=76 committed=75 rejected=1 next_active=517
+[MoveNodesFast Stage4A.1] round=10 active=517 positive=51 committed=48 rejected=3 next_active=411
+[MoveNodesFast Stage4A.1] round=11 active=411 positive=42 committed=41 rejected=1 next_active=280
+[MoveNodesFast Stage4A.1] round=12 active=280 positive=35 committed=32 rejected=3 next_active=233
+[MoveNodesFast Stage4A.1] round=13 active=233 positive=31 committed=31 rejected=0 next_active=221
+[MoveNodesFast Stage4A.1] round=14 active=221 positive=21 committed=20 rejected=1 next_active=162
+[MoveNodesFast Stage4A.1] round=15 active=162 positive=15 committed=13 rejected=2 next_active=109
+[MoveNodesFast Stage4A.1] round=16 active=109 positive=11 committed=10 rejected=1 next_active=79
+[MoveNodesFast Stage4A.1] round=17 active=79 positive=8 committed=8 rejected=0 next_active=63
+[MoveNodesFast Stage4A.1] round=18 active=63 positive=8 committed=8 rejected=0 next_active=63
+[MoveNodesFast Stage4A.1] round=19 active=63 positive=7 committed=7 rejected=0 next_active=61
+[MoveNodesFast Stage4A.1] round=20 active=61 positive=4 committed=4 rejected=0 next_active=21
+[MoveNodesFast Stage4A.1] round=21 active=21 positive=3 committed=3 rejected=0 next_active=25
+[MoveNodesFast Stage4A.1] round=22 active=25 positive=5 committed=5 rejected=0 next_active=27
+[MoveNodesFast Stage4A.1] round=23 active=27 positive=4 committed=4 rejected=0 next_active=37
+[MoveNodesFast Stage4A.1] round=24 active=37 positive=5 committed=5 rejected=0 next_active=29
+[MoveNodesFast Stage4A.1] round=25 active=29 positive=5 committed=5 rejected=0 next_active=27
+[MoveNodesFast Stage4A.1] round=26 active=27 positive=4 committed=4 rejected=0 next_active=12
+[MoveNodesFast Stage4A.1] round=27 active=12 positive=0 committed=0 rejected=0 next_active=10905
+[MoveNodesFast Stage4A.1] round=28 active=10905 positive=5 committed=5 rejected=0 next_active=46
+[MoveNodesFast Stage4A.1] round=29 active=46 positive=1 committed=1 rejected=0 next_active=9
+[MoveNodesFast Stage4A.1] round=30 active=9 positive=0 committed=0 rejected=0 next_active=10905
+[MoveNodesFast Stage4A.1] round=31 active=10905 positive=0 committed=0 rejected=0 next_active=0
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 4185
+[Leiden] num_visits: 56416
+[Leiden] elapsed time: 0.00954938 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=270 total_parent_communities=270 processed_vertices=10905
+[RefinePartition profile] member construction: 0.000195792 s
+[RefinePartition profile] subset processing: 0.00408513 s
+[RefinePartition profile] local result storage: 0.00408513 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 2.917e-06 s
+[RefinePartition profile] global assignment reconstruction: 1.8333e-05 s
+[RefinePartition profile] MakePartition rebuild: 0.000407917 s
+[RefinePartition profile] total: 0.00501796 s
+[RefineDetailed] level=3 n=10905 m=93660 community_slots=1407 active_parents=270 empty_slots=1137 min_id=0 max_id=1405 member_vectors=1407
+[RefineDetailed] wall_times member_construction=0.000195792 subset_processing=0.00408513 global_id_prefix=2.917e-06 global_assignment=1.8333e-05 make_partition=0.000407917 total=0.00501796
+[RefineDetailed] subsets=270 vertices=10905 min_size=2 max_size=457 avg_size=40.3889 adjacency_volume=176415 max_adjacency_volume=7499 avg_adjacency_volume=653.389
+[RefineDetailed] size_bins=0,132,113,25,0
+[RefineDetailed] candidates=10905 processed=10905 singleton_skips=2602 neighbor_builds=8303 neighbor_adjacency_scans=124929 touched=95238 active_iterations=1089451 sparse_iterations=67936 sparse_full_ratio=0.062358 exceptional_additions=0 max_sparse_targets=34 delta_evaluations=59633 nondecreasing=67767 selections=8303 moves=8303
+[RefineDetailed] stats_build_calls=270 stats_build_vertices=10905 stats_build_adjacency_scans=176415 stats_update_calls=8303 stats_update_adjacency_scans=124929
+[RefineDetailed refresh] initial_calls=270 move_calls=0 total_time=0.000338539 avg_time=1.25385e-06 max_time=1.5166e-05 entries_scanned=10905 active_produced=10905 sort_elements=10905 refine_ratio=0.0674655
+[RefineDetailed active_update] calls=8303 activations=0 deactivations=8303 no_change=0 total_time=0.000359807
+[RefineDetailed] cpu_times reset=0.000111788 mass=2.9497e-05 candidate_scan=0.000895594 shuffle=0.000243125 scratch_init=0.00199341 stats_build=0.00214116 candidate_processing=0.0115006 compaction=0.00139687 subset_total=0.0185243
+[RefineDetailed] local_communities_total=2602 average=9.63704 max=112 local_result_vertices=10905 local_assignment_entries=10905
+[RefineDetailed] threads=8 init_total_cpu=0.000209959 init_max_wall_proxy=4.0125e-05 init_avg=2.62449e-05 scratch_bytes_per_thread=316245 scratch_bytes_total=2529960
+[RefineDetailed] thread_work_min=0.00144479 max=0.00343554 avg=0.00251218 max_avg=1.36756
+[RefineDetailed top] rank=1 parent=619 size=336 adjacency_volume=5536 time=0.000836708 local_communities=72 max_active_communities=336 avg_sparse_targets=9.70076 max_sparse_targets=25 delta_evaluations=2297 refinement_moves=264 refresh_calls=1 refresh_time=1.3166e-05
+[RefineDetailed top] rank=2 parent=441 size=329 adjacency_volume=5509 time=0.000667083 local_communities=73 max_active_communities=329 avg_sparse_targets=9.12109 max_sparse_targets=31 delta_evaluations=2079 refinement_moves=256 refresh_calls=1 refresh_time=1.2125e-05
+[RefineDetailed top] rank=3 parent=1250 size=330 adjacency_volume=5281 time=0.000651166 local_communities=72 max_active_communities=330 avg_sparse_targets=9.3876 max_sparse_targets=34 delta_evaluations=2164 refinement_moves=258 refresh_calls=1 refresh_time=1.1917e-05
+[RefineDetailed top] rank=4 parent=1176 size=361 adjacency_volume=6032 time=0.000605208 local_communities=89 max_active_communities=361 avg_sparse_targets=9.44118 max_sparse_targets=25 delta_evaluations=2296 refinement_moves=272 refresh_calls=1 refresh_time=1.5166e-05
+[RefineDetailed top] rank=5 parent=737 size=21 adjacency_volume=325 time=0.000571791 local_communities=5 max_active_communities=21 avg_sparse_targets=7.1875 max_sparse_targets=14 delta_evaluations=99 refinement_moves=16 refresh_calls=1 refresh_time=6.25e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 2602
+[Leiden] elapsed time: 0.00533887 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 2602
+[Leiden] aggregate edges: 21258
+[Leiden] elapsed time: 0.00101888 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 0.000131125 seconds
+[Leiden] total level time: 0.0173118 seconds
+[Leiden] level 4 start
+[Leiden] current number of vertices: 2602
+[Leiden] current number of edges: 21258
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4A.1] round=1 active=2602 positive=218 committed=201 rejected=17 next_active=1171
+[MoveNodesFast Stage4A.1] round=2 active=1171 positive=147 committed=130 rejected=17 next_active=727
+[MoveNodesFast Stage4A.1] round=3 active=727 positive=83 committed=80 rejected=3 next_active=504
+[MoveNodesFast Stage4A.1] round=4 active=504 positive=39 committed=38 rejected=1 next_active=304
+[MoveNodesFast Stage4A.1] round=5 active=304 positive=38 committed=34 rejected=4 next_active=218
+[MoveNodesFast Stage4A.1] round=6 active=218 positive=26 committed=24 rejected=2 next_active=161
+[MoveNodesFast Stage4A.1] round=7 active=161 positive=18 committed=17 rejected=1 next_active=100
+[MoveNodesFast Stage4A.1] round=8 active=100 positive=7 committed=6 rejected=1 next_active=41
+[MoveNodesFast Stage4A.1] round=9 active=41 positive=5 committed=5 rejected=0 next_active=23
+[MoveNodesFast Stage4A.1] round=10 active=23 positive=3 committed=3 rejected=0 next_active=16
+[MoveNodesFast Stage4A.1] round=11 active=16 positive=0 committed=0 rejected=0 next_active=2602
+[MoveNodesFast Stage4A.1] round=12 active=2602 positive=3 committed=3 rejected=0 next_active=25
+[MoveNodesFast Stage4A.1] round=13 active=25 positive=2 committed=2 rejected=0 next_active=17
+[MoveNodesFast Stage4A.1] round=14 active=17 positive=1 committed=1 rejected=0 next_active=7
+[MoveNodesFast Stage4A.1] round=15 active=7 positive=0 committed=0 rejected=0 next_active=2602
+[MoveNodesFast Stage4A.1] round=16 active=2602 positive=0 committed=0 rejected=0 next_active=0
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 544
+[Leiden] num_visits: 11120
+[Leiden] elapsed time: 0.00362942 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=100 total_parent_communities=100 processed_vertices=2602
+[RefinePartition profile] member construction: 2.9291e-05 s
+[RefinePartition profile] subset processing: 0.000966208 s
+[RefinePartition profile] local result storage: 0.000966208 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 6.25e-07 s
+[RefinePartition profile] global assignment reconstruction: 3.5e-06 s
+[RefinePartition profile] MakePartition rebuild: 0.00011275 s
+[RefinePartition profile] total: 0.00118829 s
+[RefineDetailed] level=4 n=2602 m=21258 community_slots=270 active_parents=100 empty_slots=170 min_id=6 max_id=265 member_vectors=270
+[RefineDetailed] wall_times member_construction=2.9291e-05 subset_processing=0.000966208 global_id_prefix=6.25e-07 global_assignment=3.5e-06 make_partition=0.00011275 total=0.00118829
+[RefineDetailed] subsets=100 vertices=2602 min_size=2 max_size=110 avg_size=26.02 adjacency_volume=39914 max_adjacency_volume=1724 avg_adjacency_volume=399.14
+[RefineDetailed] size_bins=0,49,49,2,0
+[RefineDetailed] candidates=2602 processed=2602 singleton_skips=613 neighbor_builds=1989 neighbor_adjacency_scans=28074 touched=21687 active_iterations=71276 sparse_iterations=13298 sparse_full_ratio=0.186571 exceptional_additions=0 max_sparse_targets=31 delta_evaluations=11309 nondecreasing=13037 selections=1989 moves=1989
+[RefineDetailed] stats_build_calls=100 stats_build_vertices=2602 stats_build_adjacency_scans=39914 stats_update_calls=1989 stats_update_adjacency_scans=28074
+[RefineDetailed refresh] initial_calls=100 move_calls=0 total_time=6.4506e-05 avg_time=6.4506e-07 max_time=3.417e-06 entries_scanned=2602 active_produced=2602 sort_elements=2602 refine_ratio=0.0542846
+[RefineDetailed active_update] calls=1989 activations=0 deactivations=1989 no_change=0 total_time=8.0699e-05
+[RefineDetailed] cpu_times reset=1.4121e-05 mass=5.751e-06 candidate_scan=0.000150417 shuffle=5.534e-05 scratch_init=0.000204918 stats_build=0.000369494 candidate_processing=0.00247313 compaction=0.000174122 subset_total=0.00349821
+[RefineDetailed] local_communities_total=613 average=6.13 max=26 local_result_vertices=2602 local_assignment_entries=2602
+[RefineDetailed] threads=8 init_total_cpu=0.000194458 init_max_wall_proxy=3.5542e-05 init_avg=2.43073e-05 scratch_bytes_per_thread=75458 scratch_bytes_total=603664
+[RefineDetailed] thread_work_min=0.000201209 max=0.000593455 avg=0.000449114 max_avg=1.32139
+[RefineDetailed top] rank=1 parent=13 size=101 adjacency_volume=1593 time=0.000256542 local_communities=26 max_active_communities=101 avg_sparse_targets=7.90667 max_sparse_targets=19 delta_evaluations=518 refinement_moves=75 refresh_calls=1 refresh_time=2.084e-06
+[RefineDetailed top] rank=2 parent=180 size=110 adjacency_volume=1724 time=0.000221166 local_communities=23 max_active_communities=110 avg_sparse_targets=7.62069 max_sparse_targets=21 delta_evaluations=576 refinement_moves=87 refresh_calls=1 refresh_time=3.417e-06
+[RefineDetailed top] rank=3 parent=85 size=78 adjacency_volume=1267 time=0.000145833 local_communities=18 max_active_communities=78 avg_sparse_targets=7.45 max_sparse_targets=20 delta_evaluations=387 refinement_moves=60 refresh_calls=1 refresh_time=2.167e-06
+[RefineDetailed top] rank=4 parent=237 size=79 adjacency_volume=1269 time=0.000132625 local_communities=15 max_active_communities=79 avg_sparse_targets=7.23438 max_sparse_targets=20 delta_evaluations=399 refinement_moves=64 refresh_calls=1 refresh_time=2.167e-06
+[RefineDetailed top] rank=5 parent=68 size=30 adjacency_volume=463 time=0.000125917 local_communities=8 max_active_communities=30 avg_sparse_targets=6.40909 max_sparse_targets=16 delta_evaluations=119 refinement_moves=22 refresh_calls=1 refresh_time=1.333e-06
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 613
+[Leiden] elapsed time: 0.00131683 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 613
+[Leiden] aggregate edges: 4807
+[Leiden] elapsed time: 0.00033975 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 3.1375e-05 seconds
+[Leiden] total level time: 0.00602142 seconds
+[Leiden] level 5 start
+[Leiden] current number of vertices: 613
+[Leiden] current number of edges: 4807
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4A.1] round=1 active=613 positive=55 committed=50 rejected=5 next_active=296
+[MoveNodesFast Stage4A.1] round=2 active=296 positive=29 committed=27 rejected=2 next_active=153
+[MoveNodesFast Stage4A.1] round=3 active=153 positive=8 committed=6 rejected=2 next_active=43
+[MoveNodesFast Stage4A.1] round=4 active=43 positive=4 committed=3 rejected=1 next_active=30
+[MoveNodesFast Stage4A.1] round=5 active=30 positive=1 committed=1 rejected=0 next_active=11
+[MoveNodesFast Stage4A.1] round=6 active=11 positive=0 committed=0 rejected=0 next_active=613
+[MoveNodesFast Stage4A.1] round=7 active=613 positive=0 committed=0 rejected=0 next_active=0
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 87
+[Leiden] num_visits: 1759
+[Leiden] elapsed time: 0.00098375 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=56 total_parent_communities=56 processed_vertices=613
+[RefinePartition profile] member construction: 9.875e-06 s
+[RefinePartition profile] subset processing: 0.000323084 s
+[RefinePartition profile] local result storage: 0.000323084 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 1.66e-07 s
+[RefinePartition profile] global assignment reconstruction: 1.292e-06 s
+[RefinePartition profile] MakePartition rebuild: 2.0709e-05 s
+[RefinePartition profile] total: 0.000377709 s
+[RefineDetailed] level=5 n=613 m=4807 community_slots=100 active_parents=56 empty_slots=44 min_id=0 max_id=98 member_vectors=100
+[RefineDetailed] wall_times member_construction=9.875e-06 subset_processing=0.000323084 global_id_prefix=1.66e-07 global_assignment=1.292e-06 make_partition=2.0709e-05 total=0.000377709
+[RefineDetailed] subsets=56 vertices=613 min_size=2 max_size=25 avg_size=10.9464 adjacency_volume=9001 max_adjacency_volume=377 avg_adjacency_volume=160.732
+[RefineDetailed] size_bins=0,29,27,0,0
+[RefineDetailed] candidates=613 processed=613 singleton_skips=156 neighbor_builds=457 neighbor_adjacency_scans=6037 touched=4800 active_iterations=4532 sparse_iterations=2247 sparse_full_ratio=0.495808 exceptional_additions=0 max_sparse_targets=17 delta_evaluations=1790 nondecreasing=2162 selections=457 moves=457
+[RefineDetailed] stats_build_calls=56 stats_build_vertices=613 stats_build_adjacency_scans=9001 stats_update_calls=457 stats_update_adjacency_scans=6037
+[RefineDetailed refresh] initial_calls=56 move_calls=0 total_time=1.7789e-05 avg_time=3.17661e-07 max_time=8.75e-07 entries_scanned=613 active_produced=613 sort_elements=613 refine_ratio=0.0470971
+[RefineDetailed active_update] calls=457 activations=0 deactivations=457 no_change=0 total_time=1.8084e-05
+[RefineDetailed] cpu_times reset=2.29e-06 mass=1.916e-06 candidate_scan=3.8249e-05 shuffle=1.2461e-05 scratch_init=3.7121e-05 stats_build=8.1954e-05 candidate_processing=0.000427665 compaction=3.1375e-05 subset_total=0.000656041
+[RefineDetailed] local_communities_total=156 average=2.78571 max=7 local_result_vertices=613 local_assignment_entries=613
+[RefineDetailed] threads=8 init_total_cpu=4.3623e-05 init_max_wall_proxy=8.875e-06 init_avg=5.45287e-06 scratch_bytes_per_thread=17777 scratch_bytes_total=142216
+[RefineDetailed] thread_work_min=4.0709e-05 max=0.000127709 avg=8.56571e-05 max_avg=1.49093
+[RefineDetailed top] rank=1 parent=64 size=23 adjacency_volume=347 time=4.5291e-05 local_communities=4 max_active_communities=23 avg_sparse_targets=5.63158 max_sparse_targets=14 delta_evaluations=88 refinement_moves=19 refresh_calls=1 refresh_time=8.75e-07
+[RefineDetailed top] rank=2 parent=3 size=25 adjacency_volume=377 time=2.7458e-05 local_communities=6 max_active_communities=25 avg_sparse_targets=6.31579 max_sparse_targets=14 delta_evaluations=101 refinement_moves=19 refresh_calls=1 refresh_time=5.42e-07
+[RefineDetailed top] rank=3 parent=27 size=22 adjacency_volume=339 time=2.5708e-05 local_communities=6 max_active_communities=22 avg_sparse_targets=5.375 max_sparse_targets=8 delta_evaluations=70 refinement_moves=16 refresh_calls=1 refresh_time=7.92e-07
+[RefineDetailed top] rank=4 parent=14 size=9 adjacency_volume=137 time=2.5459e-05 local_communities=1 max_active_communities=9 avg_sparse_targets=4.25 max_sparse_targets=9 delta_evaluations=26 refinement_moves=8 refresh_calls=1 refresh_time=8.34e-07
+[RefineDetailed top] rank=5 parent=65 size=14 adjacency_volume=202 time=2.4375e-05 local_communities=4 max_active_communities=14 avg_sparse_targets=4.4 max_sparse_targets=8 delta_evaluations=34 refinement_moves=10 refresh_calls=1 refresh_time=6.25e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 156
+[Leiden] elapsed time: 0.000453625 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 156
+[Leiden] aggregate edges: 1165
+[Leiden] elapsed time: 0.000137708 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 9.25e-06 seconds
+[Leiden] total level time: 0.00218396 seconds
+[Leiden] level 6 start
+[Leiden] current number of vertices: 156
+[Leiden] current number of edges: 1165
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4A.1] round=1 active=156 positive=22 committed=17 rejected=5 next_active=98
+[MoveNodesFast Stage4A.1] round=2 active=98 positive=8 committed=6 rejected=2 next_active=57
+[MoveNodesFast Stage4A.1] round=3 active=57 positive=3 committed=2 rejected=1 next_active=20
+[MoveNodesFast Stage4A.1] round=4 active=20 positive=3 committed=2 rejected=1 next_active=8
+[MoveNodesFast Stage4A.1] round=5 active=8 positive=1 committed=1 rejected=0 next_active=9
+[MoveNodesFast Stage4A.1] round=6 active=9 positive=1 committed=1 rejected=0 next_active=4
+[MoveNodesFast Stage4A.1] round=7 active=4 positive=1 committed=1 rejected=0 next_active=4
+[MoveNodesFast Stage4A.1] round=8 active=4 positive=0 committed=0 rejected=0 next_active=156
+[MoveNodesFast Stage4A.1] round=9 active=156 positive=0 committed=0 rejected=0 next_active=0
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 30
+[Leiden] num_visits: 512
+[Leiden] elapsed time: 0.00098975 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=40 total_parent_communities=40 processed_vertices=156
+[RefinePartition profile] member construction: 4e-06 s
+[RefinePartition profile] subset processing: 0.000158667 s
+[RefinePartition profile] local result storage: 0.000158667 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 2.08e-07 s
+[RefinePartition profile] global assignment reconstruction: 6.25e-07 s
+[RefinePartition profile] MakePartition rebuild: 7.417e-06 s
+[RefinePartition profile] total: 0.000191084 s
+[RefineDetailed] level=6 n=156 m=1165 community_slots=56 active_parents=40 empty_slots=16 min_id=1 max_id=55 member_vectors=56
+[RefineDetailed] wall_times member_construction=4e-06 subset_processing=0.000158667 global_id_prefix=2.08e-07 global_assignment=6.25e-07 make_partition=7.417e-06 total=0.000191084
+[RefineDetailed] subsets=40 vertices=156 min_size=1 max_size=8 avg_size=3.9 adjacency_volume=2174 max_adjacency_volume=114 avg_adjacency_volume=54.35
+[RefineDetailed] size_bins=1,39,0,0,0
+[RefineDetailed] candidates=156 processed=156 singleton_skips=52 neighbor_builds=104 neighbor_adjacency_scans=1357 touched=1134 active_iterations=373 sparse_iterations=322 sparse_full_ratio=0.863271 exceptional_additions=0 max_sparse_targets=7 delta_evaluations=218 nondecreasing=309 selections=104 moves=103
+[RefineDetailed] stats_build_calls=40 stats_build_vertices=156 stats_build_adjacency_scans=2174 stats_update_calls=103 stats_update_adjacency_scans=1346
+[RefineDetailed refresh] initial_calls=40 move_calls=0 total_time=1.225e-05 avg_time=3.0625e-07 max_time=7.92e-07 entries_scanned=156 active_produced=156 sort_elements=156 refine_ratio=0.0641079
+[RefineDetailed active_update] calls=103 activations=0 deactivations=103 no_change=0 total_time=6.046e-06
+[RefineDetailed] cpu_times reset=1.83e-06 mass=1.293e-06 candidate_scan=7.2875e-05 shuffle=3.705e-06 scratch_init=2.8047e-05 stats_build=4.1127e-05 candidate_processing=0.000151457 compaction=2.2871e-05 subset_total=0.000343748
+[RefineDetailed] local_communities_total=53 average=1.325 max=3 local_result_vertices=156 local_assignment_entries=156
+[RefineDetailed] threads=8 init_total_cpu=1.1792e-05 init_max_wall_proxy=3.334e-06 init_avg=1.474e-06 scratch_bytes_per_thread=4524 scratch_bytes_total=36192
+[RefineDetailed] thread_work_min=2.3583e-05 max=7.3375e-05 avg=4.61871e-05 max_avg=1.58865
+[RefineDetailed top] rank=1 parent=14 size=6 adjacency_volume=90 time=5.8584e-05 local_communities=2 max_active_communities=6 avg_sparse_targets=3.75 max_sparse_targets=5 delta_evaluations=11 refinement_moves=4 refresh_calls=1 refresh_time=2.5e-07
+[RefineDetailed top] rank=2 parent=7 size=4 adjacency_volume=54 time=1.7083e-05 local_communities=1 max_active_communities=4 avg_sparse_targets=3 max_sparse_targets=4 delta_evaluations=6 refinement_moves=3 refresh_calls=1 refresh_time=6.67e-07
+[RefineDetailed top] rank=3 parent=49 size=4 adjacency_volume=69 time=1.6917e-05 local_communities=1 max_active_communities=4 avg_sparse_targets=2.66667 max_sparse_targets=4 delta_evaluations=5 refinement_moves=3 refresh_calls=1 refresh_time=6.66e-07
+[RefineDetailed top] rank=4 parent=43 size=4 adjacency_volume=67 time=1.6417e-05 local_communities=1 max_active_communities=4 avg_sparse_targets=3 max_sparse_targets=4 delta_evaluations=6 refinement_moves=3 refresh_calls=1 refresh_time=6.67e-07
+[RefineDetailed top] rank=5 parent=44 size=7 adjacency_volume=114 time=1.6375e-05 local_communities=2 max_active_communities=7 avg_sparse_targets=4.4 max_sparse_targets=6 delta_evaluations=17 refinement_moves=5 refresh_calls=1 refresh_time=2.92e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 53
+[Leiden] elapsed time: 0.000270875 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 53
+[Leiden] aggregate edges: 360
+[Leiden] elapsed time: 9.7084e-05 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 5.125e-06 seconds
+[Leiden] total level time: 0.00201308 seconds
+[Leiden] level 7 start
+[Leiden] current number of vertices: 53
+[Leiden] current number of edges: 360
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4A.1] round=1 active=53 positive=15 committed=9 rejected=6 next_active=42
+[MoveNodesFast Stage4A.1] round=2 active=42 positive=3 committed=3 rejected=0 next_active=22
+[MoveNodesFast Stage4A.1] round=3 active=22 positive=3 committed=2 rejected=1 next_active=13
+[MoveNodesFast Stage4A.1] round=4 active=13 positive=0 committed=0 rejected=0 next_active=53
+[MoveNodesFast Stage4A.1] round=5 active=53 positive=0 committed=0 rejected=0 next_active=0
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 14
+[Leiden] num_visits: 183
+[Leiden] elapsed time: 0.000438 seconds
+[Leiden] RefinePartition start
+[RefinePartition] done processed_parent_communities=32 total_parent_communities=32 processed_vertices=53
+[RefinePartition profile] member construction: 1.958e-06 s
+[RefinePartition profile] subset processing: 0.000152 s
+[RefinePartition profile] local result storage: 0.000152 s (included in subset processing)
+[RefinePartition profile] global ID prefix: 4.17e-07 s
+[RefinePartition profile] global assignment reconstruction: 4.59e-07 s
+[RefinePartition profile] MakePartition rebuild: 2.791e-06 s
+[RefinePartition profile] total: 0.000176291 s
+[RefineDetailed] level=7 n=53 m=360 community_slots=40 active_parents=32 empty_slots=8 min_id=0 max_id=39 member_vectors=40
+[RefineDetailed] wall_times member_construction=1.958e-06 subset_processing=0.000152 global_id_prefix=4.17e-07 global_assignment=4.59e-07 make_partition=2.791e-06 total=0.000176291
+[RefineDetailed] subsets=32 vertices=53 min_size=1 max_size=4 avg_size=1.65625 adjacency_volume=667 max_adjacency_volume=48 avg_adjacency_volume=20.8438
+[RefineDetailed] size_bins=16,16,0,0,0
+[RefineDetailed] candidates=53 processed=53 singleton_skips=16 neighbor_builds=37 neighbor_adjacency_scans=459 touched=406 active_iterations=64 sparse_iterations=64 sparse_full_ratio=1 exceptional_additions=0 max_sparse_targets=4 delta_evaluations=27 nondecreasing=61 selections=37 moves=21
+[RefineDetailed] stats_build_calls=32 stats_build_vertices=53 stats_build_adjacency_scans=667 stats_update_calls=21 stats_update_adjacency_scans=249
+[RefineDetailed refresh] initial_calls=32 move_calls=0 total_time=7.836e-06 avg_time=2.44875e-07 max_time=5.42e-07 entries_scanned=53 active_produced=53 sort_elements=53 refine_ratio=0.0444492
+[RefineDetailed active_update] calls=21 activations=0 deactivations=21 no_change=0 total_time=1.166e-06
+[RefineDetailed] cpu_times reset=1.124e-06 mass=7.49e-07 candidate_scan=7.127e-06 shuffle=1.083e-06 scratch_init=1.7208e-05 stats_build=2.4166e-05 candidate_processing=5.0085e-05 compaction=2.1376e-05 subset_total=0.000141004
+[RefineDetailed] local_communities_total=32 average=1 max=1 local_result_vertices=53 local_assignment_entries=53
+[RefineDetailed] threads=8 init_total_cpu=7.749e-06 init_max_wall_proxy=2.042e-06 init_avg=9.68625e-07 scratch_bytes_per_thread=1537 scratch_bytes_total=12296
+[RefineDetailed] thread_work_min=7.5e-06 max=3.7252e-05 avg=2.1115e-05 max_avg=1.76424
+[RefineDetailed top] rank=1 parent=10 size=2 adjacency_volume=31 time=1.225e-05 local_communities=1 max_active_communities=2 avg_sparse_targets=2 max_sparse_targets=2 delta_evaluations=1 refinement_moves=1 refresh_calls=1 refresh_time=5.42e-07
+[RefineDetailed top] rank=2 parent=7 size=2 adjacency_volume=24 time=1.1375e-05 local_communities=1 max_active_communities=2 avg_sparse_targets=2 max_sparse_targets=2 delta_evaluations=1 refinement_moves=1 refresh_calls=1 refresh_time=5e-07
+[RefineDetailed top] rank=3 parent=35 size=1 adjacency_volume=18 time=1.0125e-05 local_communities=1 max_active_communities=1 avg_sparse_targets=1 max_sparse_targets=1 delta_evaluations=0 refinement_moves=0 refresh_calls=1 refresh_time=5.42e-07
+[RefineDetailed top] rank=4 parent=30 size=1 adjacency_volume=17 time=9.375e-06 local_communities=1 max_active_communities=1 avg_sparse_targets=1 max_sparse_targets=1 delta_evaluations=0 refinement_moves=0 refresh_calls=1 refresh_time=3.33e-07
+[RefineDetailed top] rank=5 parent=31 size=2 adjacency_volume=29 time=9.292e-06 local_communities=1 max_active_communities=2 avg_sparse_targets=2 max_sparse_targets=2 delta_evaluations=1 refinement_moves=1 refresh_calls=1 refresh_time=4.59e-07
+[Leiden] RefinePartition done
+[Leiden] number of refined communities: 32
+[Leiden] elapsed time: 0.0002425 seconds
+[Leiden] AggregateGraph start
+[Leiden] AggregateGraph done
+[Leiden] aggregate vertices: 32
+[Leiden] aggregate edges: 200
+[Leiden] elapsed time: 0.000118875 seconds
+[Leiden] BuildCoarsePartition start
+[Leiden] BuildCoarsePartition done
+[Leiden] elapsed time: 2.708e-06 seconds
+[Leiden] total level time: 0.0014235 seconds
+[Leiden] level 8 start
+[Leiden] current number of vertices: 32
+[Leiden] current number of edges: 200
+[Leiden] MoveNodesFast start
+[MoveNodesFast Stage4A.1] round=1 active=32 positive=0 committed=0 rejected=0 next_active=0
+[Leiden] MoveNodesFast done
+[Leiden] num_moves: 0
+[Leiden] num_visits: 32
+[Leiden] elapsed time: 0.000133875 seconds
+[Leiden] total level time: 0.000166834 seconds
+[Leiden] converged because num_moves == 0
+Method              : LeidenMD
+Matrix              : ../0_florida/Emilia_923.mtx
+Resolution          : 1.0
+Theta               : 0.01
+Seed                : 0
+Number of vertices  : 923136
+Number of edges     : 20041035
+Number of blocks    : 32
+Number of colors    : 8
+Leiden levels       : 8
+Leiden moves        : 2563844
+MoveNodesFast time  : 5.00521 s
+  Neighbor weights time : 0 s
+  Candidate build time  : 0 s
+  Delta evaluation time : 0 s
+  Move node time        : 0 s
+    Self-loop scan time     : 0 s
+    Validation time         : 0.0395984 s
+    EnsureCommunity time    : 0.0444385 s
+    Statistics update time  : 0.22458 s
+    Empty-community time    : 0.117386 s
+    Move-node residual time : 0 s
+  Neighbor requeue time : 0 s
+  Residual time         : 5.00521 s
+  MoveNodesFast visits  : 12379510
+  MoveNodesFast moves   : 2563844
+  Total candidates      : 0
+  Stage4A rounds        : 627
+  Stage4A active scan   : 0.408616 s
+  Stage4A neighbor scan : 2.81668 s
+  Stage4A candidate eval: 1.33118 s
+  Stage4A proposal total: 1.62294 s
+  Stage4A commit total  : 3.0813 s
+  Stage4A revalidation  : 1.58979 s
+  Stage4A affected next : 0.159867 s
+  Stage4A buffer clear  : 0.00513137 s
+  Stage4A total         : 5.00212 s
+  Stage4A active vertices: 12379510
+  Stage4A positive proposals: 2897293
+  Stage4A committed moves: 2563844
+  Stage4A rejected proposals: 333449
+  Stage4A average active/round: 19744
+  Stage4A maximum active/round: 923136
+  Stage4A reactivation neighbor scans: 111083847
+  Stage4A target-community exclusions: 28194020
+  Stage4A newly activated neighbors: 10312465
+  Stage4A duplicate activation attempts: 72577362
+  Stage4A commit/proposal ratio: 0.88491
+  Stage4B processed vertices: 0
+  Stage4B successful moves: 0
+  Stage4B failed validations: 0
+  Stage4B neighbor scans: 0
+  Stage4B candidate evaluations: 0
+  Stage4B enqueue attempts/success/duplicate: 0/0/0
+  Stage4B empty attempts/failures: 0/0
+  Stage4B commit attempts/retries: 0/0
+  Stage4B lock attempts/contentions: 0/0
+  Stage4B verification sweeps: 0
+  Stage4B productive sweeps: 0
+  Stage4B final verification wall: 0 s
+  Stage4B final verification processed: 0
+  Stage4B final verification neighbor scans: 0
+  Stage4B final verification candidate evals: 0
+  Stage4B final verification enqueue dup rate: 0
+  Stage4B neighbor time: 0 s
+  Stage4B candidate time: 0 s
+  Stage4B lock wait: 0 s
+  Stage4B commit/revalidation: 0 s
+  Stage4B affected update: 0 s
+  Stage4B queue management: 0 s
+  Stage4B final rebuild: 0 s
+  Stage4B total: 0 s
+RefinePartition time: 2.39937 s
+AggregateGraph time : 0.0915431 s
+BuildCoarse time    : 0.00533167 s
+Leiden total time   : 7.96542 s
+Execution time      : 8.18093 s
+Quality value (internal objective): 3.60659e+07
+Block file          : Emilia_923_LeidenMD_gamma1.0.blk
+Color file          : Emilia_923_LeidenMD_gamma1.0.bcol
