@@ -464,6 +464,31 @@ int main(int argc, char** argv)
                   << move_profile.stage4b_lock_contentions << "\n"
                   << "  Stage4B verification sweeps: "
                   << move_profile.stage4b_verification_sweeps << "\n"
+                  << "  Stage4B productive sweeps: "
+                  << move_profile.stage4b_productive_sweeps << "\n"
+                  << "  Stage4B final verification wall: "
+                  << move_profile.stage4b_final_verification_wall_time << " s\n"
+                  << "  Stage4B final verification processed: "
+                  << move_profile.stage4b_final_verification_processed_vertices
+                  << "\n"
+                  << "  Stage4B final verification neighbor scans: "
+                  << move_profile.stage4b_final_verification_neighbor_scans
+                  << "\n"
+                  << "  Stage4B final verification candidate evals: "
+                  << move_profile
+                         .stage4b_final_verification_candidate_evaluations
+                  << "\n"
+                  << "  Stage4B final verification enqueue dup rate: "
+                  << (move_profile
+                              .stage4b_final_verification_enqueue_attempts == 0
+                          ? 0.0
+                          : static_cast<double>(
+                                move_profile
+                                    .stage4b_final_verification_duplicate_suppressions) /
+                                static_cast<double>(
+                                    move_profile
+                                        .stage4b_final_verification_enqueue_attempts))
+                  << "\n"
                   << "  Stage4B neighbor time: "
                   << move_profile.stage4b_neighbor_weights << " s\n"
                   << "  Stage4B candidate time: "

@@ -1521,6 +1521,20 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
         double queue_time = 0.0;
     };
 
+    struct Stage4BProfileSnapshot {
+        std::size_t processed = 0;
+        std::size_t moves = 0;
+        std::size_t failed = 0;
+        std::size_t neighbor_scans = 0;
+        std::size_t candidate_evaluations = 0;
+        std::size_t enqueue_attempts = 0;
+        std::size_t enqueues = 0;
+        std::size_t duplicates = 0;
+        std::size_t commit_attempts = 0;
+        std::size_t retries = 0;
+        double queue_time = 0.0;
+    };
+
 #ifdef ENABLE_MOVENODESFAST_STAGE4B_STDTHREAD
     int worker_count = 1;
     if (const char* value = std::getenv("OMP_NUM_THREADS")) {
@@ -1532,6 +1546,43 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
     const int worker_count = 1;
 #endif
     std::vector<ThreadProfile> profiles(static_cast<std::size_t>(worker_count));
+    const bool debug = DebugEnabled(options);
+    auto snapshot_profiles = [&profiles]() {
+        Stage4BProfileSnapshot snapshot;
+        for (const ThreadProfile& p : profiles) {
+            snapshot.processed += p.processed;
+            snapshot.moves += p.moves;
+            snapshot.failed += p.failed;
+            snapshot.neighbor_scans += p.neighbor_scans;
+            snapshot.candidate_evaluations += p.candidate_evaluations;
+            snapshot.enqueue_attempts += p.enqueue_attempts;
+            snapshot.enqueues += p.enqueues;
+            snapshot.duplicates += p.duplicates;
+            snapshot.commit_attempts += p.commit_attempts;
+            snapshot.retries += p.retries;
+            snapshot.queue_time += p.queue_time;
+        }
+        return snapshot;
+    };
+    const auto snapshot_delta = [](const Stage4BProfileSnapshot& after,
+                                   const Stage4BProfileSnapshot& before) {
+        Stage4BProfileSnapshot delta;
+        delta.processed = after.processed - before.processed;
+        delta.moves = after.moves - before.moves;
+        delta.failed = after.failed - before.failed;
+        delta.neighbor_scans = after.neighbor_scans - before.neighbor_scans;
+        delta.candidate_evaluations =
+            after.candidate_evaluations - before.candidate_evaluations;
+        delta.enqueue_attempts =
+            after.enqueue_attempts - before.enqueue_attempts;
+        delta.enqueues = after.enqueues - before.enqueues;
+        delta.duplicates = after.duplicates - before.duplicates;
+        delta.commit_attempts =
+            after.commit_attempts - before.commit_attempts;
+        delta.retries = after.retries - before.retries;
+        delta.queue_time = after.queue_time - before.queue_time;
+        return delta;
+    };
     // Per-vertex state machine:
     //   0 IDLE
     //   1 QUEUED or PROCESSING
@@ -1577,7 +1628,13 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
     std::shuffle(initial_order.begin(), initial_order.end(), initial_rng);
 
     std::size_t verification_sweeps = 0;
+    std::size_t productive_sweeps = 0;
+    double final_verification_wall_time = 0.0;
+    Stage4BProfileSnapshot final_verification_profile;
     while (true) {
+        const std::size_t phase = verification_sweeps + 1;
+        const Stage4BProfileSnapshot phase_before = snapshot_profiles();
+        const Clock::time_point phase_begin = Clock::now();
         for (Vertex v = 0; v < n; ++v) {
             work_state[static_cast<std::size_t>(v)].store(
                 0, std::memory_order_relaxed);
@@ -1867,7 +1924,42 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
         }
 
         ++verification_sweeps;
-        if (phase_moves.load(std::memory_order_acquire) == 0) break;
+        const std::size_t moves_this_phase =
+            phase_moves.load(std::memory_order_acquire);
+        const Stage4BProfileSnapshot phase_after = snapshot_profiles();
+        const Stage4BProfileSnapshot phase_delta =
+            snapshot_delta(phase_after, phase_before);
+        const double phase_wall_time =
+            ElapsedSeconds(phase_begin, Clock::now());
+        if (moves_this_phase != 0) {
+            ++productive_sweeps;
+        }
+        if (debug) {
+            std::cerr << "[MoveNodesFast Stage4B.4] sweep=" << phase
+                      << " processed=" << phase_delta.processed
+                      << " moves=" << phase_delta.moves
+                      << " failed_validations=" << phase_delta.failed
+                      << " neighbor_scans=" << phase_delta.neighbor_scans
+                      << " candidate_evaluations="
+                      << phase_delta.candidate_evaluations
+                      << " enqueue_attempts="
+                      << phase_delta.enqueue_attempts
+                      << " successful_enqueues=" << phase_delta.enqueues
+                      << " duplicate_suppressions="
+                      << phase_delta.duplicates
+                      << " duplicate_rate="
+                      << (phase_delta.enqueue_attempts == 0 ? 0.0 :
+                          static_cast<double>(phase_delta.duplicates) /
+                          static_cast<double>(phase_delta.enqueue_attempts))
+                      << " queue_thread_time=" << phase_delta.queue_time
+                      << " wall_time=" << phase_wall_time
+                      << "\n";
+        }
+        if (moves_this_phase == 0) {
+            final_verification_wall_time = phase_wall_time;
+            final_verification_profile = phase_delta;
+            break;
+        }
     }
 
     const Clock::time_point rebuild_begin = Clock::now();
@@ -1909,10 +2001,26 @@ MoveNodesFastResult MoveNodesFastParallelStage4B(
     result.profile.num_visits = result.num_visits;
     result.profile.stage4b_final_rebuild = rebuild_time;
     result.profile.stage4b_verification_sweeps = verification_sweeps;
+    result.profile.stage4b_productive_sweeps = productive_sweeps;
+    result.profile.stage4b_final_verification_wall_time =
+        final_verification_wall_time;
+    result.profile.stage4b_final_verification_processed_vertices =
+        final_verification_profile.processed;
+    result.profile.stage4b_final_verification_neighbor_scans =
+        final_verification_profile.neighbor_scans;
+    result.profile.stage4b_final_verification_candidate_evaluations =
+        final_verification_profile.candidate_evaluations;
+    result.profile.stage4b_final_verification_enqueue_attempts =
+        final_verification_profile.enqueue_attempts;
+    result.profile.stage4b_final_verification_duplicate_suppressions =
+        final_verification_profile.duplicates;
     result.profile.stage4b_total = ElapsedSeconds(total_begin, Clock::now());
 #else
     (void)rebuild_time;
     (void)verification_sweeps;
+    (void)productive_sweeps;
+    (void)final_verification_wall_time;
+    (void)final_verification_profile;
     (void)total_begin;
 #endif
     return result;
@@ -3323,6 +3431,7 @@ LeidenResult Leiden(const Graph& G,
         STAGE4B_ACCUMULATE(stage4b_affected_update);
         STAGE4B_ACCUMULATE(stage4b_queue_management);
         STAGE4B_ACCUMULATE(stage4b_final_rebuild);
+        STAGE4B_ACCUMULATE(stage4b_final_verification_wall_time);
         STAGE4B_ACCUMULATE(stage4b_total);
         STAGE4B_ACCUMULATE(stage4b_processed_vertices);
         STAGE4B_ACCUMULATE(stage4b_successful_moves);
@@ -3339,6 +3448,12 @@ LeidenResult Leiden(const Graph& G,
         STAGE4B_ACCUMULATE(stage4b_lock_attempts);
         STAGE4B_ACCUMULATE(stage4b_lock_contentions);
         STAGE4B_ACCUMULATE(stage4b_verification_sweeps);
+        STAGE4B_ACCUMULATE(stage4b_productive_sweeps);
+        STAGE4B_ACCUMULATE(stage4b_final_verification_processed_vertices);
+        STAGE4B_ACCUMULATE(stage4b_final_verification_neighbor_scans);
+        STAGE4B_ACCUMULATE(stage4b_final_verification_candidate_evaluations);
+        STAGE4B_ACCUMULATE(stage4b_final_verification_enqueue_attempts);
+        STAGE4B_ACCUMULATE(stage4b_final_verification_duplicate_suppressions);
 #undef STAGE4B_ACCUMULATE
 #endif
         current_partition = std::move(moved.partition);

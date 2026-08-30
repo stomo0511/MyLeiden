@@ -56,6 +56,7 @@ struct MoveNodesFastProfile {
     double stage4b_affected_update = 0.0;
     double stage4b_queue_management = 0.0;
     double stage4b_final_rebuild = 0.0;
+    double stage4b_final_verification_wall_time = 0.0;
     double stage4b_total = 0.0;
     std::size_t stage4b_processed_vertices = 0;
     std::size_t stage4b_successful_moves = 0;
@@ -72,6 +73,12 @@ struct MoveNodesFastProfile {
     std::size_t stage4b_lock_attempts = 0;
     std::size_t stage4b_lock_contentions = 0;
     std::size_t stage4b_verification_sweeps = 0;
+    std::size_t stage4b_productive_sweeps = 0;
+    std::size_t stage4b_final_verification_processed_vertices = 0;
+    std::size_t stage4b_final_verification_neighbor_scans = 0;
+    std::size_t stage4b_final_verification_candidate_evaluations = 0;
+    std::size_t stage4b_final_verification_enqueue_attempts = 0;
+    std::size_t stage4b_final_verification_duplicate_suppressions = 0;
 };
 // END TEMPORARY MOVENODESFAST PERFORMANCE PROFILING
 #endif
